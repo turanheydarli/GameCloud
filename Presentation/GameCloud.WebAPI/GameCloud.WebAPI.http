@@ -1,0 +1,6 @@
+@GameCloud_WebAPI_HostAddress = https://localhost:7257
+
+GET {{GameCloud_WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

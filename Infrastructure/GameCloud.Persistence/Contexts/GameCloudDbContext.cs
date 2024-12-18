@@ -1,0 +1,35 @@
+using GameCloud.Domain.Entities;
+using GameCloud.Persistence.Configurations;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+
+namespace GameCloud.Persistence.Contexts
+{
+    public class GameCloudDbContext(DbContextOptions<GameCloudDbContext> options) : IdentityDbContext<AppUser, AppRole, Guid>(options)
+    {
+        public DbSet<Developer> Developers { get; set; }
+        public DbSet<Game> Games { get; set; }
+        public DbSet<GameKey> GameKeys { get; set; }
+        public DbSet<FirebaseProject> FirebaseProjects { get; set; }
+        public DbSet<FunctionConfig> FunctionConfigs { get; set; }
+        public DbSet<GameState> GameStates { get; set; }
+        public DbSet<ActionLog> ActionLogs { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.HasDefaultSchema("gc");
+
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ApplyConfiguration(new AppUserEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new AppRoleEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new GameEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new GameKeyEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new DeveloperEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new FirebaseProjectEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new FunctionConfigEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new GameStateEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new PlayerEntityConfiguration());
+        }
+    }
+}

@@ -1,0 +1,39 @@
+﻿version: '3.8'
+
+services:
+  gamecloud.webapi:
+    image: gamecloud.webapi:latest
+    container_name: gamecloud_webapi
+    build:
+      context: .
+      dockerfile: Presentation/GameCloud.WebAPI/Dockerfile
+    ports:
+      - "6000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Database=GameCloudDb;Username=postgres;Password=myPass
+    depends_on:
+      - gamecloud.db
+    networks:
+      - gamecloud_network
+
+  gamecloud.db:
+    image: postgres:latest
+    container_name: gamecloud_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypass
+      POSTGRES_DB: GameCloudDb
+    ports:
+      - "5432:5432"
+    networks:
+      - gamecloud_network
+    volumes:
+      - gamecloud_data:/var/lib/postgresql/data
+
+networks:
+  gamecloud_network:
+    driver: bridge
+
+volumes:
+  gamecloud_data:
