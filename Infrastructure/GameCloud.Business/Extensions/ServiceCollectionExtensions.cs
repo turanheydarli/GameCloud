@@ -1,7 +1,11 @@
 using System.Reflection;
 using System.Text;
 using GameCloud.Application.Common.Mappings;
+using GameCloud.Application.Common.Policies;
+using GameCloud.Application.Common.Policies.Requirements;
+using GameCloud.Application.Common.Policies.Requirements.Handlers;
 using GameCloud.Application.Features.Developers;
+using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Users;
 using GameCloud.Business.Services;
@@ -10,6 +14,7 @@ using GameCloud.Domain.Repositories;
 using GameCloud.Persistence.Contexts;
 using GameCloud.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,11 +30,21 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IGameContext, GameContextAccessor>();
         services.AddScoped<IGameKeyResolver, GameKeyResolver>();
-
         services.AddScoped<IGameKeyRepository, GameKeyRepository>();
+        services.AddScoped<IGameRepository, GameRepository>();
+        services.AddScoped<IGameService, GameService>();
+
         services.AddScoped<IDeveloperRepository, DeveloperRepository>();
         services.AddScoped<IDeveloperService, DeveloperService>();
+
         services.AddScoped<IUserService, UserService>();
+
+        services.AddScoped<IAuthorizationHandler, GameOwnershipHandler>();
+        services.AddScoped<IAuthorizationHandler, GameKeyRequirementHandler>();
+
+
+        services.AddScoped<IFunctionRepository, FunctionRepository>();
+        services.AddScoped<IFunctionService, FunctionService>();
 
         services.AddDbContext<GameCloudDbContext>(opts =>
         {
@@ -46,6 +61,21 @@ public static class ServiceCollectionExtensions
             })
             .AddEntityFrameworkStores<GameCloudDbContext>()
             .AddDefaultTokenProviders();
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("OwnsGame", policy =>
+            {
+                policy.RequireRole("Developer");
+                policy.Requirements.Add(new GameOwnershipRequirement());
+            });
+
+            options.AddPolicy("HasGameKey", policy =>
+            {
+                // policy.RequireRole("Developer");
+                policy.Requirements.Add(new GameKeyRequirement());
+            });
+        });
 
         var jwtKey = configuration["Jwt:Key"];
         var jwtIssuer = configuration["Jwt:Issuer"];
@@ -82,12 +112,15 @@ public static class ServiceCollectionExtensions
                         throw new UnauthorizedAccessException("Authentication failed. Please provide a valid token.");
                     },
                     OnForbidden = context =>
-                        throw new UnauthorizedAccessException("You do not have permission to access this resource.")
+                        throw new UnauthorizedAccessException("You have not access to this operation.")
                 };
             });
 
         services.AddAutoMapper(Assembly.GetAssembly(typeof(GeneralMappingProfile)));
 
+        // HACK: Use factory
+        services.AddScoped<HttpClient, HttpClient>();
+        
         return services;
     }
 }

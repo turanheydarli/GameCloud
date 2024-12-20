@@ -1,26 +1,28 @@
 using System.Text;
 using System.Text.Json;
+using AutoMapper;
+using GameCloud.Application.Common.Requests;
+using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions;
+using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Functions.Responses;
+using GameCloud.Application.Features.Games.Responses;
+using GameCloud.Domain.Entities;
 using GameCloud.Domain.Repositories;
 
 namespace GameCloud.Business.Services;
 
-public class FunctionService : IFunctionService
+public class FunctionService(
+    HttpClient httpClient,
+    IFunctionRepository functionRepository,
+    IGameRepository gameRepository,
+    IMapper mapper)
+    : IFunctionService
 {
-    private readonly HttpClient _httpClient;
-    private readonly IFunctionRepository _functionRepository;
-
-    public FunctionService(HttpClient httpClient, IFunctionRepository functionRepository)
+    public async Task<FunctionResult> InvokeAsync(Guid id, JsonDocument parameters)
     {
-        _httpClient = httpClient;
-        _functionRepository = functionRepository;
-    }
-
-    public async Task<FunctionResponse> InvokeAsync(Guid id, JsonDocument parameters)
-    {
-        var function = await _functionRepository.GetByIdAsync(id);
+        var function = await functionRepository.GetByIdAsync(id);
 
         if (function == null)
         {
@@ -29,7 +31,7 @@ public class FunctionService : IFunctionService
 
         var httpContent = new StringContent(JsonSerializer.Serialize(parameters), Encoding.UTF8, "application/json");
 
-        var httpResult = await _httpClient.PostAsync(function.Endpoint, httpContent);
+        var httpResult = await httpClient.PostAsync(function.Endpoint, httpContent);
 
         if (!httpResult.IsSuccessStatusCode)
         {
@@ -37,7 +39,7 @@ public class FunctionService : IFunctionService
         }
 
         var responseContent = await httpResult.Content.ReadAsStringAsync();
-        var functionResponse = JsonSerializer.Deserialize<FunctionResponse>(responseContent);
+        var functionResponse = JsonSerializer.Deserialize<FunctionResult>(responseContent);
 
         if (functionResponse == null)
         {
@@ -45,5 +47,33 @@ public class FunctionService : IFunctionService
         }
 
         return functionResponse;
+    }
+
+    public async Task<FunctionResponse> CreateFunctionAsync(Guid gameId, FunctionRequest request, Guid userId)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId);
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        var functionConfig = new FunctionConfig
+        {
+            GameId = gameId,
+            Name = request.Name,
+            IsEnabled = true,
+            ActionType = request.ActionType,
+            Endpoint = request.Endpoint,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        functionConfig = await functionRepository.CreateAsync(functionConfig);
+
+        return mapper.Map<FunctionResponse>(functionConfig);
+    }
+
+    public Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -11,5 +11,7 @@ public class GameProfile : Profile
     {
         CreateMap<GameRequest, Game>();
         CreateMap<Game, GameResponse>();
+
+        CreateMap<GameKey, GameKeyResponse>();
     }
 }

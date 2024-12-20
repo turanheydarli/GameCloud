@@ -22,8 +22,7 @@ namespace GameCloud.WebAPI.Filters
 
             if (!context.HttpContext.Request.Headers.TryGetValue("X-Game-Key", out var gameKeyValue))
             {
-                context.Result = new UnauthorizedObjectResult("Game key is missing.");
-                return;
+                throw new UnauthorizedAccessException("Game Key header is missing.");
             }
 
             var gameKey = gameKeyValue.ToString();
@@ -36,14 +35,12 @@ namespace GameCloud.WebAPI.Filters
             }
             catch (Exception ex)
             {
-                context.Result = new UnauthorizedObjectResult($"Failed to validate game key: {ex.Message}");
-                return;
+                throw new UnauthorizedAccessException($"Failed to validate game key: {ex.Message}");
             }
 
             if (gameId == Guid.Empty)
             {
-                context.Result = new UnauthorizedObjectResult("Invalid or missing game key.");
-                return;
+                throw new UnauthorizedAccessException("Invalid or missing game key.");
             }
 
             var resolvedGameContext = new GameContext(gameId);

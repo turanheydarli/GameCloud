@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using GameCloud.Application.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GameCloud.WebAPI.Controllers;
@@ -6,47 +9,25 @@ namespace GameCloud.WebAPI.Controllers;
 [Produces("application/json")]
 public abstract class BaseController : ControllerBase
 {
-    /// <summary>
-    /// Returns a standardized success response.
-    /// </summary>
-    /// <typeparam name="T">The type of the response data.</typeparam>
-    /// <param name="data">The response data.</param>
-    /// <param name="message">Optional success message.</param>
-    /// <returns>Standardized success response.</returns>
-    protected IActionResult Success<T>(T data, string message = null)
+    [Authorize]
+    protected Guid GetUserIdFromClaims()
     {
-        return Ok(new ApiResponse<T>
+        if (User?.Identity == null || !User.Identity.IsAuthenticated)
         {
-            Success = true,
-            Message = message ?? "Request successful.",
-            Data = data
-        });
-    }
+            throw new InvalidUserClaimsException("User is not authenticated.");
+        }
 
-    /// <summary>
-    /// Returns a standardized error response.
-    /// </summary>
-    /// <param name="message">The error message.</param>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>Standardized error response.</returns>
-    protected IActionResult Error(string message, int statusCode = 400)
-    {
-        return StatusCode(statusCode, new ApiResponse<object>
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdString))
         {
-            Success = false,
-            Message = message,
-            Data = null
-        });
-    }
-}
+            throw new InvalidUserClaimsException("Invalid token or missing user identifier claim.");
+        }
 
-/// <summary>
-/// A standardized API response model.
-/// </summary>
-/// <typeparam name="T">The type of the response data.</typeparam>
-public class ApiResponse<T>
-{
-    public bool Success { get; set; }
-    public string Message { get; set; }
-    public T Data { get; set; }
+        if (!Guid.TryParse(userIdString, out Guid userId))
+        {
+            throw new InvalidUserClaimsException("User identifier claim is not a valid GUID.");
+        }
+
+        return userId;
+    }
 }

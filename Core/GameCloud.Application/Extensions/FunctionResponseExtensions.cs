@@ -4,13 +4,13 @@ namespace GameCloud.Application.Extensions;
 
 public static class FunctionResponseExtensions
 {
-    public static object ToEvent(this FunctionResponse functionResponse)
+    public static object ToEvent(this FunctionResult functionResult)
     {
         return new
         {
-            FunctionId = functionResponse.Id,
-            Changes = functionResponse.Changes,
-            Status = functionResponse.Status
+            FunctionId = functionResult.Id,
+            Changes = functionResult.Changes,
+            Status = functionResult.Status
         };
     }
 }

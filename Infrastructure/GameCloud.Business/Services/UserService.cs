@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Authentication;
 using System.Security.Claims;
 using System.Text;
 using GameCloud.Application.Exceptions;
@@ -27,7 +28,7 @@ namespace GameCloud.Business.Services
             AppUser? existingUser = await userManager.FindByEmailAsync(request.Email);
             if (existingUser != null)
             {
-                throw new UserAlreadyExistsException($"Email '{request.Email}' already exists.");
+                throw new UserAlreadyExistsException(request.Email);
             }
 
             var newUser = new AppUser
@@ -65,13 +66,13 @@ namespace GameCloud.Business.Services
             AppUser? developer = await userManager.FindByEmailAsync(request.Email);
             if (developer == null)
             {
-                throw new NotFoundException("Email or password is incorrect.");
+                throw new InvalidCredentialException("Username or password is incorrect.");
             }
 
             bool validPassword = await userManager.CheckPasswordAsync(developer, request.Password);
             if (!validPassword)
             {
-                throw new NotFoundException("Email or password is incorrect.");
+                throw new InvalidCredentialException("Username or password is incorrect.");
             }
 
             var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!);

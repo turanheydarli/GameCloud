@@ -24,7 +24,7 @@ public class ActionService(
     public async Task<ActionResponse> ExecuteActionAsync(Guid sessionId, ActionRequest request)
     {
         FunctionConfig functionConfig = await functionRepository.GetByActionTypeAsync(request.ActionType);
-        FunctionResponse functionResult = await functionService.InvokeAsync(functionConfig.Id, request.Parameters);
+        FunctionResult functionResult = await functionService.InvokeAsync(functionConfig.Id, request.Parameters);
 
         var actionLog = await actionLogRepository.CreateAsync(new ActionLog
         {

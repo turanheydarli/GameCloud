@@ -9,13 +9,6 @@ public interface IActionLogRepository
     Task<ICollection<ActionLog>> GetBySessionAsync(Guid sessionId);
 }
 
-public interface IFunctionRepository
-{
-    Task<FunctionConfig> CreateAsync(FunctionConfig function);
-    Task<FunctionConfig> GetByIdAsync(Guid id);
-    Task<FunctionConfig> GetByActionTypeAsync(string actionType);
-}
-
 public interface INotificationRepository
 {
     Task<ICollection<Notification>> GetNotificationsByPlayerAsync(Guid playerId, string status);

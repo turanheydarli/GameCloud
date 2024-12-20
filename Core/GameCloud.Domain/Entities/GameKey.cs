@@ -11,6 +11,5 @@ public class GameKey : BaseEntity
     public Guid GameId { get; set; }
     public string ApiKey { get; set; }
     public GameKeyStatus Status { get; set; }
-    
     public Game Game { get; set; }
 }
