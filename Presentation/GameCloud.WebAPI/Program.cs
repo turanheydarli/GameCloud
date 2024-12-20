@@ -4,12 +4,7 @@ using GameCloud.WebAPI.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers(opts =>
-{
-    opts.Filters.Add<RequireGameKeyFilter>();
-    // opts.Filters.Add<RequireGameKeyFilter>(); 
-    // opts.Filters.Add<RequireGameKeyFilter>(); 
-});
+builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
