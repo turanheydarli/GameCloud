@@ -1,12 +1,15 @@
 using System.Reflection;
 using System.Text;
 using GameCloud.Application.Common.Mappings;
-using GameCloud.Application.Common.Policies;
 using GameCloud.Application.Common.Policies.Requirements;
 using GameCloud.Application.Common.Policies.Requirements.Handlers;
+using GameCloud.Application.Features.Actions;
 using GameCloud.Application.Features.Developers;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Games;
+using GameCloud.Application.Features.Notifications;
+using GameCloud.Application.Features.Players;
+using GameCloud.Application.Features.Sessions;
 using GameCloud.Application.Features.Users;
 using GameCloud.Business.Services;
 using GameCloud.Domain.Entities;
@@ -37,14 +40,25 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDeveloperRepository, DeveloperRepository>();
         services.AddScoped<IDeveloperService, DeveloperService>();
 
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<IPlayerService, PlayerService>();
+
+        services.AddScoped<ISessionRepository, SessionRepository>();
+        services.AddScoped<ISessionService, SessionService>();
+        
+        services.AddScoped<IActionLogRepository, ActionLogRepository>();
+        services.AddScoped<IActionService, ActionService>();
+
         services.AddScoped<IUserService, UserService>();
 
         services.AddScoped<IAuthorizationHandler, GameOwnershipHandler>();
         services.AddScoped<IAuthorizationHandler, GameKeyRequirementHandler>();
 
-
         services.AddScoped<IFunctionRepository, FunctionRepository>();
         services.AddScoped<IFunctionService, FunctionService>();
+        
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         services.AddDbContext<GameCloudDbContext>(opts =>
         {
@@ -72,7 +86,7 @@ public static class ServiceCollectionExtensions
 
             options.AddPolicy("HasGameKey", policy =>
             {
-                // policy.RequireRole("Developer");
+                // policy.RequireRole("Player");
                 policy.Requirements.Add(new GameKeyRequirement());
             });
         });
@@ -117,9 +131,6 @@ public static class ServiceCollectionExtensions
             });
 
         services.AddAutoMapper(Assembly.GetAssembly(typeof(GeneralMappingProfile)));
-
-        // HACK: Use factory
-        services.AddScoped<HttpClient, HttpClient>();
         
         return services;
     }

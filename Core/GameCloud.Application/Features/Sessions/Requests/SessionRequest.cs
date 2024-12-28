@@ -1,3 +1,3 @@
 namespace GameCloud.Application.Features.Sessions.Requests;
 
-public record JoinSessionRequest(Guid PlayerId);
+public record SessionRequest(Guid PlayerId);

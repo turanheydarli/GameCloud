@@ -14,6 +14,7 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<FunctionConfig> FunctionConfigs { get; set; }
         public DbSet<GameState> GameStates { get; set; }
         public DbSet<ActionLog> ActionLogs { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

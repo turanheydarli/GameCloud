@@ -1,5 +1,8 @@
+using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Actions;
 using GameCloud.Application.Features.Actions.Requests;
+using GameCloud.Application.Features.Games;
+using GameCloud.Application.Features.Players;
 using GameCloud.Application.Features.Sessions;
 using GameCloud.Application.Features.Sessions.Requests;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +14,31 @@ namespace GameCloud.WebAPI.Controllers.V1
     [Authorize(Policy = "HasGameKey")]
     public class SessionsController(
         ISessionService sessionService,
-        IActionService actionService) : BaseController
+        IActionService actionService,
+        IGameContext gameContext,
+        IPlayerService playerService) : BaseController
     {
+        [HttpPost("create")]
+        [Authorize(Policy = "HasGameKey", Roles = "Player")]
+        public async Task<IActionResult> CreateSession()
+        {
+            var userId = GetUserIdFromClaims();
+            var session = await sessionService.CreateSessionAsync(userId, gameContext.GameId);
+
+            return Ok(session);
+        }
+
+        [HttpGet("session/{sessionId}/state")]
+        [Authorize(Policy = "HasGameKey", Roles = "Player")]
+        public async Task<IActionResult> GetSessionState(string sessionId)
+        {
+            var state = await sessionService.GetSessionStateAsync(sessionId);
+            throw new NotImplementedException();
+        }
+
         [HttpPost("{sessionId}/join")]
-        public async Task<IActionResult> JoinSession(Guid sessionId, [FromBody] JoinSessionRequest request)
+        [Authorize(Policy = "HasGameKey", Roles = "Player")]
+        public async Task<IActionResult> JoinSession(Guid sessionId, [FromBody] SessionRequest request)
         {
             if (request.PlayerId == Guid.Empty)
             {
@@ -26,13 +50,16 @@ namespace GameCloud.WebAPI.Controllers.V1
         }
 
         [HttpPost("{sessionId}/actions")]
+        [Authorize(Policy = "HasGameKey", Roles = "Player")]
         public async Task<IActionResult> ProcessAction(Guid sessionId, [FromBody] ActionRequest request)
         {
-            var result = await actionService.ExecuteActionAsync(sessionId, request);
+            var userId = GetUserIdFromClaims();
+            var result = await actionService.ExecuteActionAsync(sessionId, userId, request);
             return Ok(result);
         }
 
         [HttpGet("{sessionId}/actions")]
+        [Authorize(Policy = "HasGameKey", Roles = "Player")]
         public async Task<IActionResult> GetSessionActions(Guid sessionId)
         {
             var actions = await actionService.GetActionsBySessionAsync(sessionId);

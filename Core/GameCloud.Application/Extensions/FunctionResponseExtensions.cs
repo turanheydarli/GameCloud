@@ -9,7 +9,7 @@ public static class FunctionResponseExtensions
         return new
         {
             FunctionId = functionResult.Id,
-            Changes = functionResult.Changes,
+            Changes = functionResult.EntityUpdates,
             Status = functionResult.Status
         };
     }

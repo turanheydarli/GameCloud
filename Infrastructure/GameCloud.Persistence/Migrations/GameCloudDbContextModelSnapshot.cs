@@ -43,15 +43,10 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("FunctionId")
                         .HasColumnType("uuid");
 
-                    b.Property<JsonDocument>("Parameters")
-                        .IsRequired()
+                    b.Property<JsonDocument>("Payload")
                         .HasColumnType("jsonb");
 
-                    b.Property<Guid>("PlayerId")
-                        .HasColumnType("uuid");
-
                     b.Property<JsonDocument>("Result")
-                        .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<Guid>("SessionId")
@@ -59,6 +54,9 @@ namespace GameCloud.Persistence.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -342,11 +340,68 @@ namespace GameCloud.Persistence.Migrations
                     b.ToTable("GameStates", "gc");
                 });
 
+            modelBuilder.Entity("GameCloud.Domain.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ActionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<JsonDocument>("Data")
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("From")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SubscriptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("To")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications", "gc");
+                });
+
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<JsonDocument>("Attributes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<int>("AuthProvider")
                         .HasColumnType("integer");
@@ -354,12 +409,12 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PlayerId")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -372,7 +427,7 @@ namespace GameCloud.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SessionId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Player", "gc");
                 });
@@ -554,11 +609,13 @@ namespace GameCloud.Persistence.Migrations
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>
                 {
-                    b.HasOne("GameCloud.Domain.Entities.Session", null)
+                    b.HasOne("GameCloud.Domain.Entities.AppUser", "User")
                         .WithMany()
-                        .HasForeignKey("SessionId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

@@ -1,22 +1,40 @@
+using AutoMapper;
 using GameCloud.Application.Common.Interfaces;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Sessions;
+using GameCloud.Application.Features.Sessions.Responses;
+using GameCloud.Domain.Entities;
+using GameCloud.Domain.Enums;
+using GameCloud.Domain.Repositories;
 
 namespace GameCloud.Business.Services;
 
-public class SessionService : ISessionService
+public class SessionService(
+    IGameContext gameContext,
+    ISessionRepository sessionRepository,
+    IMapper mapper) : ISessionService
 {
-    private readonly IGameContext _gameContext;
-    private readonly ISessionCache _sessionCache;
-
-    public Task<Guid> CreateSessionAsync(Guid hostUserId)
+    public async Task<SessionResponse> CreateSessionAsync(Guid userId, Guid gameId)
     {
-        var gameId = _gameContext.GameId;
+        var session = new Session
+        {
+            Status = SessionStatus.Active,
+            GameId = gameId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
 
-        throw new NotImplementedException();
+        session = await sessionRepository.CreateAsync(session);
+
+        return mapper.Map<SessionResponse>(session);
     }
 
     public Task JoinSessionAsync(Guid sessionId, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<GameState> GetSessionStateAsync(string sessionId)
     {
         throw new NotImplementedException();
     }

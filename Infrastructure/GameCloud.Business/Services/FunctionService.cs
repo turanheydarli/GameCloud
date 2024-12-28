@@ -17,37 +17,8 @@ public class FunctionService(
     HttpClient httpClient,
     IFunctionRepository functionRepository,
     IGameRepository gameRepository,
-    IMapper mapper)
-    : IFunctionService
+    IMapper mapper) : IFunctionService
 {
-    public async Task<FunctionResult> InvokeAsync(Guid id, JsonDocument parameters)
-    {
-        var function = await functionRepository.GetByIdAsync(id);
-
-        if (function == null)
-        {
-            throw new NotFoundException("Function", id);
-        }
-
-        var httpContent = new StringContent(JsonSerializer.Serialize(parameters), Encoding.UTF8, "application/json");
-
-        var httpResult = await httpClient.PostAsync(function.Endpoint, httpContent);
-
-        if (!httpResult.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException($"Failed to invoke function. Status code: {httpResult.StatusCode}");
-        }
-
-        var responseContent = await httpResult.Content.ReadAsStringAsync();
-        var functionResponse = JsonSerializer.Deserialize<FunctionResult>(responseContent);
-
-        if (functionResponse == null)
-        {
-            throw new InvalidOperationException("Function response is invalid or empty.");
-        }
-
-        return functionResponse;
-    }
 
     public async Task<FunctionResponse> CreateFunctionAsync(Guid gameId, FunctionRequest request, Guid userId)
     {
@@ -72,8 +43,10 @@ public class FunctionService(
         return mapper.Map<FunctionResponse>(functionConfig);
     }
 
-    public Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request)
+    public async Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request)
     {
-        throw new NotImplementedException();
+        var functions = await functionRepository.GetListAsync(f => f.GameId == gameId);
+
+        return mapper.Map<PageableListResponse<FunctionResponse>>(functions);
     }
 }

@@ -5,6 +5,6 @@ namespace GameCloud.Application.Features.Actions;
 
 public interface IActionService
 {
-    Task<ActionResponse> ExecuteActionAsync(Guid sessionId, ActionRequest request);
+    Task<ActionResponse> ExecuteActionAsync(Guid sessionId,Guid userId, ActionRequest request);
     Task<IEnumerable<ActionResponse>> GetActionsBySessionAsync(Guid sessionId);
 }

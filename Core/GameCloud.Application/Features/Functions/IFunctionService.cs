@@ -8,7 +8,6 @@ namespace GameCloud.Application.Features.Functions;
 
 public interface IFunctionService
 {
-    Task<FunctionResult> InvokeAsync(Guid id, JsonDocument parameters);
     Task<FunctionResponse> CreateFunctionAsync(Guid gameId, FunctionRequest request, Guid userId);
     Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request);
 }
