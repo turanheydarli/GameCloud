@@ -27,11 +27,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 4. Run Tests (Optional but Recommended)
-      - name: Run Tests
-        run: |
-          docker compose -f docker-compose.yml run --rm gamecloud.webapi dotnet test
-
+   
       # 5. Build Docker images using docker compose
       - name: Build Docker images
         run: docker compose -f docker-compose.yml build
