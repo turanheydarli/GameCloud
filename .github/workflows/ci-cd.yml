@@ -27,20 +27,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 4. Build Docker images using docker compose
+      # 4. Run Tests (Optional but Recommended)
+      - name: Run Tests
+        run: |
+          docker compose -f docker-compose.yml run --rm gamecloud.webapi dotnet test
+
+      # 5. Build Docker images using docker compose
       - name: Build Docker images
         run: docker compose -f docker-compose.yml build
 
-      # 5. Tag and push the WebAPI image
+      # 6. Tag and push the WebAPI image
       - name: Tag and push WebAPI image
         run: |
-          VERSION=${{ github.sha }}
-          docker tag gamecloud.webapi:latest ghcr.io/${{ github.repository }}/gamecloud.webapi:${VERSION}
-          docker push ghcr.io/${{ github.repository }}/gamecloud.webapi:${VERSION}
+          IMAGE_NAME=gamecloud.webapi
+          TAG=${{ github.sha }}
+          ghcr_image=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME:$TAG
+          docker tag gamecloud.webapi:latest $ghcr_image
+          docker push $ghcr_image
 
       # (Optional) Tag and push the DB image if it's a custom image
       # - name: Tag and push DB image
       #   run: |
-      #     VERSION=${{ github.sha }}
-      #     docker tag gamecloud.db:latest ghcr.io/${{ github.repository }}/gamecloud.db:${VERSION}
-      #     docker push ghcr.io/${{ github.repository }}/gamecloud.db:${VERSION}
+      #     IMAGE_NAME=gamecloud.db
+      #     TAG=${{ github.sha }}
+      #     ghcr_image=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME:$TAG
+      #     docker tag gamecloud.db:latest $ghcr_image
+      #     docker push $ghcr_image
