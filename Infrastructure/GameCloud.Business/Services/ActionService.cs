@@ -1,6 +1,4 @@
 using System.Text.Json;
-using GameCloud.Application.Common.Interfaces;
-using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Actions;
 using GameCloud.Application.Features.Actions.Requests;
 using GameCloud.Application.Features.Actions.Responses;
@@ -55,9 +53,9 @@ public class ActionService(
 
         if (functionResult.Notifications is not null)
         {
-           await notificationService.RegisterNotificationList(functionResult.Notifications);
+            await notificationService.RegisterNotificationList(functionResult.Notifications);
         }
-        
+
         var actionLog = new ActionLog
         {
             CreatedAt = DateTime.UtcNow,

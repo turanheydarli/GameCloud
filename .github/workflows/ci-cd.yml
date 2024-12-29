@@ -1,0 +1,46 @@
+name: CI/CD for GameCloud
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the code
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      # 2. Login to GitHub Container Registry
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Build Docker images with Docker Compose
+      - name: Build images
+        run: docker-compose build
+
+      # 4. Tag and push the WebAPI image
+      - name: Tag and push WebAPI image
+        run: |
+          # The default name might be something like "gamecloud.webapi" or "gamecloudwebapi_gamecloud.webapi"
+          # depending on your Compose file's project name. You can confirm the local image name by running `docker images`.
+          
+          # We'll assume the local image is "gamecloud.webapi:latest" after the compose build:
+          docker tag gamecloud.webapi:latest ghcr.io/${{ github.repository }}/gamecloud.webapi:latest
+          docker push ghcr.io/${{ github.repository }}/gamecloud.webapi:latest
+
+      # 5. (Optional) Tag and push the DB image
+      #    If you want your own custom Postgres image in GHCR (often you wouldn't need to if
+      #    you're just using official "postgres:latest" from Docker Hub)
+      # - name: Tag and push DB image
+      #   run: |
+      #     docker tag postgres:latest ghcr.io/${{ github.repository }}/gamecloud.db:latest
+      #     docker push ghcr.io/${{ github.repository }}/gamecloud.db:latest
