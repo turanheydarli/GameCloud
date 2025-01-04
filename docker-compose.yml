@@ -11,7 +11,8 @@ services:
       - "6000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Database=GameCloudDb;Username=postgres;Password=myPass
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=gamecloud.db;Database=GameCloud;Username=postgres;Password=mypass
     depends_on:
       - gamecloud.db
     networks:

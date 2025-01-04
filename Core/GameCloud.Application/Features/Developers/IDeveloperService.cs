@@ -11,4 +11,5 @@ public interface IDeveloperService
     Task<DeveloperResponse> CreateAsync(DeveloperRequest request);
     Task<DeveloperResponse> GetByIdAsync(Guid id);
     Task<DeveloperResponse> GetByUserIdAsync(Guid userId);
+    Task<DeveloperResponse> UpdateAsync(Guid userId, DeveloperRequest request);
 }

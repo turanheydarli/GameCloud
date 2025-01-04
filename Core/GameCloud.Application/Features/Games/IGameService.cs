@@ -11,4 +11,8 @@ public interface IGameService
     Task<GameResponse> CreateGameAsync(GameRequest request, Guid userId);
     Task<GameKeyResponse> CreateGameKey(Guid gameId);
     Task<GameResponse> GetById(Guid gameId);
+    Task<PageableListResponse<GameResponse>> GetAllAsync(PageableRequest request);
+    Task DeleteAsync(Guid gameId);
+    Task<GameResponse> UpdateAsync(Guid gameId, GameRequest request);
+    Task RevokeKey(Guid gameId, string key);
 }

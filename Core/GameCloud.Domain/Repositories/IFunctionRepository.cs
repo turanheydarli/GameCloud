@@ -9,5 +9,10 @@ public interface IFunctionRepository
     Task<FunctionConfig> GetByIdAsync(Guid id);
     Task<FunctionConfig> GetByActionTypeAsync(string actionType);
     Task<FunctionConfig?> GetAsync(Expression<Func<FunctionConfig, bool>>? predicate = null);
-    Task<IPaginate<FunctionConfig>> GetListAsync(Expression<Func<FunctionConfig, bool>>? predicate = null, int index = 0, int size = 10, bool enableTracking = true);
+
+    Task<IPaginate<FunctionConfig>> GetListAsync(Expression<Func<FunctionConfig, bool>>? predicate = null,
+        int index = 0, int size = 10, bool enableTracking = true);
+
+    Task<FunctionConfig> UpdateAsync(FunctionConfig function);
+    Task DeleteAsync(FunctionConfig function);
 }

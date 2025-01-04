@@ -8,4 +8,5 @@ public interface IDeveloperRepository
     Task<Developer> CreateAsync(Developer developer);
     Task<Developer?> GetByIdAsync(Guid id);
     Task<Developer?> GetByUserIdAsync(Guid userId);
+    Task<Developer> UpdateAsync(Developer developer);
 }

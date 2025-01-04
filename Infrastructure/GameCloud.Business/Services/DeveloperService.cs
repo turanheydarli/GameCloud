@@ -51,4 +51,22 @@ public class DeveloperService(IDeveloperRepository developerRepository, IMapper 
 
         return mapper.Map<DeveloperResponse>(developer);
     }
+
+    public async Task<DeveloperResponse> UpdateAsync(Guid userId, DeveloperRequest request)
+    {
+        var developer = await developerRepository.GetByUserIdAsync(userId);
+
+        if (developer is null)
+        {
+            throw new NotFoundException("User", userId);
+        }
+
+        developer.Email = request.Email;
+        developer.Name = request.Name;
+        developer.UpdatedAt = DateTime.UtcNow;
+
+        await developerRepository.UpdateAsync(developer);
+
+        return mapper.Map<DeveloperResponse>(developer);
+    }
 }

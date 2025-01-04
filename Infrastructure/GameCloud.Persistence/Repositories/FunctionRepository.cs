@@ -61,4 +61,10 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
         await context.SaveChangesAsync();
         return functionConfig;
     }
+
+    public async Task DeleteAsync(FunctionConfig function)
+    {
+        context.Entry(function).State = EntityState.Deleted;
+        await context.SaveChangesAsync();
+    }
 }

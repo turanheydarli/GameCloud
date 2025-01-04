@@ -19,7 +19,6 @@ public class FunctionService(
     IGameRepository gameRepository,
     IMapper mapper) : IFunctionService
 {
-
     public async Task<FunctionResponse> CreateFunctionAsync(Guid gameId, FunctionRequest request, Guid userId)
     {
         var game = await gameRepository.GetByIdAsync(gameId);
@@ -48,5 +47,37 @@ public class FunctionService(
         var functions = await functionRepository.GetListAsync(f => f.GameId == gameId);
 
         return mapper.Map<PageableListResponse<FunctionResponse>>(functions);
+    }
+
+    public async Task<FunctionResponse> UpdateAsync(Guid functionId, FunctionRequest request)
+    {
+        var function = await functionRepository.GetByIdAsync(functionId);
+
+        if (function is null)
+        {
+            throw new NotFoundException("Function", functionId);
+        }
+
+        function.Name = request.Name;
+        function.IsEnabled = request.IsEnabled;
+        function.ActionType = request.ActionType;
+        function.Endpoint = request.Endpoint;
+        function.UpdatedAt = DateTime.UtcNow;
+
+        await functionRepository.UpdateAsync(function);
+        
+        return mapper.Map<FunctionResponse>(function);
+    }
+
+    public async Task DeleteAsync(Guid functionId)
+    {
+        var function = await functionRepository.GetByIdAsync(functionId);
+
+        if (function is null)
+        {
+            throw new NotFoundException("Function", functionId);
+        }
+        
+      await  functionRepository.DeleteAsync(function);
     }
 }

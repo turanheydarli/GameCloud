@@ -44,4 +44,10 @@ public class GameRepository(GameCloudDbContext context) : IGameRepository
         await context.SaveChangesAsync();
         return game;
     }
+    
+    public async Task DeleteAsync(Game game)
+    {
+        context.Entry(game).State = EntityState.Deleted;
+        await context.SaveChangesAsync();
+    }
 }

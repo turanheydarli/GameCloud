@@ -10,4 +10,6 @@ public interface IFunctionService
 {
     Task<FunctionResponse> CreateFunctionAsync(Guid gameId, FunctionRequest request, Guid userId);
     Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request);
+    Task<FunctionResponse> UpdateAsync(Guid functionId, FunctionRequest request);
+    Task DeleteAsync(Guid functionId);
 }

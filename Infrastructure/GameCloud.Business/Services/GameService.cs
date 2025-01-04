@@ -74,11 +74,69 @@ public class GameService(
     public async Task<GameResponse> GetById(Guid gameId)
     {
         var game = await gameRepository.GetByIdAsync(gameId);
+
         if (game is null)
         {
             throw new NotFoundException("Game", gameId);
         }
 
-        throw new NotImplementedException();
+        return mapper.Map<GameResponse>(game);
+    }
+
+    public async Task<PageableListResponse<GameResponse>> GetAllAsync(PageableRequest request)
+    {
+        var games = await gameRepository.GetAllAsync(request.PageIndex, request.PageSize);
+
+        return mapper.Map<PageableListResponse<GameResponse>>(games);
+    }
+
+    public async Task DeleteAsync(Guid gameId)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId);
+
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        await gameRepository.DeleteAsync(game);
+    }
+
+    public async Task<GameResponse> UpdateAsync(Guid gameId, GameRequest request)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId);
+
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        game.Description = request.Description;
+        game.Name = request.Name;
+        game.IsEnabled = request.IsEnabled;
+        game.UpdatedAt = DateTime.UtcNow;
+
+        game = await gameRepository.UpdateAsync(game);
+
+        return mapper.Map<GameResponse>(game);
+    }
+
+    public async Task RevokeKey(Guid gameId, string key)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId);
+
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        var gameKey = await gameKeyRepository.GetByApiKeyAsync(key);
+
+        if (gameKey is null)
+        {
+            throw new NotFoundException("GameKey", gameId);
+        }
+
+        await gameKeyRepository.RevokeAsync(gameKey);
     }
 }

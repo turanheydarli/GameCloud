@@ -12,4 +12,5 @@ public interface IActionLogRepository
 public interface IGameKeyRepository
 {
     Task<GameKey> GetByApiKeyAsync(string gameKey);
+    Task RevokeAsync(GameKey gameKey);
 }

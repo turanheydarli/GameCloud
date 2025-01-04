@@ -1,9 +1,9 @@
-using GameCloud.Application.Common.Requests;
+using GameCloud.Application.Features.Players.Requests;
+using GameCloud.Application.Features.Users.Requests;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
-using GameCloud.Application.Features.Players.Requests;
 using GameCloud.Application.Features.Users;
-using GameCloud.Application.Features.Users.Requests;
+using GameCloud.Application.Common.Requests;
 using GameCloud.Domain.Entities;
 using GameCloud.WebAPI.Filters.Attributes;
 using Microsoft.AspNetCore.Authorization;
@@ -23,13 +23,7 @@ public class PlayersController(
     {
         var userId = GetUserIdFromClaims();
 
-        var player = await playerService.GetByUserIdAsync(userId);
-        if (player == null)
-        {
-            throw new BadHttpRequestException("User not found.");
-        }
-
-        return Ok(player);
+        return Ok(await playerService.GetByUserIdAsync(userId));
     }
 
     [RequireGameKey]
@@ -43,7 +37,7 @@ public class PlayersController(
     public async Task<IActionResult> GetPlayerNotifications(Guid userId, [FromQuery] PageableRequest request,
         [FromQuery] NotificationStatus status = NotificationStatus.Sent)
     {
-        var notifications = await notificationService.GetPlayerNotificationsAsync(userId, status,request);
+        var notifications = await notificationService.GetPlayerNotificationsAsync(userId, status, request);
 
         return Ok(notifications);
     }

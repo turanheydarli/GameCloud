@@ -41,4 +41,10 @@ public class DeveloperRepository(GameCloudDbContext context) : IDeveloperReposit
 
         return await queryable.FirstOrDefaultAsync();
     }
+    public async Task<Developer> UpdateAsync(Developer developer)
+    {
+        context.Entry(developer).State = EntityState.Modified;
+        await context.SaveChangesAsync();
+        return developer;
+    }
 }
