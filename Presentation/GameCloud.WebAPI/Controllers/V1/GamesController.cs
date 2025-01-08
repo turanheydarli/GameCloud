@@ -3,6 +3,8 @@ using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Games.Requests;
+using GameCloud.Application.Features.ImageDocuments.Requests;
+using GameCloud.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,10 +18,12 @@ public class GamesController(
     #region Games
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Developer")]
     public async Task<IActionResult> Get([FromQuery] PageableRequest request)
     {
-        return Ok(await gameService.GetAllAsync(request));
+        var userId = GetUserIdFromClaims();
+
+        return Ok(await gameService.GetAllAsync(userId, request));
     }
 
 
@@ -36,6 +40,33 @@ public class GamesController(
     {
         var userId = GetUserIdFromClaims();
         return Ok(await gameService.CreateGameAsync(request, userId));
+    }
+
+    [HttpPost("{gameId:guid}/images")]
+    public async Task<IActionResult> SetImage([FromRoute] Guid gameId, IFormFile image)
+    {
+        var request = new ImageUploadRequest
+        {
+            ImageStream = image.OpenReadStream(),
+            FileName = image.FileName,
+            ContentType = image.ContentType,
+            Type = ImageType.GameIcon,
+        };
+
+        return Ok(await gameService.SetGameImage(gameId, request));
+    }
+
+    [HttpGet("{gameId:guid}/images")]
+    public async Task<IActionResult> GetImages(Guid gameId)
+    {
+        return Ok(await gameService.GetImageDetails(gameId));
+    }
+
+    [Authorize(Policy = "OwnsGame")]
+    [HttpGet("{gameId:guid}/players")]
+    public async Task<IActionResult> GetPlayers(Guid gameId, PageableRequest request)
+    {
+        return Ok(await gameService.GetAllPlayersAsync(gameId, request));
     }
 
     [HttpPut("{gameId}")]

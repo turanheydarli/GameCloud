@@ -1,3 +1,4 @@
+
 namespace GameCloud.Application.Features.Games.Responses;
 
 public record GameResponse(
@@ -5,6 +6,7 @@ public record GameResponse(
     string Name,
     string Description,
     Guid DeveloperId,
+    string ImageUrl,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

@@ -12,4 +12,5 @@ public interface IPlayerRepository
     Task<Player?> GetByPlayerIdAsync(string playerId, AuthProvider provider);
     Task<Player?> GetByPlayerIdAsync(string playerId);
     Task<Player> UpdateAsync(Player player);
+    Task<IPaginate<Player>> GetAllByGameId(Guid gameId, int index, int size, bool enableTracking = true);
 }

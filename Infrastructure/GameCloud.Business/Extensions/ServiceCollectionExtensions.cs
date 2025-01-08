@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using FirebaseAdmin;
 using GameCloud.Application.Common.Mappings;
 using GameCloud.Application.Common.Policies.Requirements;
 using GameCloud.Application.Common.Policies.Requirements.Handlers;
@@ -7,6 +8,7 @@ using GameCloud.Application.Features.Actions;
 using GameCloud.Application.Features.Developers;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Games;
+using GameCloud.Application.Features.ImageDocuments;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
 using GameCloud.Application.Features.Sessions;
@@ -16,6 +18,7 @@ using GameCloud.Domain.Entities;
 using GameCloud.Domain.Repositories;
 using GameCloud.Persistence.Contexts;
 using GameCloud.Persistence.Repositories;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -45,7 +48,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ISessionRepository, SessionRepository>();
         services.AddScoped<ISessionService, SessionService>();
-        
+
         services.AddScoped<IActionLogRepository, ActionLogRepository>();
         services.AddScoped<IActionService, ActionService>();
 
@@ -54,9 +57,30 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthorizationHandler, GameOwnershipHandler>();
         services.AddScoped<IAuthorizationHandler, GameKeyRequirementHandler>();
 
+        services.AddScoped<IImageService, FirebaseStorageService>();
+        services.AddScoped<IImageDocumentRepository, ImageDocumentRepository>();
+
+        services.Configure<FirebaseStorageOptions>(configuration.GetSection("FirebaseStorage"));
+
+        var credentialsPath = configuration["FirebaseStorage:CredentialsPath"];
+        if (string.IsNullOrEmpty(credentialsPath))
+        {
+            throw new InvalidOperationException("Firebase credentials path is not configured.");
+        }
+
+        var credential = GoogleCredential.FromFile(credentialsPath);
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = credential,
+            ProjectId = configuration["FirebaseStorage:ProjectId"],
+        });
+
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS",
+            configuration["FirebaseStorage:CredentialsPath"]);
+
         services.AddScoped<IFunctionRepository, FunctionRepository>();
         services.AddScoped<IFunctionService, FunctionService>();
-        
+
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();
 
@@ -131,7 +155,7 @@ public static class ServiceCollectionExtensions
             });
 
         services.AddAutoMapper(Assembly.GetAssembly(typeof(GeneralMappingProfile)));
-        
+
         return services;
     }
 }

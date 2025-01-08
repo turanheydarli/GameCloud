@@ -165,10 +165,15 @@ namespace GameCloud.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("ProfilePhotoId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -177,6 +182,9 @@ namespace GameCloud.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProfilePhotoId")
+                        .IsUnique();
 
                     b.ToTable("Developers", "gc");
                 });
@@ -256,15 +264,20 @@ namespace GameCloud.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("DeveloperId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ImageId")
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -273,6 +286,9 @@ namespace GameCloud.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DeveloperId");
+
+                    b.HasIndex("ImageId")
+                        .IsUnique();
 
                     b.ToTable("Games", "gc");
                 });
@@ -338,6 +354,83 @@ namespace GameCloud.Persistence.Migrations
                     b.HasIndex("SessionId");
 
                     b.ToTable("GameStates", "gc");
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.ImageDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StorageProvider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ImageDocuments", "gc");
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.ImageVariant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ImageDocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("VariantType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImageDocumentId");
+
+                    b.ToTable("ImageVariants", "gc");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Notification", b =>
@@ -558,6 +651,16 @@ namespace GameCloud.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", "gc");
                 });
 
+            modelBuilder.Entity("GameCloud.Domain.Entities.Developer", b =>
+                {
+                    b.HasOne("GameCloud.Domain.Entities.ImageDocument", "ProfilePhoto")
+                        .WithOne()
+                        .HasForeignKey("GameCloud.Domain.Entities.Developer", "ProfilePhotoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ProfilePhoto");
+                });
+
             modelBuilder.Entity("GameCloud.Domain.Entities.FirebaseProject", b =>
                 {
                     b.HasOne("GameCloud.Domain.Entities.Game", null)
@@ -584,7 +687,14 @@ namespace GameCloud.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GameCloud.Domain.Entities.ImageDocument", "Image")
+                        .WithOne()
+                        .HasForeignKey("GameCloud.Domain.Entities.Game", "ImageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Developer");
+
+                    b.Navigation("Image");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.GameKey", b =>
@@ -605,6 +715,17 @@ namespace GameCloud.Persistence.Migrations
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.ImageVariant", b =>
+                {
+                    b.HasOne("GameCloud.Domain.Entities.ImageDocument", "ImageDocument")
+                        .WithMany("Variants")
+                        .HasForeignKey("ImageDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ImageDocument");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>
@@ -677,6 +798,11 @@ namespace GameCloud.Persistence.Migrations
             modelBuilder.Entity("GameCloud.Domain.Entities.Game", b =>
                 {
                     b.Navigation("GameKeys");
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.ImageDocument", b =>
+                {
+                    b.Navigation("Variants");
                 });
 #pragma warning restore 612, 618
         }

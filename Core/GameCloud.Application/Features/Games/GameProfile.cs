@@ -10,7 +10,11 @@ public class GameProfile : Profile
     public GameProfile()
     {
         CreateMap<GameRequest, Game>();
-        CreateMap<Game, GameResponse>();
+
+        CreateMap<Game, GameResponse>()
+            .ForMember(dest => dest.ImageUrl,
+                opt =>
+                    opt.MapFrom(src => src.Image == null ? null : src.Image.Url));
 
         CreateMap<GameKey, GameKeyResponse>();
     }

@@ -69,4 +69,16 @@ public class PlayerRepository(GameCloudDbContext context) : IPlayerRepository
         await context.SaveChangesAsync();
         return player;
     }
+
+    public async Task<IPaginate<Player>> GetAllByGameId(Guid gameId, int index, int size, bool enableTracking = true)
+    {
+        IQueryable<Player?> queryable = context.Set<Player>();
+
+        queryable = queryable.Where(player => player != null && player.GameId == gameId);
+
+        if (!enableTracking)
+            queryable.AsNoTracking();
+
+        return await queryable.ToPaginateAsync(index, size, 0);
+    }
 }

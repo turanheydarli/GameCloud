@@ -12,5 +12,5 @@ public class Player : BaseEntity
     public AuthProvider AuthProvider { get; set; }
     public JsonDocument Attributes { get; set; } = JsonDocument.Parse("{}");
     
-    public AppUser User { get; set; }
+    public virtual AppUser User { get; set; }
 }

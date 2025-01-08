@@ -11,7 +11,12 @@ public class GameEntityConfiguration : IEntityTypeConfiguration<Game>
         builder.HasOne(g => g.Developer)
             .WithMany(d => d.Games)
             .HasForeignKey(g => g.DeveloperId);
-        
+
+        builder.HasOne(d => d.Image)
+            .WithOne()
+            .HasForeignKey<Game>(d => d.ImageId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasKey(p => p.Id);
     }
 }

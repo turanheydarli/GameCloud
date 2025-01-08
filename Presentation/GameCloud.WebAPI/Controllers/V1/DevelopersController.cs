@@ -5,7 +5,9 @@ using GameCloud.Application.Features.Developers;
 using GameCloud.Application.Features.Developers.Requests;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Games.Requests;
+using GameCloud.Application.Features.ImageDocuments.Requests;
 using GameCloud.Application.Features.Users.Requests;
+using GameCloud.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GameCloud.WebAPI.Controllers.V1;
@@ -52,13 +54,7 @@ public class DevelopersController(
     {
         var userId = GetUserIdFromClaims();
 
-        var developer = await developerService.GetByUserIdAsync(userId);
-        if (developer == null)
-        {
-            throw new BadHttpRequestException("User not found.");
-        }
-
-        return Ok(developer);
+        return Ok(await developerService.GetByUserIdAsync(userId));
     }
 
     [HttpPut("me")]
@@ -68,6 +64,25 @@ public class DevelopersController(
         var userId = GetUserIdFromClaims();
 
         return Ok(await developerService.UpdateAsync(userId, request));
+    }
+
+    [HttpPut("me/photo")]
+    [Authorize(Roles = "Developer")]
+    public async Task<IActionResult> SetProfilePhoto(IFormFile image)
+    {
+        var userId = GetUserIdFromClaims();
+
+        var request = new ImageUploadRequest
+        {
+            ImageStream = image.OpenReadStream(),
+            FileName = image.FileName,
+            ContentType = image.ContentType,
+            Type = ImageType.GameIcon,
+        };
+
+        await developerService.SetProfilePhoto(userId, request);
+
+        return Created();
     }
 
     #endregion
