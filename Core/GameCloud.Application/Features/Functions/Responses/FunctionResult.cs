@@ -1,10 +1,27 @@
+using System.Text.Json.Serialization;
+using GameCloud.Application.Features.Notifications.Requests;
+
 namespace GameCloud.Application.Features.Functions.Responses;
 
-public class FunctionResult
+public record FunctionResult(
+    Guid Id,
+    FunctionStatus Status,
+    Dictionary<string, object>? Payload,
+    Dictionary<string, List<EntityAttributeUpdate>>? EntityUpdates,
+    List<NotificationRequest>? Notifications,
+    FunctionError? Error
+);
+
+public record EntityAttributeUpdate(
+    string Key,
+    object? Value
+);
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum FunctionStatus
 {
-    public Guid Id { get; set; }
-    public string Status { get; set; }
-    public Dictionary<string, Dictionary<string, object>> Changes { get; set; }
-    public List<NotificationMessage> Messages { get; set; }
-    public FunctionError Error { get; set; }
+    Success,
+    Failed,
+    PartialSuccess,
+    Pending
 }

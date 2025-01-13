@@ -1,10 +1,13 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using GameCloud.Application.Features.Users;
 using GameCloud.Application.Common.Requests;
 using GameCloud.Application.Features.Developers;
 using GameCloud.Application.Features.Developers.Requests;
+using GameCloud.Application.Features.Games;
+using GameCloud.Application.Features.Games.Requests;
+using GameCloud.Application.Features.ImageDocuments.Requests;
 using GameCloud.Application.Features.Users.Requests;
+using GameCloud.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GameCloud.WebAPI.Controllers.V1;
@@ -12,27 +15,15 @@ namespace GameCloud.WebAPI.Controllers.V1;
 [Route("api/v1/[controller]")]
 public class DevelopersController(
     IDeveloperService developerService,
+    IGameService gameService,
     IUserService userService) : BaseController
 {
+    #region Public Endpoints
+
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] PageableRequest request)
     {
         return Ok(await developerService.GetAllAsync(request));
-    }
-
-    [HttpGet("me")]
-    [Authorize(Roles = "Developer")]
-    public async Task<IActionResult> GetMe()
-    {
-        var userId = GetUserIdFromClaims();
-
-        var developer = await developerService.GetByUserIdAsync(userId);
-        if (developer == null)
-        {
-            throw new BadHttpRequestException("User not found.");
-        }
-
-        return Ok(developer);
     }
 
     [HttpGet("{id}")]
@@ -53,10 +44,46 @@ public class DevelopersController(
         return Ok(await userService.LoginDeveloperAsync(request));
     }
 
+    #endregion
+
+    #region Authenticated Developer Endpoints
+
+    [HttpGet("me")]
+    [Authorize(Roles = "Developer")]
+    public async Task<IActionResult> GetMe()
+    {
+        var userId = GetUserIdFromClaims();
+
+        return Ok(await developerService.GetByUserIdAsync(userId));
+    }
+
     [HttpPut("me")]
     [Authorize(Roles = "Developer")]
     public async Task<IActionResult> Update(DeveloperRequest request)
     {
-        throw new NotImplementedException();
+        var userId = GetUserIdFromClaims();
+
+        return Ok(await developerService.UpdateAsync(userId, request));
     }
+
+    [HttpPut("me/photo")]
+    [Authorize(Roles = "Developer")]
+    public async Task<IActionResult> SetProfilePhoto(IFormFile image)
+    {
+        var userId = GetUserIdFromClaims();
+
+        var request = new ImageUploadRequest
+        {
+            ImageStream = image.OpenReadStream(),
+            FileName = image.FileName,
+            ContentType = image.ContentType,
+            Type = ImageType.GameIcon,
+        };
+
+        await developerService.SetProfilePhoto(userId, request);
+
+        return Created();
+    }
+
+    #endregion
 }

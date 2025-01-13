@@ -12,6 +12,11 @@ public class DeveloperEntityConfiguration : IEntityTypeConfiguration<Developer>
             .WithOne(g => g.Developer)
             .HasForeignKey(g => g.DeveloperId);
 
+        builder.HasOne(d => d.ProfilePhoto)
+            .WithOne()
+            .HasForeignKey<Developer>(d => d.ProfilePhotoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasKey(p => p.Id);
     }
 }

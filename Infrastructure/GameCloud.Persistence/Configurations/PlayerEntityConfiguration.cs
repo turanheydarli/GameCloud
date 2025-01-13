@@ -8,11 +8,6 @@ public class PlayerEntityConfiguration : IEntityTypeConfiguration<Player>
 {
     public void Configure(EntityTypeBuilder<Player> builder)
     {
-        builder.HasOne<Session>()
-            .WithMany()
-            .HasForeignKey(p => p.SessionId)
-            .OnDelete(DeleteBehavior.Cascade);
-        
         builder.HasKey(p => p.Id);
     }
 }

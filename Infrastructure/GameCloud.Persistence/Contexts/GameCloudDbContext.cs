@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GameCloud.Persistence.Contexts
 {
-    public class GameCloudDbContext(DbContextOptions<GameCloudDbContext> options) : IdentityDbContext<AppUser, AppRole, Guid>(options)
+    public sealed class GameCloudDbContext(DbContextOptions<GameCloudDbContext> options)
+        : IdentityDbContext<AppUser, AppRole, Guid>(options)
     {
         public DbSet<Developer> Developers { get; set; }
         public DbSet<Game> Games { get; set; }
@@ -14,6 +15,14 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<FunctionConfig> FunctionConfigs { get; set; }
         public DbSet<GameState> GameStates { get; set; }
         public DbSet<ActionLog> ActionLogs { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<ImageDocument> ImageDocuments { get; set; }
+        public DbSet<ImageVariant> ImageVariants { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,6 +39,7 @@ namespace GameCloud.Persistence.Contexts
             modelBuilder.ApplyConfiguration(new FunctionConfigEntityConfiguration());
             modelBuilder.ApplyConfiguration(new GameStateEntityConfiguration());
             modelBuilder.ApplyConfiguration(new PlayerEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new ImageDocumentEntityConfiguration());
         }
     }
 }

@@ -12,7 +12,7 @@ public abstract class BaseController : ControllerBase
     [Authorize]
     protected Guid GetUserIdFromClaims()
     {
-        if (User?.Identity == null || !User.Identity.IsAuthenticated)
+        if (User.Identity == null || !User.Identity.IsAuthenticated)
         {
             throw new InvalidUserClaimsException("User is not authenticated.");
         }

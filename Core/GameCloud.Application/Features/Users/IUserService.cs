@@ -8,4 +8,5 @@ public interface IUserService
 {
     Task<DeveloperResponse> RegisterDeveloperAsync(RegisterDeveloperRequest request);
     Task<AuthResponse> LoginDeveloperAsync(LoginDeveloperRequest request);
+    Task<AuthResponse> AuthenticatePlayerAsync(AuthPlayerRequest request);
 }

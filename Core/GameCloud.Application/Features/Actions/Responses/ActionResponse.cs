@@ -7,7 +7,7 @@ public record ActionResponse(
     Guid SessionId,
     Guid PlayerId,
     string ActionType,
-    JsonDocument Parameters,
-    JsonDocument Result,
+    JsonDocument? Payload,
+    JsonDocument? Result,
     DateTime ExecutedAt
 );

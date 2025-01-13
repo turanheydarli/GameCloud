@@ -12,6 +12,9 @@ public class DeveloperProfile : Profile
     public DeveloperProfile()
     {
         CreateMap<DeveloperRequest, Developer>();
-        CreateMap<Developer, DeveloperResponse>();
+        CreateMap<Developer, DeveloperResponse>()
+            .ForMember(m => m.ProfileImageUrl,
+                opt 
+                    => opt.MapFrom(p => p.ProfilePhoto.Url));
     }
 }

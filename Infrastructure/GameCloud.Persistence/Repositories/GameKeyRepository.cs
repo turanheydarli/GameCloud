@@ -16,4 +16,11 @@ public class GameKeyRepository(GameCloudDbContext context) : IGameKeyRepository
 
         return await GameKeys.FirstOrDefaultAsync(gk => gk.ApiKey == gameKey);
     }
+
+    public async Task RevokeAsync(GameKey gameKey)
+    {
+        gameKey.Status = GameKeyStatus.Revoked;
+        context.Entry(gameKey).State = EntityState.Modified;
+        await context.SaveChangesAsync();
+    }
 }

@@ -3,6 +3,7 @@ using GameCloud.Domain.Repositories;
 using GameCloud.Persistence.Contexts;
 using GameCloud.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace GameCloud.Persistence.Repositories;
 
@@ -11,6 +12,18 @@ public class GameRepository(GameCloudDbContext context) : IGameRepository
     public Task<IPaginate<Game>> GetAllAsync(int index = 0, int size = 10, bool enableTracking = true)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task<IPaginate<Game>> GetAllByDeveloperIdAsync(Guid developerId, int index = 0, int size = 10
+        , Func<IQueryable<Game>, IIncludableQueryable<Game, object>>? include = null)
+    {
+        IQueryable<Game> queryable = context.Set<Game>();
+
+        queryable = queryable.Where(k => k.DeveloperId == developerId);
+        if (include != null)
+            queryable = include(queryable!);
+
+        return await queryable.ToPaginateAsync(index, size, 0);
     }
 
     public async Task<IPaginate<GameKey>> GetAllKeysAsync(Guid gameId, int index = 0, int size = 10)
@@ -29,11 +42,15 @@ public class GameRepository(GameCloudDbContext context) : IGameRepository
         return game;
     }
 
-    public async Task<Game?> GetByIdAsync(Guid id)
+    public async Task<Game?> GetByIdAsync(Guid id,
+        Func<IQueryable<Game>, IIncludableQueryable<Game, object>>? include = null)
     {
         IQueryable<Game?> queryable = context.Set<Game>();
 
         queryable = queryable.Where(game => game != null && game.Id == id);
+
+        if (include != null)
+            queryable = include(queryable!);
 
         return await queryable.FirstOrDefaultAsync();
     }
@@ -43,5 +60,11 @@ public class GameRepository(GameCloudDbContext context) : IGameRepository
         context.Entry(game).State = EntityState.Modified;
         await context.SaveChangesAsync();
         return game;
+    }
+
+    public async Task DeleteAsync(Game game)
+    {
+        context.Entry(game).State = EntityState.Deleted;
+        await context.SaveChangesAsync();
     }
 }

@@ -11,6 +11,4 @@ public class AppUserEntityConfiguration : IEntityTypeConfiguration<AppUser>
     {
         builder.HasKey(u => u.Id);
     }
-    
-  
 }
