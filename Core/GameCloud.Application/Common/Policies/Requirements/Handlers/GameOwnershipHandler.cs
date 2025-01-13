@@ -22,9 +22,8 @@ public sealed class GameOwnershipHandler(IGameRepository gameRepository, IDevelo
             return;
         }
 
-        if (!httpContext.Request.RouteValues.TryGetValue("gameId", out var gameIdValue)
-            || gameIdValue is not string gameIdString
-            || !Guid.TryParse(gameIdString, out var gameId))
+        var gameId = await GetGameId(httpContext);
+        if (gameId == null)
         {
             return;
         }
@@ -35,10 +34,55 @@ public sealed class GameOwnershipHandler(IGameRepository gameRepository, IDevelo
             return;
         }
 
-        var game = await gameRepository.GetByIdAsync(gameId);
+        var game = await gameRepository.GetByIdAsync(gameId.Value);
         if (game != null && game.DeveloperId == developer.Id)
         {
             context.Succeed(requirement);
         }
+    }
+
+    private async Task<Guid?> GetGameId(HttpContext httpContext)
+    {
+        if (httpContext.Request.RouteValues.TryGetValue("gameId", out var gameIdValue))
+        {
+            if (gameIdValue is string gameIdString && Guid.TryParse(gameIdString, out var gameId))
+            {
+                return gameId;
+            }
+        }
+
+        if (httpContext.Request.Query.TryGetValue("gameId", out var queryGameId))
+        {
+            if (Guid.TryParse(queryGameId.ToString(), out var gameId))
+            {
+                return gameId;
+            }
+        }
+
+        if (httpContext.Request.Method == "POST" && httpContext.Request.HasFormContentType)
+        {
+            var form = await httpContext.Request.ReadFormAsync();
+            if (form.TryGetValue("gameId", out var formGameId))
+            {
+                if (Guid.TryParse(formGameId.ToString(), out var gameId))
+                {
+                    return gameId;
+                }
+            }
+        }
+        
+        if (httpContext.Request.Method == "DELETE" && httpContext.Request.HasFormContentType)
+        {
+            var form = await httpContext.Request.ReadFormAsync();
+            if (form.TryGetValue("gameId", out var formGameId))
+            {
+                if (Guid.TryParse(formGameId.ToString(), out var gameId))
+                {
+                    return gameId;
+                }
+            }
+        }
+
+        return null;
     }
 }

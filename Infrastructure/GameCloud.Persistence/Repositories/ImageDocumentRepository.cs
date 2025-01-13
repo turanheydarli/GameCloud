@@ -26,7 +26,8 @@ public class ImageDocumentRepository(GameCloudDbContext context) : IImageDocumen
     {
         IQueryable<ImageDocument?> queryable = context.Set<ImageDocument>();
 
-        queryable = queryable.Where(document => document != null && document.Id == id);
+        queryable = queryable.Where(document => document != null && document.Id == id)
+            .Include(v => v.Variants);
 
         return await queryable.FirstOrDefaultAsync();
     }

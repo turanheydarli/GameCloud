@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameCloud.Persistence", "In
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{03E583F6-60F6-44D1-9DD0-5C7F17409C3E}"
 	ProjectSection(SolutionItems) = preProject
-		docker-compose.yml = docker-compose.yml
+		docker-compose.dev.yml = docker-compose.dev.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameCloud.Messaging", "Infrastructure\GameCloud.Messaging\GameCloud.Messaging.csproj", "{32AE83B8-2DFA-43F5-8EB6-2FF0551D5D7D}"

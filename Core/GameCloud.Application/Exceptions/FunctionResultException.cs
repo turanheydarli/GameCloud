@@ -1,24 +1,41 @@
 using GameCloud.Application.Features.Functions.Responses;
 
-namespace GameCloud.Application.Exceptions
+namespace GameCloud.Application.Exceptions;
+
+public class FunctionResultException : Exception
 {
-    public class FunctionResultException : Exception
+    public FunctionStatus Status { get; }
+
+    public FunctionError? Error { get; }
+
+    public FunctionResultException(FunctionResult result)
+        : base(GenerateMessage(result))
     {
-        public FunctionStatus Status { get; }
+        Status = result.Status;
+        Error = result.Error;
+    }
 
-        public FunctionError? Error { get; }
+    private static string GenerateMessage(FunctionResult result)
+    {
+        var errorMessage = result.Error?.Message ?? "No error details available.";
+        return $"FunctionResult indicates a failure with status '{result.Status}': {errorMessage}";
+    }
+}
 
-        public FunctionResultException(FunctionResult result)
-            : base(GenerateMessage(result))
-        {
-            Status = result.Status;
-            Error = result.Error;
-        }
+public class ImageNotFoundException : Exception
+{
+    public ImageNotFoundException(string message) : base(message)
+    {
+    }
 
-        private static string GenerateMessage(FunctionResult result)
-        {
-            var errorMessage = result.Error?.Message ?? "No error details available.";
-            return $"FunctionResult indicates a failure with status '{result.Status}': {errorMessage}";
-        }
+    public ImageNotFoundException(string message, Exception inner) : base(message, inner)
+    {
+    }
+}
+
+public class ImageVariantNotFoundException : Exception
+{
+    public ImageVariantNotFoundException(string message) : base(message)
+    {
     }
 }

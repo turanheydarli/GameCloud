@@ -42,7 +42,8 @@ public class GamesController(
         return Ok(await gameService.CreateGameAsync(request, userId));
     }
 
-    [HttpPost("{gameId:guid}/images")]
+
+    [HttpPost("{gameId:guid}/icon")]
     public async Task<IActionResult> SetImage([FromRoute] Guid gameId, IFormFile image)
     {
         var request = new ImageUploadRequest
@@ -62,6 +63,14 @@ public class GamesController(
         return Ok(await gameService.GetImageDetails(gameId));
     }
 
+    [HttpGet("{gameId:guid}/icon")]
+    public async Task<IActionResult> GetIcon(Guid gameId, [FromQuery] string? variant)
+    {
+        var image = await gameService.GetIconFile(gameId, variant);
+
+        return File(image.Stream, image.ContentType, image.FileName);
+    }
+
     [Authorize(Policy = "OwnsGame")]
     [HttpGet("{gameId:guid}/players")]
     public async Task<IActionResult> GetPlayers(Guid gameId, PageableRequest request)
@@ -77,7 +86,7 @@ public class GamesController(
     }
 
     [HttpDelete("{gameId}")]
-    [Authorize(Roles = "OwnsGame")]
+    [Authorize(Policy = "OwnsGame")]
     public async Task<IActionResult> Delete(Guid gameId)
     {
         await gameService.DeleteAsync(gameId);
@@ -116,6 +125,13 @@ public class GamesController(
     #region Functions
 
     [Authorize(Policy = "OwnsGame")]
+    [HttpGet("{gameId:guid}/functions/{functionId:guid}")]
+    public async Task<IActionResult> GetFunction([FromRoute] Guid gameId, [FromRoute] Guid functionId)
+    {
+        return Ok(await functionService.GetById(gameId, functionId));
+    }
+
+    [Authorize(Policy = "OwnsGame")]
     [HttpPost("{gameId:guid}/functions")]
     public async Task<IActionResult> CreateFunction([FromRoute] Guid gameId, [FromBody] FunctionRequest request)
     {
@@ -145,7 +161,7 @@ public class GamesController(
     }
 
     [HttpDelete("{gameId}/functions/{functionId:guid}")]
-    [Authorize(Roles = "OwnsGame")]
+    [Authorize(Policy = "OwnsGame")]
     public async Task<IActionResult> DeleteFunction(Guid gameId, Guid functionId)
     {
         await functionService.DeleteAsync(functionId);

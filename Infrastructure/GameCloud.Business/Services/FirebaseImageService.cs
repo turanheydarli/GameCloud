@@ -1,3 +1,4 @@
+using GameCloud.Application.Exceptions;
 using Google.Cloud.Storage.V1;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -117,7 +118,6 @@ public class FirebaseStorageService(
 
         return ToImageResponse(image);
     }
-
     private async Task<string> UploadImageToStorage(Image image, string path, string contentType)
     {
         using var ms = new MemoryStream();
@@ -132,7 +132,51 @@ public class FirebaseStorageService(
             ContentType = contentType
         }, ms);
 
-        return $"https://storage.googleapis.com/{_options.BucketName}/{obj.Name}";
+        return obj.Name;
+    }
+
+    public async Task<ImageFileResponse> GetImageFileAsync(string path)
+    {
+        try
+        {
+            var stream = new MemoryStream();
+            await _storageClient.DownloadObjectAsync(_options.BucketName, path, stream);
+            stream.Position = 0;
+
+            var obj = await _storageClient.GetObjectAsync(_options.BucketName, path);
+
+            return new ImageFileResponse
+            {
+                Stream = stream,
+                ContentType = obj.ContentType,
+                FileName = Path.GetFileName(path)
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new ImageNotFoundException($"Image not found at path: {path}", ex);
+        }
+    }
+    public async Task<ImageFileResponse> GetImageFileByIdAsync(Guid imageId, string variant = "original")
+    {
+        var image = await imageDocumentRepository.GetByIdAsync(imageId);
+        if (image == null)
+            throw new ImageNotFoundException($"Image with ID {imageId} not found");
+
+        string url;
+        if (variant == "original")
+        {
+            url = image.Url;
+        }
+        else
+        {
+            var variantImage = image.Variants.FirstOrDefault(v => v.VariantType == variant);
+            if (variantImage == null)
+                throw new ImageVariantNotFoundException($"Variant {variant} not found for image {imageId}");
+            url = variantImage.Url;
+        }
+
+        return await GetImageFileAsync(url);
     }
 
     private async Task DeleteFileFromStorage(string url)

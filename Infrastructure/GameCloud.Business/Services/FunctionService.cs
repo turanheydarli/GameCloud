@@ -51,7 +51,7 @@ public class FunctionService(
 
     public async Task<FunctionResponse> UpdateAsync(Guid functionId, FunctionRequest request)
     {
-        var function = await functionRepository.GetByIdAsync(functionId);
+        var function = await functionRepository.GetAsync(f => f.Id == functionId);
 
         if (function is null)
         {
@@ -65,19 +65,36 @@ public class FunctionService(
         function.UpdatedAt = DateTime.UtcNow;
 
         await functionRepository.UpdateAsync(function);
-        
+
+        return mapper.Map<FunctionResponse>(function);
+    }
+
+    public async Task<FunctionResponse> GetById(Guid gameId, Guid functionId)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId);
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        var function = await functionRepository.GetAsync(
+            f => f.GameId == gameId && f.Id == functionId);
+
+        if (function is null)
+            throw new NotFoundException("Function", functionId);
+
         return mapper.Map<FunctionResponse>(function);
     }
 
     public async Task DeleteAsync(Guid functionId)
     {
-        var function = await functionRepository.GetByIdAsync(functionId);
+        var function = await functionRepository.GetAsync(f => f.Id == functionId);
 
         if (function is null)
         {
             throw new NotFoundException("Function", functionId);
         }
-        
-      await  functionRepository.DeleteAsync(function);
+
+        await functionRepository.DeleteAsync(function);
     }
 }

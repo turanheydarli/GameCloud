@@ -6,6 +6,8 @@ namespace GameCloud.Application.Features.ImageDocuments;
 public interface IImageService
 {
     Task<ImageResponse> UploadAsync(ImageUploadRequest request);
-    Task<ImageResponse> GetByIdAsync(Guid imageId);
     Task<bool> DeleteAsync(Guid imageId);
+    Task<ImageResponse> GetByIdAsync(Guid imageId);
+    Task<ImageFileResponse> GetImageFileAsync(string imageUrl);
+    Task<ImageFileResponse> GetImageFileByIdAsync(Guid imageId, string variant = "original");
 }

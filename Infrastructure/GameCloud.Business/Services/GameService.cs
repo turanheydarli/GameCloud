@@ -135,7 +135,7 @@ public class GameService(
     public async Task<GameResponse> GetById(Guid gameId)
     {
         var game = await gameRepository.GetByIdAsync(gameId, IGameRepository.DefaultIncludes);
-
+        
         if (game is null)
         {
             throw new NotFoundException("Game", gameId);
@@ -209,5 +209,19 @@ public class GameService(
         }
 
         await gameKeyRepository.RevokeAsync(gameKey);
+    }
+
+    public async Task<ImageFileResponse> GetIconFile(Guid gameId, string variant = "original")
+    {
+        var game = await gameRepository.GetByIdAsync(gameId);
+
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        var response = await imageService.GetImageFileByIdAsync(game.ImageId.Value, variant);
+
+        return response;
     }
 }

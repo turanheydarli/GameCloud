@@ -16,11 +16,6 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
         return functionConfig;
     }
 
-    public Task<FunctionConfig> GetByIdAsync(Guid id)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task<FunctionConfig> GetByActionTypeAsync(string actionType)
     {
         IQueryable<FunctionConfig?> queryable = context.Set<FunctionConfig>();

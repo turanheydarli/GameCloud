@@ -13,3 +13,11 @@ public record ImageResponse(
     ImageType Type,
     List<ImageVariant> Variants,
     DateTime CreatedAt);
+
+public record ImageFileResponse 
+{
+    public required Stream Stream { get; set; }
+    public required string ContentType { get; set; }
+    public string? FileName { get; set; }
+
+}

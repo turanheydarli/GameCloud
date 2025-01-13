@@ -8,6 +8,16 @@ public class ImageProfile : Profile
 {
     public ImageProfile()
     {
-        CreateMap<ImageDocument, ImageResponse>();
+        CreateMap<ImageDocument, ImageResponse>()
+            .ForMember(dest => dest.Url, 
+                opt => opt.MapFrom(src => $"/api/v1/images/{src.Id}"))
+            .ForMember(dest => dest.Variants, 
+                opt => opt.MapFrom(src => src.Variants.Select(v => new ImageVariant
+                {
+                    Url = $"/api/v1/images/{src.Id}?variant={v.VariantType}",
+                    Width = v.Width,
+                    Height = v.Height,
+                    VariantType = v.VariantType
+                })));
     }
 }
