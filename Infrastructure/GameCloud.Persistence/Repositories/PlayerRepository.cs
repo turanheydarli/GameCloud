@@ -82,3 +82,31 @@ public class PlayerRepository(GameCloudDbContext context) : IPlayerRepository
         return await queryable.ToPaginateAsync(index, size, 0);
     }
 }
+
+public class PlayerAttributeRepository(GameCloudDbContext context) : IPlayerAttributeRepository
+{
+    public Task<PlayerAttribute?> GetAsync(string username, string collection, string key)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<PlayerAttribute>> GetCollectionAsync(string username, string collection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<PlayerAttribute> CreateAsync(PlayerAttribute attribute)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<PlayerAttribute> UpdateAsync(PlayerAttribute attribute)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task DeleteAsync(string username, string collection, string key)
+    {
+        throw new NotImplementedException();
+    }
+}
