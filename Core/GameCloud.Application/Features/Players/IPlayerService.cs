@@ -12,11 +12,9 @@ public interface IPlayerService
     Task<PlayerResponse> CreateAsync(PlayerRequest request);
     Task<PlayerResponse> GetByIdAsync(Guid id);
     Task<PlayerResponse> GetByUserIdAsync(Guid userId);
-    
-
-    Task<Dictionary<string, AttributeResponse?>> GetAttributesAsync(Guid userId);
-    Task<AttributeResponse?> GetAttributeAsync(Guid userId, string key);
-    Task SetAttributeAsync(Guid userId, AttributeRequest request);
-    Task RemoveAttributeAsync(Guid playerId, string key);
-    Task ApplyAttributeUpdatesAsync(string playerId, IEnumerable<EntityAttributeUpdate> updates);
+    Task<Dictionary<string, AttributeResponse>> GetAttributesAsync(string collection, string username);
+    Task<AttributeResponse> GetAttributeAsync(string username, string collection, string key);
+    Task SetAttributeAsync(string username, string collection, AttributeRequest request);
+    Task RemoveAttributeAsync(string username, string collection, string key);
+    Task ApplyAttributeUpdatesAsync(string username, IEnumerable<EntityAttributeUpdate> updates);
 }

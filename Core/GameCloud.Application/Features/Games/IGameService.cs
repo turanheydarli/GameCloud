@@ -22,4 +22,6 @@ public interface IGameService
     Task<GameResponse> UpdateAsync(Guid gameId, GameRequest request);
     Task RevokeKey(Guid gameId, string key);
     Task<ImageFileResponse> GetIconFile(Guid gameId, string? variant = "original");
+    
+    Task<GameDetailResponse> GetGameDetailsAsync(Guid gameId);
 }

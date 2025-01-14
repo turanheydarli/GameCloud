@@ -47,7 +47,7 @@ public class NotificationService(
                 SentAt = request.SentAt == default ? DateTime.UtcNow : request.SentAt,
                 Status = request.Status,
                 Data = JsonDocument.Parse(JsonSerializer.Serialize(request.Data)),
-                CreatedAt = DateTime.UtcNow, 
+                CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
@@ -61,11 +61,11 @@ public class NotificationService(
     }
 
 
-    public async Task<PageableListResponse<NotificationResponse>> GetPlayerNotificationsAsync(Guid playerId,
+    public async Task<PageableListResponse<NotificationResponse>> GetPlayerNotificationsAsync(string username,
         NotificationStatus status, PageableRequest request)
     {
         var notifications =
-            await notificationRepository.GetNotificationsByPlayerAsync(playerId, status, request.PageIndex,
+            await notificationRepository.GetNotificationsByPlayerAsync(username, status, request.PageIndex,
                 request.PageSize);
 
         return mapper.Map<PageableListResponse<NotificationResponse>>(notifications);

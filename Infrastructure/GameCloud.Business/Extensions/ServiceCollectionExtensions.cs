@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using Amazon.S3;
 using FirebaseAdmin;
 using GameCloud.Application.Common.Mappings;
 using GameCloud.Application.Common.Policies.Requirements;
@@ -57,7 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthorizationHandler, GameOwnershipHandler>();
         services.AddScoped<IAuthorizationHandler, GameKeyRequirementHandler>();
 
-        services.AddScoped<IImageService, FirebaseStorageService>();
+        services.AddScoped<IImageService, YandexStorageService>();
         services.AddScoped<IImageDocumentRepository, ImageDocumentRepository>();
 
         services.Configure<FirebaseStorageOptions>(configuration.GetSection("FirebaseStorage"));
@@ -78,6 +79,23 @@ public static class ServiceCollectionExtensions
         Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS",
             configuration["FirebaseStorage:CredentialsPath"]);
 
+        services.Configure<YandexStorageOptions>(
+            configuration.GetSection("YandexStorage"));
+
+        var options = configuration.GetSection("YandexStorage")
+            .Get<YandexStorageOptions>();
+
+        services.AddSingleton<IAmazonS3>(sp => new AmazonS3Client(
+            options.AccessKey,
+            options.SecretKey,
+            new AmazonS3Config
+            {
+                ServiceURL = options.ServiceUrl,
+                ForcePathStyle = true
+            }));
+
+
+        
         services.AddScoped<IFunctionRepository, FunctionRepository>();
         services.AddScoped<IFunctionService, FunctionService>();
 

@@ -12,6 +12,14 @@ public class GameEntityConfiguration : IEntityTypeConfiguration<Game>
             .WithMany(d => d.Games)
             .HasForeignKey(g => g.DeveloperId);
 
+        builder.HasMany(g => g.GameKeys)
+            .WithOne()
+            .HasForeignKey(g => g.GameId);
+
+        builder.HasMany(g => g.Functions)
+            .WithOne()
+            .HasForeignKey(g => g.GameId);
+
         builder.HasOne(d => d.Image)
             .WithOne()
             .HasForeignKey<Game>(d => d.ImageId)

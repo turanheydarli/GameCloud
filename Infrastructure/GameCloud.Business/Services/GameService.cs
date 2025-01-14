@@ -224,4 +224,46 @@ public class GameService(
 
         return response;
     }
+
+    public async Task<GameDetailResponse> GetGameDetailsAsync(Guid gameId)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId, IGameRepository.FullGameIncludes);
+    
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        var recentActivities = new List<GameActivityResponse>();
+        if (game.Activities != null)
+        {
+            recentActivities = game.Activities
+                .OrderByDescending(a => a.Timestamp)
+                .Take(10)
+                .Select(a => new GameActivityResponse(
+                    a.EventType,
+                    a.Timestamp,
+                    a.Details))
+                .ToList();
+        }
+
+        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+        var activePlayers = game.Players?.Count(p => p.UpdatedAt >= thirtyDaysAgo) ?? 0;
+
+        return new GameDetailResponse(
+            Id: game.Id,
+            Name: game.Name,
+            Description: game.Description,
+            DeveloperId: game.DeveloperId,
+            ImageId: game.ImageId,
+            ImageUrl: game.Image?.Url,
+            CreatedAt: game.CreatedAt,
+            UpdatedAt: game.UpdatedAt,
+            TotalPlayerCount: game.Players?.Count ?? 0,
+            ActivePlayerCount: activePlayers,
+            FunctionCount: game.Functions?.Count ?? 0,
+            KeyCount: game.GameKeys?.Count ?? 0,
+            RecentActivity: recentActivities
+        );
+    }
 }

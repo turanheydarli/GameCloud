@@ -63,6 +63,13 @@ public class GamesController(
         return Ok(await gameService.GetImageDetails(gameId));
     }
 
+    [HttpGet("{gameId:guid}/details")]
+    [Authorize(Policy = "OwnsGame")]
+    public async Task<IActionResult> GetDetails(Guid gameId)
+    {
+        return Ok(await gameService.GetGameDetailsAsync(gameId));
+    }
+
     [HttpGet("{gameId:guid}/icon")]
     public async Task<IActionResult> GetIcon(Guid gameId, [FromQuery] string? variant)
     {

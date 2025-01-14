@@ -8,7 +8,7 @@ public interface INotificationRepository
     Task CreateManyAsync(IEnumerable<Notification> notifications);
 
     Task<IPaginate<Notification>> GetNotificationsByPlayerAsync(
-        Guid playerId,
+        string username,
         NotificationStatus status,
         int pageIndex,
         int pageSize

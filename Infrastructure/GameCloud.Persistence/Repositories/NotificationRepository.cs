@@ -55,14 +55,15 @@ public class NotificationRepository(GameCloudDbContext context) : INotificationR
         await context.SaveChangesAsync();
     }
 
-    public async Task<IPaginate<Notification>> GetNotificationsByPlayerAsync(Guid playerId, NotificationStatus status,
+    public async Task<IPaginate<Notification>> GetNotificationsByPlayerAsync(string username, NotificationStatus status,
         int index = 0, int size = 10)
     {
-        IQueryable<Notification?> queryable = context.Set<Notification>();
+        throw new NotImplementedException();
+        // IQueryable<Notification?> queryable = context.Set<Notification>();
+        //
+        // queryable = queryable.Where(notification =>
+        //     notification != null && notification.To == playerId && notification.Status == status);
 
-        queryable = queryable.Where(notification =>
-            notification != null && notification.To == playerId && notification.Status == status);
-
-        return await queryable.ToPaginateAsync(index, size, 0);
+        // return await queryable.ToPaginateAsync(index, size, 0);
     }
 }

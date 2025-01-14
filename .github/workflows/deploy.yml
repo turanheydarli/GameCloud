@@ -5,7 +5,7 @@ on:
     
 env:
   IMAGE_TAG: ${{ github.sha }}
-  YC_REGISTRY: cr.yandex/crptfdbrbcnk9hvgef45
+  YC_REGISTRY: cr.yandex/crpl3p256m938dtgp3lh
   APP_NAME: gamecloud.main
 
 jobs:
