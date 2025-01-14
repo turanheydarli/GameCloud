@@ -1,7 +1,9 @@
 using GameCloud.Business.Extensions;
 using GameCloud.Functioning.Extensions;
+using GameCloud.Persistence.Contexts;
 using GameCloud.WebAPI.Exceptions;
 using GameCloud.WebAPI.Filters;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        try 
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<GameCloudDbContext>();
+            dbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Migration error: {ex.Message}");
+            throw;
+        }
+    }}
 
 app.UseHttpsRedirection();
 

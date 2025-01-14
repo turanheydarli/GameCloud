@@ -14,7 +14,6 @@ namespace GameCloud.Business.Services;
 public class PlayerAttributeService(
     IPlayerAttributeRepository repository,
     IMapper mapper,
-    IDistributedCache cache,
     ILogger<PlayerAttributeService> logger,
     IPermissionValidator permissionValidator)
     : IPlayerAttributeService
@@ -198,8 +197,8 @@ public class PlayerAttributeService(
         await repository.DeleteAsync(username, collection, key);
 
         var cacheKey = $"attr:{username}:{collection}:{key}";
-        await cache.RemoveAsync(cacheKey);
-        await cache.RemoveAsync($"attr:collection:{username}:{collection}");
+        // await cache.RemoveAsync(cacheKey);
+        // await cache.RemoveAsync($"attr:collection:{username}:{collection}");
     }
 
     private async Task ValidatePermissions(

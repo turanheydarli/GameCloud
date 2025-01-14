@@ -46,6 +46,9 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         services.AddScoped<IPlayerService, PlayerService>();
+        services.AddScoped<IPlayerAttributeService, PlayerAttributeService>();
+        services.AddScoped<IPlayerAttributeRepository, PlayerAttributeRepository>();
+        services.AddScoped<IPermissionValidator, PermissionValidator>();
 
         services.AddScoped<ISessionRepository, SessionRepository>();
         services.AddScoped<ISessionService, SessionService>();
