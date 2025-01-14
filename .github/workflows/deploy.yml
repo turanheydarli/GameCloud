@@ -2,9 +2,10 @@ name: Build and Deploy to Yandex Cloud
 on:
   push:
     branches: [ main ]
-    
+
 env:
   IMAGE_TAG: ${{ github.sha }}
+  LATEST_TAG: latest
   YC_REGISTRY: cr.yandex/crpl3p256m938dtgp3lh
   APP_NAME: gamecloud.main
 
@@ -23,4 +24,8 @@ jobs:
       - name: Build and push
         run: |
           docker build -t ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} -f ./Presentation/GameCloud.WebAPI/Dockerfile .
+          
+          docker tag ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
+          
           docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
