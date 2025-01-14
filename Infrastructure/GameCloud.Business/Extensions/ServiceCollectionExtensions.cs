@@ -66,22 +66,6 @@ public static class ServiceCollectionExtensions
 
         services.Configure<FirebaseStorageOptions>(configuration.GetSection("FirebaseStorage"));
 
-        var credentialsPath = configuration["FirebaseStorage:CredentialsPath"];
-        if (string.IsNullOrEmpty(credentialsPath))
-        {
-            throw new InvalidOperationException("Firebase credentials path is not configured.");
-        }
-
-        var credential = GoogleCredential.FromFile(credentialsPath);
-        FirebaseApp.Create(new AppOptions
-        {
-            Credential = credential,
-            ProjectId = configuration["FirebaseStorage:ProjectId"],
-        });
-
-        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS",
-            configuration["FirebaseStorage:CredentialsPath"]);
-
         services.Configure<YandexStorageOptions>(
             configuration.GetSection("YandexStorage"));
 
