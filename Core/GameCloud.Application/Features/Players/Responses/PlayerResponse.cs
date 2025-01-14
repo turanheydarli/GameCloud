@@ -8,8 +8,3 @@ public record PlayerResponse(
     PlayerStatus Status,
     string? PlayerId,
     Guid UserId);
-
-public record AttributeResponse(
-    string Key,
-    object Value,
-    string Type);

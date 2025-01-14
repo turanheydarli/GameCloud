@@ -13,8 +13,9 @@ public record FunctionResult(
 );
 
 public record EntityAttributeUpdate(
+    string Collection,
     string Key,
-    object? Value
+    string? Value
 );
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

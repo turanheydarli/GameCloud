@@ -30,4 +30,21 @@ public abstract class BaseController : ControllerBase
 
         return userId;
     }
+
+    [Authorize]
+    protected string GetUserNameFromClaims()
+    {
+        if (User.Identity == null || !User.Identity.IsAuthenticated)
+        {
+            throw new InvalidUserClaimsException("User is not authenticated.");
+        }
+
+        var username = User.FindFirstValue(ClaimTypes.Name);
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidUserClaimsException("Invalid token or missing user identifier claim.");
+        }
+
+        return username;
+    }
 }

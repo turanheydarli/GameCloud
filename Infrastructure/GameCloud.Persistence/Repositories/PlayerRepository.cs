@@ -43,22 +43,22 @@ public class PlayerRepository(GameCloudDbContext context) : IPlayerRepository
         return await queryable.FirstOrDefaultAsync();
     }
 
-    public async Task<Player?> GetByPlayerIdAsync(string playerId, AuthProvider provider)
+    public async Task<Player?> GetByUsernameAsync(string playerId, AuthProvider provider)
     {
         IQueryable<Player?> queryable = context.Set<Player>();
 
         queryable = queryable.Where(player =>
-            player != null && player.PlayerId == playerId && player.AuthProvider == provider);
+            player != null && player.Username == playerId && player.AuthProvider == provider);
 
         return await queryable.FirstOrDefaultAsync();
     }
 
-    public async Task<Player?> GetByPlayerIdAsync(string playerId)
+    public async Task<Player?> GetByUsernameAsync(string playerId)
     {
         IQueryable<Player?> queryable = context.Set<Player>();
 
         queryable = queryable.Where(player =>
-            player != null && player.PlayerId == playerId);
+            player != null && player.Username == playerId);
 
         return await queryable.FirstOrDefaultAsync();
     }

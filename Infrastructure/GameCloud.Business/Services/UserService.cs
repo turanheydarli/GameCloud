@@ -19,33 +19,19 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 
 namespace GameCloud.Business.Services
 {
-    public class UserService : IUserService
+    public class UserService(
+        UserManager<AppUser> userManager,
+        RoleManager<AppRole> roleManager,
+        IDeveloperService developerService,
+        IPlayerService playerService,
+        IConfiguration configuration)
+        : IUserService
     {
-        private readonly UserManager<AppUser> _userManager;
-        private readonly RoleManager<AppRole> _roleManager;
-        private readonly IDeveloperService _developerService;
-        private readonly IPlayerService _playerService;
-        private readonly IConfiguration _configuration;
-
-        public UserService(
-            UserManager<AppUser> userManager,
-            RoleManager<AppRole> roleManager,
-            IDeveloperService developerService,
-            IPlayerService playerService,
-            IConfiguration configuration)
-        {
-            _userManager = userManager;
-            _roleManager = roleManager;
-            _developerService = developerService;
-            _playerService = playerService;
-            _configuration = configuration;
-        }
-
         #region Developer Methods
 
         public async Task<DeveloperResponse> RegisterDeveloperAsync(RegisterDeveloperRequest request)
         {
-            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            var existingUser = await userManager.FindByEmailAsync(request.Email);
             if (existingUser != null)
             {
                 throw new UserAlreadyExistsException(request.Email);
@@ -57,14 +43,15 @@ namespace GameCloud.Business.Services
                 Email = request.Email,
             };
 
-            var result = await _userManager.CreateAsync(newUser, request.Password);
+            var result = await userManager.CreateAsync(newUser, request.Password);
             if (!result.Succeeded)
             {
-                throw new Exception($"Failed to create the user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                throw new Exception(
+                    $"Failed to create the user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
             await EnsureRoleExistsAsync("Developer");
-            await _userManager.AddToRoleAsync(newUser, "Developer");
+            await userManager.AddToRoleAsync(newUser, "Developer");
 
             var developerRequest = new DeveloperRequest(
                 Id: Guid.Empty,
@@ -73,13 +60,13 @@ namespace GameCloud.Business.Services
                 Email: request.Email
             );
 
-            return await _developerService.CreateAsync(developerRequest);
+            return await developerService.CreateAsync(developerRequest);
         }
 
         public async Task<AuthResponse> LoginDeveloperAsync(LoginDeveloperRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
+            var user = await userManager.FindByEmailAsync(request.Email);
+            if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
             {
                 throw new InvalidCredentialException("Username or password is incorrect.");
             }
@@ -132,7 +119,7 @@ namespace GameCloud.Business.Services
                     throw new NotImplementedException($"Auth provider '{request.Provider}' is not supported.");
             }
 
-            var user = await _userManager.FindByNameAsync(playerId);
+            var user = await userManager.FindByNameAsync(playerId);
             if (user == null)
             {
                 user = new AppUser
@@ -141,21 +128,22 @@ namespace GameCloud.Business.Services
                     Email = email
                 };
 
-                var createResult = await _userManager.CreateAsync(user);
+                var createResult = await userManager.CreateAsync(user);
                 if (!createResult.Succeeded)
                 {
-                    throw new Exception($"Failed to create the player user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                    throw new Exception(
+                        $"Failed to create the player user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
                 }
 
                 await EnsureRoleExistsAsync("Player");
-                await _userManager.AddToRoleAsync(user, "Player");
+                await userManager.AddToRoleAsync(user, "Player");
 
-                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, playerId, email, user.Id);
-                await _playerService.CreateAsync(playerRequest);
+                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, email, user.Id);
+                await playerService.CreateAsync(playerRequest);
             }
 
             var token = GenerateJwtToken(user, "Player");
-            var playerResponse = await _playerService.GetByUserIdAsync(user.Id);
+            var playerResponse = await playerService.GetByUserIdAsync(user.Id);
 
             return new AuthResponse(
                 UserId: user.Id,
@@ -172,18 +160,18 @@ namespace GameCloud.Business.Services
 
         private async Task EnsureRoleExistsAsync(string roleName)
         {
-            if (!await _roleManager.RoleExistsAsync(roleName))
+            if (!await roleManager.RoleExistsAsync(roleName))
             {
-                await _roleManager.CreateAsync(new AppRole { Name = roleName });
+                await roleManager.CreateAsync(new AppRole { Name = roleName });
             }
         }
 
         private (string Token, DateTime Expires) GenerateJwtToken(AppUser user, string role)
         {
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
-            var issuer = _configuration["Jwt:Issuer"];
-            var audience = _configuration["Jwt:Audience"];
-            var expires = DateTime.UtcNow.AddHours(int.Parse(_configuration["Jwt:Expiration"] ?? "1"));
+            var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!);
+            var issuer = configuration["Jwt:Issuer"];
+            var audience = configuration["Jwt:Audience"];
+            var expires = DateTime.UtcNow.AddHours(int.Parse(configuration["Jwt:Expiration"] ?? "1"));
 
             var claims = new List<Claim>
             {

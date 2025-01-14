@@ -38,4 +38,9 @@ public class ImageVariantNotFoundException : Exception
     public ImageVariantNotFoundException(string message) : base(message)
     {
     }
+}public class ConcurrencyException : Exception
+{
+    public ConcurrencyException(string message) : base(message)
+    {
+    }
 }

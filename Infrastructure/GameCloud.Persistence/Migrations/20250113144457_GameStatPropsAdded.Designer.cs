@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameCloud.Persistence.Migrations
 {
     [DbContext(typeof(GameCloudDbContext))]
-    partial class GameCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250113144457_GameStatPropsAdded")]
+    partial class GameStatPropsAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -242,6 +245,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("GameId1")
+                        .HasColumnType("uuid");
+
                     b.Property<Dictionary<string, string>>("Headers")
                         .HasColumnType("hstore");
 
@@ -264,6 +270,8 @@ namespace GameCloud.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GameId");
+
+                    b.HasIndex("GameId1");
 
                     b.ToTable("FunctionConfigs", "gc");
                 });
@@ -356,6 +364,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("GameId1")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -365,6 +376,8 @@ namespace GameCloud.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GameId");
+
+                    b.HasIndex("GameId1");
 
                     b.ToTable("GameKeys", "gc");
                 });
@@ -722,10 +735,14 @@ namespace GameCloud.Persistence.Migrations
             modelBuilder.Entity("GameCloud.Domain.Entities.FunctionConfig", b =>
                 {
                     b.HasOne("GameCloud.Domain.Entities.Game", null)
-                        .WithMany("Functions")
+                        .WithMany()
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("GameCloud.Domain.Entities.Game", null)
+                        .WithMany("Functions")
+                        .HasForeignKey("GameId1");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Game", b =>
@@ -764,6 +781,10 @@ namespace GameCloud.Persistence.Migrations
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("GameCloud.Domain.Entities.Game", null)
+                        .WithMany("Keys")
+                        .HasForeignKey("GameId1");
 
                     b.Navigation("Game");
                 });
@@ -866,6 +887,8 @@ namespace GameCloud.Persistence.Migrations
                     b.Navigation("Functions");
 
                     b.Navigation("GameKeys");
+
+                    b.Navigation("Keys");
 
                     b.Navigation("Players");
                 });

@@ -47,7 +47,7 @@ public class ActionService(
         {
             foreach (var (entityId, attributeUpdates) in functionResult.EntityUpdates)
             {
-                await playerService.ApplyAttributeUpdatesAsync(entityId, attributeUpdates);
+                 await playerService.ApplyAttributeUpdatesAsync(entityId, attributeUpdates);
             }
         }
 

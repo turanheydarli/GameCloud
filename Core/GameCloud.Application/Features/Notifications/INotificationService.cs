@@ -9,5 +9,5 @@ namespace GameCloud.Application.Features.Notifications;
 public interface INotificationService
 {
     Task RegisterNotificationList(IEnumerable<NotificationRequest> notifications);
-    Task<PageableListResponse<NotificationResponse>> GetPlayerNotificationsAsync(Guid playerId, NotificationStatus status, PageableRequest request);
+    Task<PageableListResponse<NotificationResponse>> GetPlayerNotificationsAsync(string username, NotificationStatus status, PageableRequest request);
 }
