@@ -19,6 +19,7 @@ public class GamesController(
 
     [HttpGet]
     [Authorize(Roles = "Developer")]
+    
     public async Task<IActionResult> Get([FromQuery] PageableRequest request)
     {
         var userId = GetUserIdFromClaims();
