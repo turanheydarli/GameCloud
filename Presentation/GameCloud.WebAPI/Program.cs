@@ -38,19 +38,18 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    using (var scope = app.Services.CreateScope())
+    using var scope = app.Services.CreateScope();
+    try 
     {
-        try 
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<GameCloudDbContext>();
-            dbContext.Database.Migrate();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Migration error: {ex.Message}");
-            throw;
-        }
-    }}
+        var dbContext = scope.ServiceProvider.GetRequiredService<GameCloudDbContext>();
+        dbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Migration error: {ex.Message}");
+        throw;
+    }
+}
 
 app.UseHttpsRedirection();
 

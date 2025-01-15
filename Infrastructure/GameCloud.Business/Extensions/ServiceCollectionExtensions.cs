@@ -35,42 +35,100 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddScoped<IGameContext, GameContextAccessor>();
-        services.AddScoped<IGameKeyResolver, GameKeyResolver>();
-        services.AddScoped<IGameKeyRepository, GameKeyRepository>();
-        services.AddScoped<IGameRepository, GameRepository>();
-        services.AddScoped<IGameService, GameService>();
+        services
+            .AddRepositories()
+            .AddServices()
+            .AddAuthorizationHandlers()
+            .AddStorageServices(configuration)
+            .AddDatabaseContext(configuration)
+            .AddIdentityServices()
+            .AddAuthorizationPolicies()
+            .AddJwtAuthentication(configuration)
+            .AddAutoMapper(Assembly.GetAssembly(typeof(GeneralMappingProfile)));
 
-        services.AddScoped<IDeveloperRepository, DeveloperRepository>();
-        services.AddScoped<IDeveloperService, DeveloperService>();
+        return services;
+    }
 
-        services.AddScoped<IPlayerRepository, PlayerRepository>();
-        services.AddScoped<IPlayerService, PlayerService>();
-        services.AddScoped<IPlayerAttributeService, PlayerAttributeService>();
-        services.AddScoped<IPlayerAttributeRepository, PlayerAttributeRepository>();
-        services.AddScoped<IPermissionValidator, PermissionValidator>();
+    private static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
+        return services
+            .AddScoped<IGameKeyRepository, GameKeyRepository>()
+            .AddScoped<IGameRepository, GameRepository>()
+            .AddScoped<IDeveloperRepository, DeveloperRepository>()
+            .AddScoped<IPlayerRepository, PlayerRepository>()
+            .AddScoped<IPlayerAttributeRepository, PlayerAttributeRepository>()
+            .AddScoped<ISessionRepository, SessionRepository>()
+            .AddScoped<IActionLogRepository, ActionLogRepository>()
+            .AddScoped<IImageDocumentRepository, ImageDocumentRepository>()
+            .AddScoped<IFunctionRepository, FunctionRepository>()
+            .AddScoped<INotificationRepository, NotificationRepository>();
+    }
 
-        services.AddScoped<ISessionRepository, SessionRepository>();
-        services.AddScoped<ISessionService, SessionService>();
+    private static IServiceCollection AddServices(this IServiceCollection services)
+    {
+        return services
+            .AddScoped<IGameContext, GameContextAccessor>()
+            .AddScoped<IGameKeyResolver, GameKeyResolver>()
+            .AddScoped<IGameService, GameService>()
+            .AddScoped<IDeveloperService, DeveloperService>()
+            .AddScoped<IPlayerService, PlayerService>()
+            .AddScoped<IPlayerAttributeService, PlayerAttributeService>()
+            .AddScoped<IPermissionValidator, PermissionValidator>()
+            .AddScoped<ISessionService, SessionService>()
+            .AddScoped<IActionService, ActionService>()
+            .AddScoped<IUserService, UserService>()
+            .AddScoped<IFunctionService, FunctionService>()
+            .AddScoped<INotificationService, NotificationService>();
+    }
 
-        services.AddScoped<IActionLogRepository, ActionLogRepository>();
-        services.AddScoped<IActionService, ActionService>();
+    private static IServiceCollection AddAuthorizationHandlers(this IServiceCollection services)
+    {
+        return services
+            .AddScoped<IAuthorizationHandler, GameOwnershipHandler>()
+            .AddScoped<IAuthorizationHandler, GameKeyRequirementHandler>();
+    }
 
-        services.AddScoped<IUserService, UserService>();
+    private static IServiceCollection AddStorageServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        var environment = configuration.GetValue<string>("Environment") ?? "Production";
 
-        services.AddScoped<IAuthorizationHandler, GameOwnershipHandler>();
-        services.AddScoped<IAuthorizationHandler, GameKeyRequirementHandler>();
+        if (environment.Equals("Development", StringComparison.OrdinalIgnoreCase))
+        {
+            return services
+                .AddFirebaseStorage(configuration)
+                .AddScoped<IImageService, FirebaseStorageService>();
+        }
 
-        services.AddScoped<IImageService, YandexStorageService>();
-        services.AddScoped<IImageDocumentRepository, ImageDocumentRepository>();
+        return services
+            .AddYandexStorage(configuration)
+            .AddScoped<IImageService, YandexStorageService>();
+    }
 
+    private static IServiceCollection AddFirebaseStorage(this IServiceCollection services, IConfiguration configuration)
+    {
         services.Configure<FirebaseStorageOptions>(configuration.GetSection("FirebaseStorage"));
 
-        services.Configure<YandexStorageOptions>(
-            configuration.GetSection("YandexStorage"));
+        var credentialsPath = configuration["FirebaseStorage:CredentialsPath"]
+                              ?? throw new InvalidOperationException("Firebase credentials path is not configured.");
 
-        var options = configuration.GetSection("YandexStorage")
-            .Get<YandexStorageOptions>();
+        var credential = GoogleCredential.FromFile(credentialsPath);
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = credential,
+            ProjectId = configuration["FirebaseStorage:ProjectId"],
+        });
+
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
+
+        return services;
+    }
+
+    private static IServiceCollection AddYandexStorage(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<YandexStorageOptions>(configuration.GetSection("YandexStorage"));
+
+        var options = configuration.GetSection("YandexStorage").Get<YandexStorageOptions>()
+                      ?? throw new InvalidOperationException("Yandex storage options are not configured.");
 
         services.AddSingleton<IAmazonS3>(sp => new AmazonS3Client(
             options.AccessKey,
@@ -81,20 +139,20 @@ public static class ServiceCollectionExtensions
                 ForcePathStyle = true
             }));
 
+        return services;
+    }
 
-        
-        services.AddScoped<IFunctionRepository, FunctionRepository>();
-        services.AddScoped<IFunctionService, FunctionService>();
-
-        services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<INotificationService, NotificationService>();
-
-        services.AddDbContext<GameCloudDbContext>(opts =>
+    private static IServiceCollection AddDatabaseContext(this IServiceCollection services, IConfiguration configuration)
+    {
+        return services.AddDbContext<GameCloudDbContext>(opts =>
         {
             opts.UseNpgsql(configuration.GetConnectionString("GameCloud"));
         });
+    }
 
-        services.AddIdentity<AppUser, AppRole>(options =>
+    private static IServiceCollection AddIdentityServices(this IServiceCollection services)
+    {
+        return services.AddIdentity<AppUser, AppRole>(options =>
             {
                 options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
@@ -103,8 +161,12 @@ public static class ServiceCollectionExtensions
                 options.Password.RequireNonAlphanumeric = false;
             })
             .AddEntityFrameworkStores<GameCloudDbContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .Services;
+    }
 
+    private static IServiceCollection AddAuthorizationPolicies(this IServiceCollection services)
+    {
         services.AddAuthorization(options =>
         {
             options.AddPolicy("OwnsGame", policy =>
@@ -113,17 +175,19 @@ public static class ServiceCollectionExtensions
                 policy.Requirements.Add(new GameOwnershipRequirement());
             });
 
-            options.AddPolicy("HasGameKey", policy =>
-            {
-                // policy.RequireRole("Player");
-                policy.Requirements.Add(new GameKeyRequirement());
-            });
+            options.AddPolicy("HasGameKey", policy => { policy.Requirements.Add(new GameKeyRequirement()); });
         });
 
-        var jwtKey = configuration["Jwt:Key"];
+        return services;
+    }
+
+    private static IServiceCollection AddJwtAuthentication(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var jwtKey = configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is not configured.");
         var jwtIssuer = configuration["Jwt:Issuer"];
         var jwtAudience = configuration["Jwt:Audience"];
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
         services.AddAuthentication(options =>
             {
@@ -151,15 +215,12 @@ public static class ServiceCollectionExtensions
                     OnChallenge = context =>
                     {
                         context.HandleResponse();
-
                         throw new UnauthorizedAccessException("Authentication failed. Please provide a valid token.");
                     },
                     OnForbidden = context =>
                         throw new UnauthorizedAccessException("You have not access to this operation.")
                 };
             });
-
-        services.AddAutoMapper(Assembly.GetAssembly(typeof(GeneralMappingProfile)));
 
         return services;
     }

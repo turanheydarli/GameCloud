@@ -4,4 +4,6 @@ namespace GameCloud.Domain.Entities;
 
 public class AppRole : IdentityRole<Guid>
 {
+    
+    
 }
