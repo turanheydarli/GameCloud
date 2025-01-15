@@ -19,6 +19,7 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<ImageDocument> ImageDocuments { get; set; }
         public DbSet<ImageVariant> ImageVariants { get; set; }
         public DbSet<GameActivity> GameActivities { get; set; }
+        public DbSet<PlayerAttribute> Attributes { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
