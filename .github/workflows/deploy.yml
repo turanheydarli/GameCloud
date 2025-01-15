@@ -24,8 +24,17 @@ jobs:
       - name: Build and push
         run: |
           docker build -t ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} -f ./Presentation/GameCloud.WebAPI/Dockerfile .
-          
           docker tag ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
-          
           docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
           docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/gamecloud
+            docker-compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml up -d --build
