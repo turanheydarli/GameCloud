@@ -35,6 +35,7 @@ public class FunctionService(
             ActionType = request.ActionType,
             Endpoint = request.Endpoint,
             CreatedAt = DateTime.UtcNow,
+            Version = Guid.NewGuid().ToString().Split('-')[0]
         };
 
         functionConfig = await functionRepository.CreateAsync(functionConfig);
@@ -44,7 +45,7 @@ public class FunctionService(
 
     public async Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request)
     {
-        var functions = await functionRepository.GetListAsync(f => f.GameId == gameId);
+        var functions = await functionRepository.GetListPaginatedAsync(f => f.GameId == gameId);
 
         return mapper.Map<PageableListResponse<FunctionResponse>>(functions);
     }
@@ -58,10 +59,29 @@ public class FunctionService(
             throw new NotFoundException("Function", functionId);
         }
 
+        function.Version = Guid.NewGuid().ToString().Split('-')[0];
+
         function.Name = request.Name;
         function.IsEnabled = request.IsEnabled;
         function.ActionType = request.ActionType;
         function.Endpoint = request.Endpoint;
+        function.UpdatedAt = DateTime.UtcNow;
+
+        await functionRepository.UpdateAsync(function);
+
+        return mapper.Map<FunctionResponse>(function);
+    }
+
+    public async Task<FunctionResponse> ToggleFunction(Guid gameId, Guid functionId, bool isEnabled)
+    {
+        var function = await functionRepository.GetAsync(f => f.Id == functionId);
+
+        if (function is null)
+        {
+            throw new NotFoundException("Function", functionId);
+        }
+
+        function.IsEnabled = isEnabled;
         function.UpdatedAt = DateTime.UtcNow;
 
         await functionRepository.UpdateAsync(function);

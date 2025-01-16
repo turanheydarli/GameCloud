@@ -1,5 +1,6 @@
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions.Responses;
+using GameCloud.Domain.Enums;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 

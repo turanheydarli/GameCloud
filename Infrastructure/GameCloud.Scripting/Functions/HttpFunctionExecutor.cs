@@ -7,6 +7,7 @@ using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Functions.Responses;
+using GameCloud.Domain.Enums;
 
 namespace GameCloud.Functioning.Functions;
 

@@ -10,5 +10,7 @@ public class FunctionConfig : BaseEntity
     public bool IsEnabled { get; set; }
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);  
     public Dictionary<string, string>? Headers { get; set; }  
-    public int MaxRetries { get; set; } 
+    public int MaxRetries { get; set; }
+    public string Version { get; set; }
+    public IEnumerable<ActionLog>? ActionLogs { get; set; }
 }

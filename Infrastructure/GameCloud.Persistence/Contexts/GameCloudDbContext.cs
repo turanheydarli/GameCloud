@@ -42,6 +42,7 @@ namespace GameCloud.Persistence.Contexts
             modelBuilder.ApplyConfiguration(new GameStateEntityConfiguration());
             modelBuilder.ApplyConfiguration(new PlayerEntityConfiguration());
             modelBuilder.ApplyConfiguration(new ImageDocumentEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new ActionLogEntityConfiguration());
         }
     }
 }

@@ -1,4 +1,5 @@
 using GameCloud.Application.Features.Functions.Responses;
+using GameCloud.Domain.Enums;
 
 namespace GameCloud.Application.Exceptions;
 
