@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameCloud.Persistence.Migrations
 {
     [DbContext(typeof(GameCloudDbContext))]
-    partial class GameCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250116080032_ActionLogsUpdated")]
+    partial class ActionLogsUpdated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -57,9 +60,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("FunctionId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsTestMode")
-                        .HasColumnType("boolean");
-
                     b.Property<Dictionary<string, string>>("Metadata")
                         .HasColumnType("hstore");
 
@@ -97,8 +97,6 @@ namespace GameCloud.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("FunctionId");
 
                     b.ToTable("ActionLogs", "gc");
                 });
@@ -795,17 +793,6 @@ namespace GameCloud.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", "gc");
                 });
 
-            modelBuilder.Entity("GameCloud.Domain.Entities.ActionLog", b =>
-                {
-                    b.HasOne("GameCloud.Domain.Entities.FunctionConfig", "Function")
-                        .WithMany("ActionLogs")
-                        .HasForeignKey("FunctionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Function");
-                });
-
             modelBuilder.Entity("GameCloud.Domain.Entities.Developer", b =>
                 {
                     b.HasOne("GameCloud.Domain.Entities.ImageDocument", "ProfilePhoto")
@@ -974,11 +961,6 @@ namespace GameCloud.Persistence.Migrations
             modelBuilder.Entity("GameCloud.Domain.Entities.Developer", b =>
                 {
                     b.Navigation("Games");
-                });
-
-            modelBuilder.Entity("GameCloud.Domain.Entities.FunctionConfig", b =>
-                {
-                    b.Navigation("ActionLogs");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Game", b =>

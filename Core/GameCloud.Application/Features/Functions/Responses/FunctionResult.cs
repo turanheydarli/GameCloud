@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
 using GameCloud.Application.Features.Notifications.Requests;
+using GameCloud.Domain.Enums;
 
 namespace GameCloud.Application.Features.Functions.Responses;
 
@@ -17,12 +17,3 @@ public record EntityAttributeUpdate(
     string Key,
     string? Value
 );
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum FunctionStatus
-{
-    Success,
-    Failed,
-    PartialSuccess,
-    Pending
-}

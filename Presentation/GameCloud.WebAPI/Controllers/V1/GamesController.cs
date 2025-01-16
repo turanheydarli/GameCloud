@@ -1,4 +1,7 @@
 using GameCloud.Application.Common.Requests;
+using GameCloud.Application.Features.Actions;
+using GameCloud.Application.Features.Actions.Requests;
+using GameCloud.Application.Features.Actions.Responses;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Games;
@@ -13,13 +16,13 @@ namespace GameCloud.WebAPI.Controllers.V1;
 [Route("api/v1/[controller]")]
 public class GamesController(
     IGameService gameService,
-    IFunctionService functionService) : BaseController
+    IFunctionService functionService,
+    IActionService actionService) : BaseController
 {
     #region Games
 
     [HttpGet]
     [Authorize(Roles = "Developer")]
-    
     public async Task<IActionResult> Get([FromQuery] PageableRequest request)
     {
         var userId = GetUserIdFromClaims();
@@ -154,18 +157,43 @@ public class GamesController(
         return Ok(await functionService.GetFunctionsAsync(gameId, request));
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="gameId">Required for OwnsGame policy</param>
-    /// <param name="functionId"></param>
-    /// <param name="request"></param>
-    /// <returns></returns>
+    [Authorize(Policy = "OwnsGame")]
+    [HttpGet("{gameId:guid}/functions/{functionId:guid}/test/logs")]
+    public async Task<IActionResult> GetTestedFunctionLogs(
+        Guid gameId,
+        Guid functionId,
+        [FromQuery] PageableRequest request)
+    {
+        return Ok(await actionService.GetTestedFunctionLogs(functionId, request));
+    }
+
+    [Authorize(Policy = "OwnsGame")]
+    [HttpPost("{gameId:guid}/functions/{functionId:guid}/test/{actionId:guid}")]
+    public async Task<IActionResult> GetFunctionLog(Guid gameId, Guid functionId, Guid actionId)
+    {
+        return Ok(await actionService.GetFunctionLogByActionId(actionId));
+    }
+
+    [Authorize(Policy = "OwnsGame")]
+    [HttpPost("{gameId:guid}/functions/{functionId:guid}/test")]
+    public async Task<IActionResult> TestFunction(Guid gameId, Guid functionId, [FromBody] ActionRequest request)
+    {
+        var userId = GetUserIdFromClaims();
+        return Ok(await actionService.ExecuteActionAsync(Guid.Empty, userId, request, true));
+    }
+
     [HttpPut("{gameId}/functions/{functionId:guid}")]
     [Authorize(Policy = "OwnsGame")]
     public async Task<IActionResult> UpdateFunction(Guid gameId, Guid functionId, FunctionRequest request)
     {
         return Ok(await functionService.UpdateAsync(functionId, request));
+    }
+
+    [HttpPut("{gameId}/functions/{functionId:guid}/toggle")]
+    [Authorize(Policy = "OwnsGame")]
+    public async Task<IActionResult> UpdateFunction(Guid gameId, Guid functionId, bool isEnabled)
+    {
+        return Ok(await functionService.ToggleFunction(gameId, functionId, isEnabled));
     }
 
     [HttpDelete("{gameId}/functions/{functionId:guid}")]
@@ -174,6 +202,43 @@ public class GamesController(
     {
         await functionService.DeleteAsync(functionId);
         return NoContent();
+    }
+
+    #endregion
+
+    #region Functions Stats
+
+    [Authorize(Policy = "OwnsGame")]
+    [HttpGet("{gameId:guid}/functions/{functionId:guid}/stats")]
+    public async Task<IActionResult> GetFunctionStats(
+        [FromRoute] Guid gameId,
+        [FromRoute] Guid functionId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to)
+    {
+        var start = from ?? DateTime.UtcNow.AddHours(-24);
+        var end = to ?? DateTime.UtcNow;
+
+        return Ok(await actionService.GetFunctionStatsAsync(
+            functionId,
+            new DateTimeRange(start, end)
+        ));
+    }
+
+    [Authorize(Policy = "OwnsGame")]
+    [HttpGet("{gameId:guid}/functions/stats")]
+    public async Task<IActionResult> GetGameFunctionsStats(
+        [FromRoute] Guid gameId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to)
+    {
+        var start = from ?? DateTime.UtcNow.AddHours(-24);
+        var end = to ?? DateTime.UtcNow;
+
+        return Ok(await actionService.GetGameFunctionsStatsAsync(
+            gameId,
+            new DateTimeRange(start, end)
+        ));
     }
 
     #endregion

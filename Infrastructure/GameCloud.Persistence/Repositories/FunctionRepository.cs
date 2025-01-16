@@ -37,7 +37,8 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
         return await queryable.FirstOrDefaultAsync();
     }
 
-    public async Task<IPaginate<FunctionConfig>> GetListAsync(Expression<Func<FunctionConfig, bool>>? predicate = null,
+    public async Task<IPaginate<FunctionConfig>> GetListPaginatedAsync(
+        Expression<Func<FunctionConfig, bool>>? predicate = null,
         int index = 0, int size = 10, bool enableTracking = true)
     {
         IQueryable<FunctionConfig> queryable = context.Set<FunctionConfig>();
@@ -61,5 +62,20 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
     {
         context.Entry(function).State = EntityState.Deleted;
         await context.SaveChangesAsync();
+    }
+
+    public async Task<List<FunctionConfig>> GetListAsync(Guid gameId,
+        Expression<Func<FunctionConfig, bool>>? predicate = null, bool enableTracking = false)
+    {
+        IQueryable<FunctionConfig> queryable = context.Set<FunctionConfig>();
+        if (!enableTracking)
+            queryable.AsNoTracking();
+
+        queryable = queryable.Where(f => f.GameId == gameId);
+
+        if (predicate is not null)
+            queryable = queryable.Where(predicate);
+
+        return await queryable.ToListAsync();
     }
 }
