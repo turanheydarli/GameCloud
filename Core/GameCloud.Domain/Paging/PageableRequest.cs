@@ -1,4 +1,4 @@
-namespace GameCloud.Application.Common.Requests;
+namespace GameCloud.Domain.Paging;
 
 public record PageableRequest(
     int PageIndex = 0,

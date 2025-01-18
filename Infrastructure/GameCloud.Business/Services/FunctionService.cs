@@ -1,14 +1,11 @@
-using System.Text;
-using System.Text.Json;
 using AutoMapper;
-using GameCloud.Application.Common.Requests;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Functions.Responses;
-using GameCloud.Application.Features.Games.Responses;
 using GameCloud.Domain.Entities;
+using GameCloud.Domain.Paging;
 using GameCloud.Domain.Repositories;
 
 namespace GameCloud.Business.Services;

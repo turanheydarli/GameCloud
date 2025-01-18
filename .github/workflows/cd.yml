@@ -1,0 +1,63 @@
+# .github/workflows/cd.yml
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    branches: [main]
+    types:
+      - completed
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+  LATEST_TAG: latest
+  YC_REGISTRY: cr.yandex/crpl3p256m938dtgp3lh
+  APP_NAME: gamecloud.main
+  KUBE_NAMESPACE: gamecloud
+
+jobs:
+  deploy:
+    environment: production
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to Yandex Cloud Container Registry
+        uses: yc-actions/yc-cr-login@v1
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+
+      - name: Build and push
+        run: |
+          docker build -t ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} -f ./Presentation/GameCloud.WebAPI/Dockerfile .
+          docker tag ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
+          docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
+
+      - name: Setup kubectl
+        uses: yc-actions/yc-k8s-auth@v1
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+          kube-config-path: ~/.kube/config
+          cluster-id: ${{ secrets.YC_CLUSTER_ID }}
+
+      - name: Update Kubernetes resources
+        run: |
+          cd deploy/kubernetes/overlays/production
+          kustomize edit set image ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}=${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Apply database migrations
+        run: |
+          kubectl create job --from=cronjob/migration migration-${{ env.IMAGE_TAG }} -n ${{ env.KUBE_NAMESPACE }} || true
+          kubectl wait --for=condition=complete job/migration-${{ env.IMAGE_TAG }} -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -k deploy/kubernetes/overlays/production
+          kubectl rollout status deployment/${{ env.APP_NAME }} -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
+
+      - name: Cleanup
+        if: always()
+        run: |
+          kubectl delete job migration-${{ env.IMAGE_TAG }} -n ${{ env.KUBE_NAMESPACE }} || true

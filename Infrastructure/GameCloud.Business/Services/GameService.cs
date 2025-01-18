@@ -1,5 +1,5 @@
 using AutoMapper;
-using GameCloud.Application.Common.Requests;
+using GameCloud.Domain.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Games;

@@ -1,0 +1,11 @@
+# k8s/overlay/configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gamecloud-config
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080"
+  RABBITMQ_HOST: "your-managed-rabbitmq-host"
+  RABBITMQ_PORT: "5672"

@@ -1,0 +1,28 @@
+# k8s/overlay/production/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: gamecloud
+
+resources:
+  - ../../base
+
+commonLabels:
+  environment: production
+
+images:
+  - name: cr.yandex/crpl3p256m938dtgp3lh/gamecloud.main
+    newTag: latest
+
+configMapGenerator:
+  - name: gamecloud-config
+    behavior: merge
+    literals:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RABBITMQ_HOST=your-managed-rabbitmq-host
+      - RABBITMQ_PORT=5672
+
+secretGenerator:
+  - name: gamecloud-secrets
+    envs:
+      - .env.prod

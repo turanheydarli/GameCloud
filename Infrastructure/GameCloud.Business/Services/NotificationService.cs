@@ -1,6 +1,6 @@
 using System.Text.Json;
 using AutoMapper;
-using GameCloud.Application.Common.Requests;
+using GameCloud.Domain.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Notifications.Requests;

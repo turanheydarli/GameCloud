@@ -1,5 +1,4 @@
 using AutoMapper;
-using GameCloud.Application.Common.Requests;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Developers;
@@ -10,6 +9,7 @@ using GameCloud.Application.Features.ImageDocuments.Requests;
 using GameCloud.Application.Features.ImageDocuments.Responses;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Enums;
+using GameCloud.Domain.Paging;
 using GameCloud.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 

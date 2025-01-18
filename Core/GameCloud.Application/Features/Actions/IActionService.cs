@@ -1,7 +1,7 @@
-using GameCloud.Application.Common.Requests;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Features.Actions.Requests;
 using GameCloud.Application.Features.Actions.Responses;
+using GameCloud.Domain.Paging;
 
 namespace GameCloud.Application.Features.Actions;
 

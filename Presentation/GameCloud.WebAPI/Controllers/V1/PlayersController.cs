@@ -3,7 +3,7 @@ using GameCloud.Application.Features.Users.Requests;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
 using GameCloud.Application.Features.Users;
-using GameCloud.Application.Common.Requests;
+using GameCloud.Domain.Paging;
 using GameCloud.Domain.Entities;
 using GameCloud.WebAPI.Filters.Attributes;
 using Microsoft.AspNetCore.Authorization;
