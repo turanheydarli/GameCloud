@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using AutoMapper;
+using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Actions;
@@ -14,7 +15,6 @@ using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Enums;
-using GameCloud.Domain.Paging;
 using GameCloud.Domain.Repositories;
 
 namespace GameCloud.Business.Services;

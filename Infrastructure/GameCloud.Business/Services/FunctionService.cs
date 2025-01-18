@@ -1,11 +1,11 @@
 using AutoMapper;
+using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Functions.Responses;
 using GameCloud.Domain.Entities;
-using GameCloud.Domain.Paging;
 using GameCloud.Domain.Repositories;
 
 namespace GameCloud.Business.Services;

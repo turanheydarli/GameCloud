@@ -1,4 +1,3 @@
-using GameCloud.Domain.Paging;
 
 namespace GameCloud.Domain.Dynamics;
 
@@ -7,4 +6,4 @@ public record DynamicRequest(
     IEnumerable<Sort>? Sort,
     Filter? Filter,
     int PageIndex = 0,
-    int PageSize = 10) : PageableRequest(PageIndex, PageSize);
+    int PageSize = 10);

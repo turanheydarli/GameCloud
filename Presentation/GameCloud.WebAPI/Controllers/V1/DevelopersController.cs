@@ -1,3 +1,4 @@
+using GameCloud.Application.Common.Paging;
 using Microsoft.AspNetCore.Mvc;
 using GameCloud.Application.Features.Users;
 using GameCloud.Application.Features.Developers;
@@ -7,7 +8,6 @@ using GameCloud.Application.Features.Games.Requests;
 using GameCloud.Application.Features.ImageDocuments.Requests;
 using GameCloud.Application.Features.Users.Requests;
 using GameCloud.Domain.Enums;
-using GameCloud.Domain.Paging;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GameCloud.WebAPI.Controllers.V1;
