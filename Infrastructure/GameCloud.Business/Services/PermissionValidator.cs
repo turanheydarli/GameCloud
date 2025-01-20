@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GameCloud.Application.Features.Actions;
 using GameCloud.Application.Features.Players;
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +11,17 @@ internal class PermissionRule
     public string Value { get; set; } = string.Empty;
 }
 
-internal class PermissionValidator(ILogger<PermissionValidator> logger) : IPermissionValidator
+internal class PermissionValidator(ILogger<PermissionValidator> logger, ExecutionContextAccessor executionContextAccessor) : IPermissionValidator
 {
     public async Task<bool> HasPermission(string username, JsonDocument permissions)
     {
         try
         {
+            if (executionContextAccessor.Context == ActionExecutionContext.Function)
+            {
+                return true;
+            }
+
             if (permissions.RootElement.ValueKind == JsonValueKind.Object &&
                 !permissions.RootElement.EnumerateObject().Any())
             {

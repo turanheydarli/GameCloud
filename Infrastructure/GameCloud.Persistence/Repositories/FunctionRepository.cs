@@ -37,18 +37,25 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
         return await queryable.FirstOrDefaultAsync();
     }
 
-    public async Task<IPaginate<FunctionConfig>> GetListPaginatedAsync(
-        Expression<Func<FunctionConfig, bool>>? predicate = null,
-        int index = 0, int size = 10, bool enableTracking = true)
+    public async Task<IPaginate<FunctionConfig>> GetListPagedByGameIdAsync(
+        Guid gameId,
+        string? search = null,
+        bool ascending = true,
+        int page = 0,
+        int size = 10,
+        bool enableTracking = true)
     {
         IQueryable<FunctionConfig> queryable = context.Set<FunctionConfig>();
         if (!enableTracking)
             queryable.AsNoTracking();
 
-        if (predicate is not null)
-            queryable = queryable.Where(predicate);
+        if (!string.IsNullOrEmpty(search))
+            queryable = queryable.Where(f =>
+                f.Name.Contains(search) ||
+                f.Description.Contains(search) ||
+                f.ActionType.Contains(search));
 
-        return await queryable.ToPaginateAsync(index, size, 0);
+        return await queryable.ToPaginateAsync(page, size, 0);
     }
 
     public async Task<FunctionConfig> UpdateAsync(FunctionConfig functionConfig)
@@ -64,17 +71,13 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
         await context.SaveChangesAsync();
     }
 
-    public async Task<List<FunctionConfig>> GetListAsync(Guid gameId,
-        Expression<Func<FunctionConfig, bool>>? predicate = null, bool enableTracking = false)
+    public async Task<List<FunctionConfig>> GetListAsync(Guid gameId, bool enableTracking = false)
     {
         IQueryable<FunctionConfig> queryable = context.Set<FunctionConfig>();
         if (!enableTracking)
             queryable.AsNoTracking();
 
         queryable = queryable.Where(f => f.GameId == gameId);
-
-        if (predicate is not null)
-            queryable = queryable.Where(predicate);
 
         return await queryable.ToListAsync();
     }

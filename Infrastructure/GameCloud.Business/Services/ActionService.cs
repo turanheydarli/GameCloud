@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using AutoMapper;
-using GameCloud.Application.Common.Paging;
+using GameCloud.Application.Common.Interfaces;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Actions;
@@ -13,6 +13,7 @@ using GameCloud.Application.Features.Functions.Responses;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
+using GameCloud.Domain.Dynamics;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Enums;
 using GameCloud.Domain.Repositories;
@@ -26,7 +27,9 @@ public class ActionService(
     IPlayerService playerService,
     INotificationService notificationService,
     IGameContext gameContext,
-    IMapper mapper)
+    IMapper mapper,
+    IEventPublisher eventPublisher,
+    ExecutionContextAccessor executionContextAccessor)
     : IActionService
 {
     public async Task<ActionResponse> ExecuteActionAsync(
@@ -53,13 +56,15 @@ public class ActionService(
 
         try
         {
+            executionContextAccessor.SetContext(ActionExecutionContext.Function);
+
             FunctionConfig functionConfig = await functionRepository.GetByActionTypeAsync(request.ActionType);
 
             if (functionConfig == null)
             {
                 throw new ApplicationException($"Action type '{request.ActionType}' not found.");
             }
-            
+
             actionLog.FunctionId = functionConfig.Id;
 
             if (!functionConfig.IsEnabled)
@@ -86,6 +91,11 @@ public class ActionService(
             {
                 foreach (var (entityId, attributeUpdates) in functionResult.EntityUpdates)
                 {
+                    // await eventPublisher.PublishAsync(new AttributeUpdateEvent(
+                    //     userId,
+                    //     entityId,
+                    //     attributeUpdates));
+
                     await playerService.ApplyAttributeUpdatesAsync(entityId, attributeUpdates);
                 }
             }
@@ -131,6 +141,10 @@ public class ActionService(
 
             await actionLogRepository.CreateAsync(actionLog);
             throw;
+        }
+        finally
+        {
+            executionContextAccessor.SetContext(ActionExecutionContext.Api);
         }
     }
 
@@ -244,12 +258,10 @@ public class ActionService(
         );
     }
 
-    public async Task<PageableListResponse<ActionResponse>> GetTestedFunctionLogs(
-        Guid functionId,
-        PageableRequest request)
+    public async Task<PageableListResponse<ActionResponse>> GetAllPagedDynamicFunctionLogs(Guid functionId,
+        DynamicRequest request)
     {
-        var logs = await actionLogRepository.GetTestedActionsByFunctionAsync(functionId, request.PageIndex,
-            request.PageSize);
+        var logs = await actionLogRepository.GetPagedDynamicFunctionLogs(functionId, request);
 
         return mapper.Map<PageableListResponse<ActionResponse>>(logs);
     }

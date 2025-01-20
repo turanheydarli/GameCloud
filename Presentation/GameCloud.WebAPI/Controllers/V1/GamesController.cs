@@ -7,6 +7,7 @@ using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Games.Requests;
 using GameCloud.Application.Features.ImageDocuments.Requests;
+using GameCloud.Domain.Dynamics;
 using GameCloud.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -158,13 +159,13 @@ public class GamesController(
     }
 
     [Authorize(Policy = "OwnsGame")]
-    [HttpGet("{gameId:guid}/functions/{functionId:guid}/test/logs")]
+    [HttpPost("{gameId:guid}/functions/{functionId:guid}/logs")]
     public async Task<IActionResult> GetTestedFunctionLogs(
         Guid gameId,
         Guid functionId,
-        [FromQuery] PageableRequest request)
+        [FromBody] DynamicRequest request)
     {
-        return Ok(await actionService.GetTestedFunctionLogs(functionId, request));
+        return Ok(await actionService.GetAllPagedDynamicFunctionLogs(functionId, request));
     }
 
     [Authorize(Policy = "OwnsGame")]

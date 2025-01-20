@@ -43,7 +43,8 @@ public class GameService(
             throw new NotFoundException("Game", gameId);
         }
 
-        var players = await playerRepository.GetAllByGameId(gameId, request.PageIndex, request.PageSize, false);
+        var players =
+            await playerRepository.GetAllByGameId(gameId, request.PageIndex, request.PageSize, false);
 
         return mapper.Map<PageableListResponse<PlayerResponse>>(players);
     }
@@ -135,7 +136,7 @@ public class GameService(
     public async Task<GameResponse> GetById(Guid gameId)
     {
         var game = await gameRepository.GetByIdAsync(gameId, IGameRepository.DefaultIncludes);
-        
+
         if (game is null)
         {
             throw new NotFoundException("Game", gameId);
@@ -148,15 +149,18 @@ public class GameService(
     {
         var developer = await developerRepository.GetByUserIdAsync(userId);
 
-
         if (developer is null)
         {
             throw new NotFoundException("User", userId.ToString());
         }
 
-
-        var games = await gameRepository.GetAllByDeveloperIdAsync(developer.Id,
-            request.PageIndex, request.PageSize, IGameRepository.DefaultIncludes);
+        var games = await gameRepository.GetAllByDeveloperIdAsync(
+            developerId: developer.Id,
+            search: request.Search,
+            ascending: request.IsAscending,
+            page: request.PageIndex,
+            size: request.PageSize,
+            include: IGameRepository.DefaultIncludes);
 
         return mapper.Map<PageableListResponse<GameResponse>>(games);
     }
@@ -228,7 +232,7 @@ public class GameService(
     public async Task<GameDetailResponse> GetGameDetailsAsync(Guid gameId)
     {
         var game = await gameRepository.GetByIdAsync(gameId, IGameRepository.FullGameIncludes);
-    
+
         if (game is null)
         {
             throw new NotFoundException("Game", gameId);

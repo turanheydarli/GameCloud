@@ -31,6 +31,8 @@ namespace GameCloud.Persistence.Contexts
             modelBuilder.HasDefaultSchema("gc");
 
             base.OnModelCreating(modelBuilder);
+            
+            modelBuilder.HasPostgresExtension("jsonb");
 
             modelBuilder.ApplyConfiguration(new AppUserEntityConfiguration());
             modelBuilder.ApplyConfiguration(new AppRoleEntityConfiguration());

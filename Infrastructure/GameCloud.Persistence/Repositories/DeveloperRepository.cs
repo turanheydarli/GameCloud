@@ -9,13 +9,28 @@ namespace GameCloud.Persistence.Repositories;
 
 public class DeveloperRepository(GameCloudDbContext context) : IDeveloperRepository
 {
-    public async Task<IPaginate<Developer>> GetAllAsync(int index = 0, int size = 10, bool enableTracking = true)
+    public async Task<IPaginate<Developer>> GetAllAsync(string? search = null,
+        bool ascending = true,
+        int page = 0,
+        int size = 10, bool enableTracking = true)
     {
         IQueryable<Developer> queryable = context.Set<Developer>();
-        if (!enableTracking)
-            queryable.AsNoTracking();
 
-        return await queryable.ToPaginateAsync(index, size, 0);
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+
+        queryable = ascending
+            ? queryable.OrderBy(f => f.CreatedAt)
+            : queryable.OrderByDescending(f => f.CreatedAt);
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            queryable = queryable.Where(f =>
+                f.Name.Contains(search) ||
+                f.Email.Contains(search));
+        }
+
+        return await queryable.ToPaginateAsync(page, size, 0);
     }
 
     public async Task<Developer> CreateAsync(Developer developer)

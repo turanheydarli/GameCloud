@@ -2,6 +2,7 @@ using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Features.Actions.Requests;
 using GameCloud.Application.Features.Actions.Responses;
+using GameCloud.Domain.Dynamics;
 
 namespace GameCloud.Application.Features.Actions;
 
@@ -18,6 +19,6 @@ public interface IActionService
         Guid gameId,
         DateTimeRange range);
 
-    Task<PageableListResponse<ActionResponse>> GetTestedFunctionLogs(Guid functionId, PageableRequest request);
+    Task<PageableListResponse<ActionResponse>> GetAllPagedDynamicFunctionLogs(Guid functionId, DynamicRequest request);
     Task<ActionResponse> GetFunctionLogByActionId(Guid actionId);
 }

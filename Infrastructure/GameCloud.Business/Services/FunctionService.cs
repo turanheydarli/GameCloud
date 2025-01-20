@@ -1,3 +1,4 @@
+using System.Drawing;
 using AutoMapper;
 using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
@@ -42,7 +43,12 @@ public class FunctionService(
 
     public async Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request)
     {
-        var functions = await functionRepository.GetListPaginatedAsync(f => f.GameId == gameId);
+        var functions = await functionRepository.GetListPagedByGameIdAsync(
+            gameId: gameId,
+            search: request.Search,
+            ascending: request.IsAscending,
+            page: request.PageIndex,
+            size: request.PageSize);
 
         return mapper.Map<PageableListResponse<FunctionResponse>>(functions);
     }

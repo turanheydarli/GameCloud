@@ -36,6 +36,7 @@ public class PlayerAttributeService(
         //     return cached;
 
         var attributes = await repository.GetCollectionAsync(username, collection);
+        
         var result = attributes.ToDictionary(
             attr => attr.Key,
             attr => new AttributeResponse(

@@ -11,16 +11,21 @@ using GameCloud.Application.Features.ImageDocuments.Responses;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Enums;
 using GameCloud.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace GameCloud.Business.Services;
 
-public class DeveloperService(IDeveloperRepository developerRepository,
-    IImageService imageService,IMapper mapper) : IDeveloperService
+public class DeveloperService(
+    IDeveloperRepository developerRepository,
+    IImageService imageService,
+    IMapper mapper) : IDeveloperService
 {
     public async Task<PageableListResponse<DeveloperResponse>> GetAllAsync(PageableRequest request)
     {
-        var developers = await developerRepository.GetAllAsync(request.PageIndex, request.PageSize);
+        var developers = await developerRepository.GetAllAsync(
+            page: request.PageIndex,
+            size: request.PageSize,
+            search: request.Search,
+            ascending: request.IsAscending);
 
         return mapper.Map<PageableListResponse<DeveloperResponse>>(developers);
     }
@@ -54,7 +59,7 @@ public class DeveloperService(IDeveloperRepository developerRepository,
         {
             throw new NotFoundException("User", userId);
         }
-        
+
         if (developer.ProfilePhotoId.HasValue)
         {
             await imageService.DeleteAsync(developer.ProfilePhotoId.Value);

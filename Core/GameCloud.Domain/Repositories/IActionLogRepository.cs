@@ -1,3 +1,4 @@
+using GameCloud.Domain.Dynamics;
 using GameCloud.Domain.Entities;
 
 namespace GameCloud.Domain.Repositories;
@@ -8,7 +9,7 @@ public interface IActionLogRepository
     Task<IPaginate<ActionLog>> GetBySessionAsync(Guid sessionId, int index = 0, int size = 10);
     Task<List<ActionLog>> GetListActionByFunctionAsync(Guid functionId, DateTime rangeFrom, DateTime rangeTo);
     Task<IPaginate<ActionLog>> GetByFunctionAsync(Guid functionId, int index = 0, int size = 10);
-    Task<IPaginate<ActionLog>> GetTestedActionsByFunctionAsync(Guid functionId, int index = 0, int size = 10);
+    Task<IPaginate<ActionLog>> GetPagedDynamicFunctionLogs(Guid functionId, DynamicRequest request);
     Task<ActionLog?> GetByIdAsync(Guid actionId);
 }
 

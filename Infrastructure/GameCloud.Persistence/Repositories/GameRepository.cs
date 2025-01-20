@@ -14,8 +14,14 @@ public class GameRepository(GameCloudDbContext context) : IGameRepository
         throw new NotImplementedException();
     }
 
-    public async Task<IPaginate<Game>> GetAllByDeveloperIdAsync(Guid developerId, int index = 0, int size = 10
-        , Func<IQueryable<Game>, IIncludableQueryable<Game, object>>? include = null)
+    public async Task<IPaginate<Game>> GetAllByDeveloperIdAsync(
+        Guid developerId,
+        string? search = null,
+        bool ascending = true,
+        int page = 0,
+        int size = 10,
+        bool enableTracking = true,
+        Func<IQueryable<Game>, IIncludableQueryable<Game, object>>? include = null)
     {
         IQueryable<Game> queryable = context.Set<Game>();
 
@@ -23,7 +29,21 @@ public class GameRepository(GameCloudDbContext context) : IGameRepository
         if (include != null)
             queryable = include(queryable!);
 
-        return await queryable.ToPaginateAsync(index, size, 0);
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+
+        queryable = ascending
+            ? queryable.OrderBy(f => f.CreatedAt)
+            : queryable.OrderByDescending(f => f.CreatedAt);
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            queryable = queryable.Where(f =>
+                f.Name.Contains(search) ||
+                f.Description.Contains(search));
+        }
+
+        return await queryable.ToPaginateAsync(page, size, 0);
     }
 
     public async Task<IPaginate<GameKey>> GetAllKeysAsync(Guid gameId, int index = 0, int size = 10)
