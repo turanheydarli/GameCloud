@@ -1,25 +1,23 @@
-# k8s/base/api/deployment.yml
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gamecloud-api
+  name: gamecloud-main
 spec:
   selector:
     matchLabels:
-      app: gamecloud-api
+      app: gamecloud-main
       app.kubernetes.io/part-of: gamecloud
       app.kubernetes.io/managed-by: kustomize
   template:
     metadata:
       labels:
-        app: gamecloud-api
+        app: gamecloud-main
         app.kubernetes.io/part-of: gamecloud
         app.kubernetes.io/managed-by: kustomize
     spec:
       containers:
-        - name: gamecloud-api
-          image: cr.yandex/crpl3p256m938dtgp3lh/gamecloud.main:latest
+        - name: gamecloud-main
+          image: cr.yandex/crpl3p256m938dtgp3lh/gamecloud-main:latest
           ports:
             - containerPort: 8080
               name: http

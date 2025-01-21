@@ -1,8 +1,7 @@
-# k8s/base/api/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: gamecloud-api-ingress
+  name: gamecloud-main-ingress
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
@@ -16,6 +15,6 @@ spec:
             pathType: Prefix     # Changed to Prefix since you want to match /api/*
             backend:
               service:
-                name: gamecloud-api
+                name: gamecloud-main
                 port:
                   number: 80

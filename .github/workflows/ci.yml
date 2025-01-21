@@ -9,7 +9,7 @@ on:
 env:
   DOTNET_VERSION: '8.0.x'
   YC_REGISTRY: cr.yandex/crpl3p256m938dtgp3lh
-  APP_NAME: gamecloud.main
+  APP_NAME: gamecloud-main
 
 jobs:
   build-and-test:

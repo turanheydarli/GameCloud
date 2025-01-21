@@ -12,7 +12,7 @@ env:
   IMAGE_TAG: ${{ github.sha }}
   LATEST_TAG: latest
   YC_REGISTRY: cr.yandex/crpl3p256m938dtgp3lh
-  APP_NAME: gamecloud.main
+  APP_NAME: gamecloud-main
   KUBE_NAMESPACE: gamecloud
 
 jobs:

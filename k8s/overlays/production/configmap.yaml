@@ -1,5 +1,3 @@
-# k8s/overlay/configmap.yaml
-
 apiVersion: v1
 kind: ConfigMap
 metadata:

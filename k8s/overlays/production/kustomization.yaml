@@ -1,29 +1,28 @@
-# k8s/overlay/production/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: gamecloud
 
 resources:
-- ../../base
+  - ../../base
 
 
 images:
-- name: cr.yandex/crpl3p256m938dtgp3lh/gamecloud.main
-  newTag: latest
+  - name: cr.yandex/crpl3p256m938dtgp3lh/gamecloud-main
+    newTag: latest
 
 
 configMapGenerator:
   - name: gamecloud-config
-    literals: 
+    literals:
       - ASPNETCORE_ENVIRONMENT=Production
 #  - behavior: merge
 
 
 secretGenerator:
-- envs:
-  - .env.prod
-  name: gamecloud-secrets
+  - envs:
+      - .env.prod
+    name: gamecloud-secrets
 
 
 commonLabels:
