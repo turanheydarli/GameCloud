@@ -1,11 +1,9 @@
-# k8s/base/api/service.yml
-
 apiVersion: v1
 kind: Service
 metadata:
-  name: gamecloud-api
+  name: gamecloud-main
   labels:
-    app: gamecloud-api
+    app: gamecloud-main
   annotations:
     cloud.yandex.com/load-balancer-type: "internal"
     cloud.yandex.com/monitored: "true"
@@ -17,4 +15,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: gamecloud-api
+    app: gamecloud-main
