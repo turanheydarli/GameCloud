@@ -44,10 +44,16 @@ jobs:
           docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
           docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
 
-      - name: Setup Yandex Cloud CLI and authenticate
+      - name: Install Yandex Cloud CLI
         run: |
           curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+          export PATH="/home/runner/yandex-cloud/bin:${PATH}"
+          source "/home/runner/.bashrc"
+
+      - name: Configure Yandex Cloud CLI
+        run: |
           echo "${{ secrets.YC_SA_JSON_CREDENTIALS }}" > key.json
+          export PATH="/home/runner/yandex-cloud/bin:${PATH}"
           yc config profile create sa-profile
           yc config set service-account-key key.json
           yc config set cloud-id ${{ secrets.YC_CLOUD_ID }}
