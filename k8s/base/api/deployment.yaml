@@ -1,0 +1,45 @@
+# k8s/base/api/deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gamecloud-api
+spec:
+  selector:
+    matchLabels:
+      app: gamecloud-api
+      app.kubernetes.io/part-of: gamecloud
+      app.kubernetes.io/managed-by: kustomize
+  template:
+    metadata:
+      labels:
+        app: gamecloud-api
+        app.kubernetes.io/part-of: gamecloud
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      containers:
+        - name: gamecloud-api
+          image: cr.yandex/crpl3p256m938dtgp3lh/gamecloud.main:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: gamecloud-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: ConnectionStrings__GameCloud
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: DB_CONNECTION_STRING

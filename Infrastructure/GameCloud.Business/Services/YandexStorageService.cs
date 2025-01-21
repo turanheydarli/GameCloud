@@ -24,15 +24,15 @@ public class YandexStorageService : IImageService
     {
         [ImageType.GameIcon] = new[]
         {
-            (400, 400), 
-            (200, 200), 
-            (100, 100) 
+            (400, 400),
+            (200, 200),
+            (100, 100)
         },
         [ImageType.DeveloperProfile] = new[]
         {
-            (400, 400), 
-            (200, 200), 
-            (100, 100) 
+            (400, 400),
+            (200, 200),
+            (100, 100)
         }
     };
 
@@ -48,83 +48,83 @@ public class YandexStorageService : IImageService
 
     /// TODO: seperate image resizing to different threads
     public async Task<ImageResponse> UploadAsync(ImageUploadRequest request)
-{
-     var originalImage = await Image.LoadAsync(request.ImageStream);
-    
-    var fileExtension = Path.GetExtension(request.FileName);
-    var folderPath = $"{request.Type.ToString().ToLower()}/{Guid.NewGuid()}";
-    var imageSizes = _imageSizes[request.Type];
-
-    var mainImagePath = $"{folderPath}/original{fileExtension}";
-    var mainImageUploadTask = UploadImageToStorage(originalImage, mainImagePath, request.ContentType);
-
-    var variantSizes = imageSizes.Skip(1).ToList();
-    var resizedImages = new ConcurrentDictionary<(int width, int height), Image>();
-    var resizingTasks = new List<Task>();
-
-    foreach (var size in variantSizes)
     {
-        var task = Task.Run(() =>
+        var originalImage = await Image.LoadAsync(request.ImageStream);
+
+        var fileExtension = Path.GetExtension(request.FileName);
+        var folderPath = $"{request.Type.ToString().ToLower()}/{Guid.NewGuid()}";
+        var imageSizes = _imageSizes[request.Type];
+
+        var mainImagePath = $"{folderPath}/original{fileExtension}";
+        var mainImageUploadTask = UploadImageToStorage(originalImage, mainImagePath, request.ContentType);
+
+        var variantSizes = imageSizes.Skip(1).ToList();
+        var resizedImages = new ConcurrentDictionary<(int width, int height), Image>();
+        var resizingTasks = new List<Task>();
+
+        foreach (var size in variantSizes)
         {
-            var resizedImage = originalImage.Clone(ctx =>
+            var task = Task.Run(() =>
             {
-                ctx.Resize(new ResizeOptions
+                var resizedImage = originalImage.Clone(ctx =>
                 {
-                    Size = new Size(size.width, size.height),
-                    Mode = ResizeMode.Max
+                    ctx.Resize(new ResizeOptions
+                    {
+                        Size = new Size(size.width, size.height),
+                        Mode = ResizeMode.Max
+                    });
                 });
+                resizedImages[size] = resizedImage;
             });
-            resizedImages[size] = resizedImage;
-        });
-        resizingTasks.Add(task);
+            resizingTasks.Add(task);
+        }
+
+        await Task.WhenAll(resizingTasks);
+
+        var uploadTasks = new List<Task<ImageVariant>>();
+
+        foreach (var size in variantSizes)
+        {
+            var resizedImage = resizedImages[size];
+            var variantPath = $"{folderPath}/{size.width}x{size.height}{fileExtension}";
+
+            var uploadTask = UploadImageToStorage(resizedImage, variantPath, request.ContentType)
+                .ContinueWith(uploadResult => new ImageVariant
+                {
+                    Url = uploadResult.Result,
+                    Width = size.width,
+                    Height = size.height,
+                    VariantType = size == variantSizes[0] ? "medium" : "thumbnail"
+                });
+
+            uploadTasks.Add(uploadTask);
+        }
+
+        var mainImageUrl = await mainImageUploadTask;
+        var variants = await Task.WhenAll(uploadTasks);
+
+        originalImage.Dispose();
+
+        foreach (var resizedImage in resizedImages.Values)
+        {
+            resizedImage.Dispose();
+        }
+
+        var imageDocument = new ImageDocument
+        {
+            Url = mainImageUrl,
+            Width = imageSizes[0].width,
+            Height = imageSizes[0].height,
+            FileType = request.ContentType,
+            StorageProvider = "Yandex",
+            Type = request.Type,
+            CreatedAt = DateTime.UtcNow,
+            Variants = variants.ToList()
+        };
+
+        imageDocument = await _imageDocumentRepository.CreateAsync(imageDocument);
+        return ToImageResponse(imageDocument);
     }
-
-    await Task.WhenAll(resizingTasks);
-
-    var uploadTasks = new List<Task<ImageVariant>>();
-    
-    foreach (var size in variantSizes)
-    {
-        var resizedImage = resizedImages[size];
-        var variantPath = $"{folderPath}/{size.width}x{size.height}{fileExtension}";
-        
-        var uploadTask = UploadImageToStorage(resizedImage, variantPath, request.ContentType)
-            .ContinueWith(uploadResult => new ImageVariant
-            {
-                Url = uploadResult.Result,
-                Width = size.width,
-                Height = size.height,
-                VariantType = size == variantSizes[0] ? "medium" : "thumbnail"
-            });
-            
-        uploadTasks.Add(uploadTask);
-    }
-
-    var mainImageUrl = await mainImageUploadTask;
-    var variants = await Task.WhenAll(uploadTasks);
-
-    originalImage.Dispose();
-
-    foreach (var resizedImage in resizedImages.Values)
-    {
-        resizedImage.Dispose();
-    }
-
-    var imageDocument = new ImageDocument
-    {
-        Url = mainImageUrl,
-        Width = imageSizes[0].width,
-        Height = imageSizes[0].height,
-        FileType = request.ContentType,
-        StorageProvider = "Yandex",
-        Type = request.Type,
-        CreatedAt = DateTime.UtcNow,
-        Variants = variants.ToList()
-    };
-
-    imageDocument = await _imageDocumentRepository.CreateAsync(imageDocument);
-    return ToImageResponse(imageDocument);
-}
 
     private async Task<string> UploadImageToStorage(Image image, string path, string contentType)
     {

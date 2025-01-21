@@ -1,4 +1,4 @@
-using GameCloud.Application.Common.Requests;
+using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Features.Notifications.Requests;
 using GameCloud.Application.Features.Notifications.Responses;

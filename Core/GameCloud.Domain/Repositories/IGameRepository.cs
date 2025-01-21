@@ -23,7 +23,12 @@ public interface IGameRepository
 
     Task<IPaginate<Game>> GetAllAsync(int index = 0, int size = 10, bool enableTracking = true);
 
-    Task<IPaginate<Game>> GetAllByDeveloperIdAsync(Guid developerId, int index = 0, int size = 10,
+    Task<IPaginate<Game>> GetAllByDeveloperIdAsync(
+        Guid developerId,
+        string? search = null,
+        bool ascending = true,
+        int page = 0,
+        int size = 10, bool enableTracking = true,
         Func<IQueryable<Game>, IIncludableQueryable<Game, object>>? include = null);
 
     Task<IPaginate<GameKey>> GetAllKeysAsync(Guid gameId, int index = 0, int size = 10);

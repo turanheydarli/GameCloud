@@ -1,9 +1,9 @@
+using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Features.Players.Requests;
 using GameCloud.Application.Features.Users.Requests;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
 using GameCloud.Application.Features.Users;
-using GameCloud.Application.Common.Requests;
 using GameCloud.Domain.Entities;
 using GameCloud.WebAPI.Filters.Attributes;
 using Microsoft.AspNetCore.Authorization;
@@ -71,11 +71,11 @@ public class PlayersController : BaseController
         return Ok(attribute);
     }
 
-    [HttpPut("{username}/attributes/{collection}/{key}")]
+    
+    [HttpPut("{username}/attributes/{collection}")]
     public async Task<IActionResult> SetAttribute(
         string username,
         string collection,
-        string key,
         [FromBody] AttributeRequest request)
     {
         await _playerService.SetAttributeAsync(username, collection, request);

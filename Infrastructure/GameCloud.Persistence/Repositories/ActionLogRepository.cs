@@ -1,3 +1,4 @@
+using GameCloud.Domain.Dynamics;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Repositories;
 using GameCloud.Persistence.Contexts;
@@ -46,16 +47,15 @@ public class ActionLogRepository(GameCloudDbContext context) : IActionLogReposit
         return await queryable.ToPaginateAsync(index, size, 0);
     }
 
-    public async Task<IPaginate<ActionLog>> GetTestedActionsByFunctionAsync(Guid functionId, int index = 0,
-        int size = 10)
+    public async Task<IPaginate<ActionLog>> GetPagedDynamicFunctionLogs(Guid functionId, DynamicRequest dynamic)
     {
         IQueryable<ActionLog> queryable = context.Set<ActionLog>();
 
-        queryable = queryable
-            .Where(k => k.FunctionId == functionId && k.IsTestMode)
-            .OrderByDescending(l => l.StartedAt);
-
-        return await queryable.ToPaginateAsync(index, size, 0);
+        queryable = queryable.Where(k => k.FunctionId == functionId);
+        
+        queryable = queryable.ToDynamic(dynamic);
+        
+        return await queryable.ToPaginateAsync(dynamic.PageIndex, dynamic.PageSize, 0);
     }
 
     public async Task<ActionLog?> GetByIdAsync(Guid actionId)

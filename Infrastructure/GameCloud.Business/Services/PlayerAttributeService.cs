@@ -13,6 +13,7 @@ namespace GameCloud.Business.Services;
 
 public class PlayerAttributeService(
     IPlayerAttributeRepository repository,
+    IPlayerRepository playerRepository,
     IMapper mapper,
     ILogger<PlayerAttributeService> logger,
     IPermissionValidator permissionValidator)
@@ -36,6 +37,7 @@ public class PlayerAttributeService(
         //     return cached;
 
         var attributes = await repository.GetCollectionAsync(username, collection);
+
         var result = attributes.ToDictionary(
             attr => attr.Key,
             attr => new AttributeResponse(
@@ -111,7 +113,11 @@ public class PlayerAttributeService(
         logger.LogInformation(
             "Setting attribute {Collection}/{Key} for user {Username}",
             collection, key, username);
+     
+        var player = await playerRepository.GetByUsernameAsync(username);
 
+        if (player == null)
+            throw new NotFoundException("Player", username);
 
         var attribute = await repository.GetAsync(username, collection, key);
         var oldValue = attribute?.Value;
@@ -135,6 +141,7 @@ public class PlayerAttributeService(
         {
             attribute = new PlayerAttribute
             {
+                PlayerId = player.Id,
                 Username = username,
                 Collection = collection,
                 Key = key,
@@ -168,6 +175,11 @@ public class PlayerAttributeService(
             throw new ArgumentException("Collection is required", nameof(collection));
         if (!attributes.Any())
             throw new ArgumentException("At least one attribute is required", nameof(attributes));
+
+        var player = await playerRepository.GetByUsernameAsync(username);
+
+        if (player == null)
+            throw new NotFoundException("Player", username);
 
         foreach (var (key, value) in attributes)
         {

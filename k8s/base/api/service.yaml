@@ -1,0 +1,20 @@
+# k8s/base/api/service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: gamecloud-api
+  labels:
+    app: gamecloud-api
+  annotations:
+    cloud.yandex.com/load-balancer-type: "internal"
+    cloud.yandex.com/monitored: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: gamecloud-api

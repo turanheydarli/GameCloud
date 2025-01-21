@@ -5,6 +5,5 @@ namespace GameCloud.Application.Features.Users.Requests;
 public record AuthPlayerRequest(
     AuthProvider Provider,
     string? Token,
-    string? UserName,
-    string? PlayerId,
+    string UserName,
     Guid UserId);

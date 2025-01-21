@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text;
 using Amazon.S3;
 using FirebaseAdmin;
+using GameCloud.Application.Common.Interfaces;
 using GameCloud.Application.Common.Mappings;
 using GameCloud.Application.Common.Policies.Requirements;
 using GameCloud.Application.Common.Policies.Requirements.Handlers;
@@ -17,6 +18,7 @@ using GameCloud.Application.Features.Users;
 using GameCloud.Business.Services;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Repositories;
+using GameCloud.Messaging.Brokers;
 using GameCloud.Persistence.Contexts;
 using GameCloud.Persistence.Repositories;
 using Google.Apis.Auth.OAuth2;
@@ -35,8 +37,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,
         IConfiguration configuration)
     {
-        services
-            .AddRepositories()
+        services.AddRepositories()
             .AddServices()
             .AddAuthorizationHandlers()
             .AddStorageServices(configuration)
@@ -68,6 +69,7 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddScoped<IGameContext, GameContextAccessor>()
+            .AddScoped<IExecutionContextAccessor, ExecutionContextAccessor>()
             .AddScoped<IGameKeyResolver, GameKeyResolver>()
             .AddScoped<IGameService, GameService>()
             .AddScoped<IDeveloperService, DeveloperService>()
@@ -221,6 +223,18 @@ public static class ServiceCollectionExtensions
                         throw new UnauthorizedAccessException("You have not access to this operation.")
                 };
             });
+
+        return services;
+    }
+
+    public static IServiceCollection AddMessageQueue(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<YandexCloudOptions>(
+            configuration.GetSection("YandexCloud:MessageQueue"));
+
+        services.AddSingleton<IEventPublisher, YandexSqsPublisher>();
 
         return services;
     }

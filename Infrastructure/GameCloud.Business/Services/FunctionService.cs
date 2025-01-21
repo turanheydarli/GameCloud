@@ -1,13 +1,11 @@
-using System.Text;
-using System.Text.Json;
+using System.Drawing;
 using AutoMapper;
-using GameCloud.Application.Common.Requests;
+using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Functions.Responses;
-using GameCloud.Application.Features.Games.Responses;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Repositories;
 
@@ -45,7 +43,12 @@ public class FunctionService(
 
     public async Task<PageableListResponse<FunctionResponse>> GetFunctionsAsync(Guid gameId, PageableRequest request)
     {
-        var functions = await functionRepository.GetListPaginatedAsync(f => f.GameId == gameId);
+        var functions = await functionRepository.GetListPagedByGameIdAsync(
+            gameId: gameId,
+            search: request.Search,
+            ascending: request.IsAscending,
+            page: request.PageIndex,
+            size: request.PageSize);
 
         return mapper.Map<PageableListResponse<FunctionResponse>>(functions);
     }

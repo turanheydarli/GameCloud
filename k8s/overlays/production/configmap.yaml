@@ -1,0 +1,11 @@
+# k8s/overlay/configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gamecloud-config
+  namespace: gamecloud
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080"
+  DB_CONNECTION_STRING: ""

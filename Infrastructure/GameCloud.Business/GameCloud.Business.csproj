@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Core\GameCloud.Application\GameCloud.Application.csproj" />
+      <ProjectReference Include="..\GameCloud.Messaging\GameCloud.Messaging.csproj" />
       <ProjectReference Include="..\GameCloud.Persistence\GameCloud.Persistence.csproj" />
     </ItemGroup>
 

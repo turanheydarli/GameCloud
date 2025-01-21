@@ -1,6 +1,6 @@
+using GameCloud.Application.Common.Paging;
 using Microsoft.AspNetCore.Mvc;
 using GameCloud.Application.Features.Users;
-using GameCloud.Application.Common.Requests;
 using GameCloud.Application.Features.Developers;
 using GameCloud.Application.Features.Developers.Requests;
 using GameCloud.Application.Features.Games;

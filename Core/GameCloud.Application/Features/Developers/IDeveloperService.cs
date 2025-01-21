@@ -1,10 +1,9 @@
-using GameCloud.Application.Common.Requests;
+using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Features.Developers.Requests;
 using GameCloud.Application.Features.Developers.Responses;
 using GameCloud.Application.Features.ImageDocuments.Requests;
 using GameCloud.Application.Features.ImageDocuments.Responses;
-using GameCloud.Domain.Entities;
 
 namespace GameCloud.Application.Features.Developers;
 

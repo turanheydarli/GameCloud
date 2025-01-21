@@ -1,5 +1,5 @@
 using AutoMapper;
-using GameCloud.Application.Common.Requests;
+using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions.Responses;
@@ -27,7 +27,6 @@ public class PlayerService(
         if (player == null)
             throw new NotFoundException("Player", id);
 
-        await EnsureCanAccessPlayerData(player.Username);
         return mapper.Map<PlayerResponse>(player);
     }
 
@@ -37,7 +36,6 @@ public class PlayerService(
         if (player is null)
             throw new NotFoundException("Player", userId);
 
-        await EnsureCanAccessPlayerData(player.Username);
         return mapper.Map<PlayerResponse>(player);
     }
 
@@ -47,14 +45,11 @@ public class PlayerService(
         if (player == null)
             throw new NotFoundException($"Player not found with Username: {username}");
 
-        await EnsureCanAccessPlayerData(username);
         return await attributeService.GetCollectionAsync(player.Username, collection);
     }
 
     public async Task<AttributeResponse> GetAttributeAsync(string username, string collection, string key)
     {
-        await EnsureCanAccessPlayerData(username);
-        
         var attribute = await attributeService.GetAsync(username, collection, key);
         if (attribute == null)
             throw new NotFoundException($"Attribute {collection}/{key} not found");
@@ -64,8 +59,6 @@ public class PlayerService(
 
     public async Task SetAttributeAsync(string username, string collection, AttributeRequest request)
     {
-        await EnsureCanModifyPlayerData(username);
-
         TimeSpan? ttl = request.ExpiresIn.HasValue
             ? TimeSpan.FromSeconds(request.ExpiresIn.Value)
             : null;
@@ -81,14 +74,11 @@ public class PlayerService(
 
     public async Task RemoveAttributeAsync(string username, string collection, string key)
     {
-        await EnsureCanModifyPlayerData(username);
         await attributeService.DeleteAsync(username, collection, key);
     }
 
     public async Task ApplyAttributeUpdatesAsync(string username, IEnumerable<EntityAttributeUpdate> updates)
     {
-        await EnsureCanModifyPlayerData(username);
-
         var entityAttributeUpdates = updates as EntityAttributeUpdate[] ?? updates.ToArray();
         var updatesByCollection = entityAttributeUpdates.GroupBy(u => u.Collection);
 
@@ -120,6 +110,7 @@ public class PlayerService(
         player.CreatedAt = DateTime.UtcNow;
         player.UpdatedAt = DateTime.UtcNow;
         player.GameId = gameContext.GameId;
+        player.DisplayName = request.Username;
 
         player = await playerRepository.CreateAsync(player);
         return mapper.Map<PlayerResponse>(player);
@@ -129,42 +120,5 @@ public class PlayerService(
     {
         var players = await playerRepository.GetAllAsync(request.PageIndex, request.PageSize);
         return mapper.Map<PageableListResponse<PlayerResponse>>(players);
-    }
-
-    private async Task EnsureCanAccessPlayerData(string username)
-    {
-        var currentUser = httpContextAccessor.HttpContext?.User;
-        if (currentUser == null)
-            throw new UnauthorizedAccessException("No user context found");
-
-        var currentUsername = currentUser.Identity?.Name;
-        
-        // Same user can always access their own data
-        if (currentUsername == username) return;
-
-        // Admin can access any data
-        if (currentUser.IsInRole("Admin")) return;
-
-        // Game specific checks can be added here
-        // For example: team/guild membership checks
-        
-        throw new UnauthorizedAccessException(
-            $"User {currentUsername} does not have permission to access data for {username}");
-    }
-
-    private async Task EnsureCanModifyPlayerData(string username)
-    {
-        var currentUser = httpContextAccessor.HttpContext?.User;
-        if (currentUser == null)
-            throw new UnauthorizedAccessException("No user context found");
-
-        var currentUsername = currentUser.Identity?.Name;
-
-        // Only same user or admin can modify data
-        if (currentUsername != username && !currentUser.IsInRole("Admin"))
-        {
-            throw new UnauthorizedAccessException(
-                $"User {currentUsername} does not have permission to modify data for {username}");
-        }
     }
 }
