@@ -37,10 +37,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<IExecutionContextAccessor, ExecutionContextAccessor>();
-
-        services
-            .AddRepositories()
+        services.AddRepositories()
             .AddServices()
             .AddAuthorizationHandlers()
             .AddStorageServices(configuration)
@@ -72,6 +69,7 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddScoped<IGameContext, GameContextAccessor>()
+            .AddScoped<IExecutionContextAccessor, ExecutionContextAccessor>()
             .AddScoped<IGameKeyResolver, GameKeyResolver>()
             .AddScoped<IGameService, GameService>()
             .AddScoped<IDeveloperService, DeveloperService>()
@@ -228,16 +226,16 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
-    
+
     public static IServiceCollection AddMessageQueue(
         this IServiceCollection services,
         IConfiguration configuration)
     {
         services.Configure<YandexCloudOptions>(
             configuration.GetSection("YandexCloud:MessageQueue"));
-            
+
         services.AddSingleton<IEventPublisher, YandexSqsPublisher>();
-        
+
         return services;
     }
 }

@@ -16,11 +16,11 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
         return functionConfig;
     }
 
-    public async Task<FunctionConfig> GetByActionTypeAsync(string actionType)
+    public async Task<FunctionConfig> GetByActionTypeAsync(Guid gameId, string actionType)
     {
         IQueryable<FunctionConfig?> queryable = context.Set<FunctionConfig>();
 
-        queryable = queryable.Where(f => f.ActionType == actionType);
+        queryable = queryable.Where(f => f.ActionType == actionType && f.GameId == gameId);
 
         return await queryable.FirstOrDefaultAsync();
     }
@@ -48,6 +48,8 @@ public class FunctionRepository(GameCloudDbContext context) : IFunctionRepositor
         IQueryable<FunctionConfig> queryable = context.Set<FunctionConfig>();
         if (!enableTracking)
             queryable.AsNoTracking();
+
+        queryable = queryable.Where(f => f.GameId == gameId);
 
         if (!string.IsNullOrEmpty(search))
             queryable = queryable.Where(f =>

@@ -11,7 +11,9 @@ internal class PermissionRule
     public string Value { get; set; } = string.Empty;
 }
 
-internal class PermissionValidator(ILogger<PermissionValidator> logger, ExecutionContextAccessor executionContextAccessor) : IPermissionValidator
+internal class PermissionValidator(
+    ILogger<PermissionValidator> logger,
+    IExecutionContextAccessor executionContextAccessor) : IPermissionValidator
 {
     public async Task<bool> HasPermission(string username, JsonDocument permissions)
     {

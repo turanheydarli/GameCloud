@@ -75,7 +75,7 @@ namespace GameCloud.Business.Services
 
             return new AuthResponse(
                 UserId: user.Id,
-                PlayerId: string.Empty,
+                Username: user.UserName,
                 Email: user.Email,
                 Token: token.Token,
                 ExpiresAt: token.Expires
@@ -88,44 +88,24 @@ namespace GameCloud.Business.Services
 
         public async Task<AuthResponse> AuthenticatePlayerAsync(AuthPlayerRequest request)
         {
-            string playerId;
-            string? email = null;
+            string username = "";
 
             switch (request.Provider)
             {
-                case AuthProvider.GooglePlay:
-                    playerId = await ValidateGoogleIdTokenAsync(request.Token!);
-                    break;
-
-                case AuthProvider.iOS:
-                    playerId = await ValidateAppleIdTokenAsync(request.Token!);
-                    break;
-
-                case AuthProvider.Unity:
-                    playerId = await ValidateUnityTokenAsync(request.Token!);
-                    break;
-
                 case AuthProvider.Custom:
-                    if (string.IsNullOrEmpty(request.PlayerId))
-                    {
-                        throw new ArgumentException("PlayerId must be provided for Custom provider.");
-                    }
-
-                    playerId = request.PlayerId!;
-                    email = request.UserName;
+                    username = request.UserName;
                     break;
 
                 default:
                     throw new NotImplementedException($"Auth provider '{request.Provider}' is not supported.");
             }
 
-            var user = await userManager.FindByNameAsync(playerId);
+            var user = await userManager.FindByNameAsync(username);
             if (user == null)
             {
                 user = new AppUser
                 {
-                    UserName = playerId,
-                    Email = email
+                    UserName = username
                 };
 
                 var createResult = await userManager.CreateAsync(user);
@@ -138,7 +118,7 @@ namespace GameCloud.Business.Services
                 await EnsureRoleExistsAsync("Player");
                 await userManager.AddToRoleAsync(user, "Player");
 
-                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, email, user.Id);
+                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, username, user.Id);
                 await playerService.CreateAsync(playerRequest);
             }
 
@@ -147,7 +127,7 @@ namespace GameCloud.Business.Services
 
             return new AuthResponse(
                 UserId: user.Id,
-                PlayerId: playerResponse.PlayerId,
+                Username: playerResponse.Username,
                 Email: user.Email,
                 Token: token.Token,
                 ExpiresAt: token.Expires
@@ -199,27 +179,6 @@ namespace GameCloud.Business.Services
             var tokenString = tokenHandler.WriteToken(securityToken);
 
             return (tokenString, expires);
-        }
-
-        private async Task<string> ValidateGoogleIdTokenAsync(string idToken)
-        {
-            // TODO: Implement real validation using Google.Apis.Auth
-            await Task.CompletedTask;
-            return "google-user-id-from-token";
-        }
-
-        private async Task<string> ValidateAppleIdTokenAsync(string idToken)
-        {
-            // TODO: Implement Apple Sign-In token validation
-            await Task.CompletedTask;
-            return "apple-user-id-from-token";
-        }
-
-        private async Task<string> ValidateUnityTokenAsync(string unityToken)
-        {
-            // TODO: Implement Unity authentication token validation
-            await Task.CompletedTask;
-            return "unity-user-id-from-token";
         }
 
         #endregion

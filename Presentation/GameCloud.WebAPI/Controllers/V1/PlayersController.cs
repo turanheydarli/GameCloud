@@ -71,11 +71,11 @@ public class PlayersController : BaseController
         return Ok(attribute);
     }
 
-    [HttpPut("{username}/attributes/{collection}/{key}")]
+    
+    [HttpPut("{username}/attributes/{collection}")]
     public async Task<IActionResult> SetAttribute(
         string username,
         string collection,
-        string key,
         [FromBody] AttributeRequest request)
     {
         await _playerService.SetAttributeAsync(username, collection, request);

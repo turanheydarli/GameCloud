@@ -9,6 +9,7 @@ using GameCloud.Application.Features.Games.Requests;
 using GameCloud.Application.Features.ImageDocuments.Requests;
 using GameCloud.Domain.Dynamics;
 using GameCloud.Domain.Enums;
+using GameCloud.WebAPI.Filters.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -176,6 +177,7 @@ public class GamesController(
     }
 
     [Authorize(Policy = "OwnsGame")]
+    [RequireGameKey]
     [HttpPost("{gameId:guid}/functions/{functionId:guid}/test")]
     public async Task<IActionResult> TestFunction(Guid gameId, Guid functionId, [FromBody] ActionRequest request)
     {

@@ -6,5 +6,5 @@ public record PlayerResponse(
     Guid Id,
     AuthProvider AuthProvider,
     PlayerStatus Status,
-    string? PlayerId,
+    string? Username,
     Guid UserId);

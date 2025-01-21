@@ -1,20 +1,14 @@
 # k8s/base/kustomization.yaml
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   - namespace.yaml
   - api/deployment.yaml
   - api/service.yaml
   - api/ingress.yaml
-
-commonLabels:
-  app.kubernetes.io/part-of: gamecloud
-  app.kubernetes.io/managed-by: kustomize
-
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: gamecloud
+    includeSelectors: true
 namespace: gamecloud
-
-configMapGenerator:
-  - name: gamecloud-config
-    literals:
-      - ASPNETCORE_URLS=http://+:8080

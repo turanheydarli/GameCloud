@@ -4,22 +4,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gamecloud-api
-  labels:
-    app: gamecloud-api
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app: gamecloud-api
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      app.kubernetes.io/part-of: gamecloud
+      app.kubernetes.io/managed-by: kustomize
   template:
     metadata:
       labels:
         app: gamecloud-api
+        app.kubernetes.io/part-of: gamecloud
+        app.kubernetes.io/managed-by: kustomize
     spec:
       containers:
         - name: gamecloud-api
@@ -29,11 +25,11 @@ spec:
               name: http
           resources:
             requests:
-              cpu: "200m"
-              memory: "256Mi"
+              cpu: "100m"
+              memory: "128Mi"
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: "100m"
+              memory: "128Mi"
           env:
             - name: ASPNETCORE_ENVIRONMENT
               valueFrom:
@@ -42,40 +38,8 @@ spec:
                   key: ASPNETCORE_ENVIRONMENT
             - name: ASPNETCORE_URLS
               value: "http://+:8080"
-            - name: RABBITMQ_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: gamecloud-config
-                  key: RABBITMQ_HOST
-            - name: RABBITMQ_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: gamecloud-config
-                  key: RABBITMQ_PORT
-            - name: RABBITMQ_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: gamecloud-secrets
-                  key: RABBITMQ_USERNAME
-            - name: RABBITMQ_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: gamecloud-secrets
-                  key: RABBITMQ_PASSWORD
             - name: ConnectionStrings__GameCloud
               valueFrom:
                 secretKeyRef:
                   name: gamecloud-secrets
                   key: DB_CONNECTION_STRING
-          livenessProbe:
-            httpGet:
-              path: /health/live
-              port: http
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /health/ready
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10

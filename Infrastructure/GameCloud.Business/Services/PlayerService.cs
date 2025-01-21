@@ -110,6 +110,7 @@ public class PlayerService(
         player.CreatedAt = DateTime.UtcNow;
         player.UpdatedAt = DateTime.UtcNow;
         player.GameId = gameContext.GameId;
+        player.DisplayName = request.Username;
 
         player = await playerRepository.CreateAsync(player);
         return mapper.Map<PlayerResponse>(player);

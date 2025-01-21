@@ -44,17 +44,12 @@ jobs:
 
       - name: Update Kubernetes resources
         run: |
-          cd deploy/kubernetes/overlays/production
+          cd k8s/overlays/production
           kustomize edit set image ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}=${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
-
-      - name: Apply database migrations
-        run: |
-          kubectl create job --from=cronjob/migration migration-${{ env.IMAGE_TAG }} -n ${{ env.KUBE_NAMESPACE }} || true
-          kubectl wait --for=condition=complete job/migration-${{ env.IMAGE_TAG }} -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -k deploy/kubernetes/overlays/production
+          kubectl apply -k k8s/overlays/production
           kubectl rollout status deployment/${{ env.APP_NAME }} -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
 
       - name: Cleanup

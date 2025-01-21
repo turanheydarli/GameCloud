@@ -28,8 +28,7 @@ public class ActionService(
     INotificationService notificationService,
     IGameContext gameContext,
     IMapper mapper,
-    IEventPublisher eventPublisher,
-    ExecutionContextAccessor executionContextAccessor)
+    IExecutionContextAccessor executionContextAccessor)
     : IActionService
 {
     public async Task<ActionResponse> ExecuteActionAsync(
@@ -58,7 +57,7 @@ public class ActionService(
         {
             executionContextAccessor.SetContext(ActionExecutionContext.Function);
 
-            FunctionConfig functionConfig = await functionRepository.GetByActionTypeAsync(request.ActionType);
+            FunctionConfig functionConfig = await functionRepository.GetByActionTypeAsync(gameContext.GameId,request.ActionType);
 
             if (functionConfig == null)
             {

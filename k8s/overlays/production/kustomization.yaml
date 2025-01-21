@@ -5,24 +5,26 @@ kind: Kustomization
 namespace: gamecloud
 
 resources:
-  - ../../base
+- ../../base
 
-commonLabels:
-  environment: production
 
 images:
-  - name: cr.yandex/crpl3p256m938dtgp3lh/gamecloud.main
-    newTag: latest
+- name: cr.yandex/crpl3p256m938dtgp3lh/gamecloud.main
+  newTag: latest
+
 
 configMapGenerator:
   - name: gamecloud-config
-    behavior: merge
-    literals:
+    literals: 
       - ASPNETCORE_ENVIRONMENT=Production
-      - RABBITMQ_HOST=your-managed-rabbitmq-host
-      - RABBITMQ_PORT=5672
+#  - behavior: merge
+
 
 secretGenerator:
-  - name: gamecloud-secrets
-    envs:
-      - .env.prod
+- envs:
+  - .env.prod
+  name: gamecloud-secrets
+
+
+commonLabels:
+  environment: production

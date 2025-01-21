@@ -6,6 +6,9 @@ metadata:
   name: gamecloud-api
   labels:
     app: gamecloud-api
+  annotations:
+    cloud.yandex.com/load-balancer-type: "internal"
+    cloud.yandex.com/monitored: "true"
 spec:
   type: ClusterIP
   ports:
