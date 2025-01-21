@@ -6,7 +6,7 @@
 # dotenv files
 .env
 *.env
-.env.*
+.env.prod
 
 # User-specific files
 *.rsuser
