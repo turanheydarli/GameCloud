@@ -53,7 +53,7 @@ jobs:
       - name: Configure Yandex Cloud CLI
         run: |
           echo "${{ secrets.YC_SA_JSON_CREDENTIALS }}" > key.json
-          export PATH="/home/runner/yandex-cloud/bin:${PATH}"
+          export PATH=$PATH:~/yandex-cloud/bin
           yc config profile create sa-profile
           yc config set service-account-key key.json
           yc config set cloud-id ${{ secrets.YC_CLOUD_ID }}
