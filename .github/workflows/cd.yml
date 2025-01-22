@@ -52,7 +52,7 @@ jobs:
 
       - name: Configure Yandex Cloud CLI
         env:
-          YC_SERVICE_ACCOUNT_KEY_FILE: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+          YC_SERVICE_ACCOUNT_KEY_FILE: ${{ secrets.YC_K8S_JSON_CREDENTIALS }}
         run: |
           export PATH=$PATH:~/yandex-cloud/bin
           yc config profile create sa-profile || true
