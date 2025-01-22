@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using GameCloud.Domain.Entities;
+using GameCloud.Domain.Entities.Matchmaking;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 
@@ -40,6 +41,9 @@ public interface IGameRepository
 
 public interface IPlayerAttributeRepository
 {
+    Task<List<PlayerAttribute>> GetMatchingAttributesAsync(
+        Guid playerId, 
+        IEnumerable<AttributeCriteria> criteria);
     Task<PlayerAttribute?> GetAsync(string username, string collection, string key);
     Task<IEnumerable<PlayerAttribute>> GetCollectionAsync(string username, string collection);
     Task<PlayerAttribute> CreateAsync(PlayerAttribute attribute);

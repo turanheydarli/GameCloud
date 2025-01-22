@@ -1,4 +1,5 @@
 using GameCloud.Domain.Entities;
+using GameCloud.Domain.Entities.Matchmaking;
 using GameCloud.Persistence.Configurations;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,9 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<ImageVariant> ImageVariants { get; set; }
         public DbSet<GameActivity> GameActivities { get; set; }
         public DbSet<PlayerAttribute> Attributes { get; set; }
+        public DbSet<MatchmakingQueue> MatchmakingQueues { get; set; }
+        public DbSet<MatchTicket> MatchTickets { get; set; }
+        public DbSet<Match> Matches { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -31,8 +35,6 @@ namespace GameCloud.Persistence.Contexts
             modelBuilder.HasDefaultSchema("gc");
 
             base.OnModelCreating(modelBuilder);
-            
-            modelBuilder.HasPostgresExtension("jsonb");
 
             modelBuilder.ApplyConfiguration(new AppUserEntityConfiguration());
             modelBuilder.ApplyConfiguration(new AppRoleEntityConfiguration());

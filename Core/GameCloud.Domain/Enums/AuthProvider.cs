@@ -7,3 +7,4 @@ public enum AuthProvider
     Unity,
     Custom
 }
+

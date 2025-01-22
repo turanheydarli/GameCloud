@@ -1,4 +1,5 @@
 using GameCloud.Domain.Entities;
+using GameCloud.Domain.Entities.Matchmaking;
 using GameCloud.Domain.Repositories;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,22 @@ namespace GameCloud.Persistence.Repositories;
 
 public class PlayerAttributeRepository(GameCloudDbContext context) : IPlayerAttributeRepository
 {
+    public async Task<List<PlayerAttribute>> GetMatchingAttributesAsync(
+        Guid playerId,
+        IEnumerable<AttributeCriteria> criteria)
+    {
+        // 1) Flatten (Collection, Key) to a string
+        var colKeySet = criteria
+            .Select(c => c.Collection + "||" + c.Key)
+            .ToHashSet();
+
+        // 2) Query EF with a single "Contains" call
+        return await context.Attributes
+            .Where(a => a.PlayerId == playerId)
+            .Where(a => colKeySet.Contains(a.Collection + "||" + a.Key))
+            .ToListAsync();
+    }
+
     public async Task<PlayerAttribute?> GetAsync(string username, string collection, string key)
     {
         return await context.Attributes
