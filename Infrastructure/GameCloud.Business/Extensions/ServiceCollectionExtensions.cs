@@ -11,6 +11,7 @@ using GameCloud.Application.Features.Developers;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.ImageDocuments;
+using GameCloud.Application.Features.Matchmakers;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
 using GameCloud.Application.Features.Sessions;
@@ -62,7 +63,10 @@ public static class ServiceCollectionExtensions
             .AddScoped<IActionLogRepository, ActionLogRepository>()
             .AddScoped<IImageDocumentRepository, ImageDocumentRepository>()
             .AddScoped<IFunctionRepository, FunctionRepository>()
-            .AddScoped<INotificationRepository, NotificationRepository>();
+            .AddScoped<INotificationRepository, NotificationRepository>()        
+            .AddScoped<IMatchRepository, MatchRepository>()
+            .AddScoped<IMatchmakingQueueRepository, MatchmakingQueueRepository>()
+            .AddScoped<IMatchTicketRepository, MatchTicketRepository>();
     }
 
     private static IServiceCollection AddServices(this IServiceCollection services)
@@ -80,6 +84,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IActionService, ActionService>()
             .AddScoped<IUserService, UserService>()
             .AddScoped<IFunctionService, FunctionService>()
+            .AddScoped<IMatchmakingService, MatchmakingService>()
             .AddScoped<INotificationService, NotificationService>();
     }
 

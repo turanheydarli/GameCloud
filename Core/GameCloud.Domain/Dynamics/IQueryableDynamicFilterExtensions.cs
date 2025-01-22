@@ -6,60 +6,32 @@ namespace GameCloud.Domain.Dynamics;
 public static class IQueryableDynamicFilterExtensions
 {
     private static readonly IDictionary<string, string> Operators = new Dictionary<string, string>
-{
-    { "eq", "=" },
-    { "neq", "!=" },
-    { "lt", "<" },
-    { "lte", "<=" },
-    { "gt", ">" },
-    { "gte", ">=" },
-    { "isnull", "== null" },
-    { "isnotnull", "!= null" },
-    { "startswith", "StartsWith" },
-    { "endswith", "EndsWith" },
-    { "contains", "Contains" },
-    { "doesnotcontain", "Contains" },
-    { "jsonsearch", "JsonSearch" }
-};
-
-
-    public static IQueryable<T> ToDynamic<T>(
-        this IQueryable<T> query, DynamicRequest dynamic)
     {
-        if (dynamic.Filter is not null) query = Filter(query, dynamic.Filter);
-        if (dynamic.Sort is not null && dynamic.Sort.Any()) query = Sort(query, dynamic.Sort);
+        { "eq", "=" },
+        { "neq", "!=" },
+        { "lt", "<" },
+        { "lte", "<=" },
+        { "gt", ">" },
+        { "gte", ">=" },
+        { "isnull", "== null" },
+        { "isnotnull", "!= null" },
+        { "startswith", "StartsWith" },
+        { "endswith", "EndsWith" },
+        { "contains", "Contains" },
+        { "doesnotcontain", "Contains" },
+        // This one used to generate CAST(...).ILIKE. Now we do a case-insensitive .Contains(...) approach.
+        { "jsonsearch", "JsonSearch" }
+    };
+
+    public static IQueryable<T> ToDynamic<T>(this IQueryable<T> query, DynamicRequest dynamic)
+    {
+        if (dynamic.Filter is not null)
+            query = Filter(query, dynamic.Filter);
+
+        if (dynamic.Sort is not null && dynamic.Sort.Any())
+            query = Sort(query, dynamic.Sort);
+
         return query;
-    }
-
-    private static IQueryable<T> Filter_Old<T>(
-        IQueryable<T> queryable, Filter filter)
-    {
-        IList<Filter> filters = GetAllFilters(filter);
-    
-        object[] values = new object[filters.Count];
-        for (int i = 0; i < filters.Count; i++)
-        {
-            Filter f = filters[i];
-            if (f.Operator == "jsonsearch")
-            {
-                values[i] = $"{{\"search\": \"{f.Value}\"}}";
-            }
-            else if (DateTime.TryParse(f.Value, out DateTime dateTime))
-            {
-                values[i] = dateTime.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
-                    : dateTime.ToUniversalTime();
-            }
-            else
-            {
-                values[i] = f.Value;
-            }
-        }
-
-        string where = Transform(filter, filters);
-        queryable = queryable.Where(where, values);
-
-        return queryable;
     }
 
     private static IQueryable<T> Sort<T>(
@@ -70,38 +42,63 @@ public static class IQueryableDynamicFilterExtensions
             string ordering = string.Join(",", sort.Select(s => $"{s.Field} {s.Dir}"));
             return queryable.OrderBy(ordering);
         }
-
         return queryable;
     }
 
-    public static IList<Filter> GetAllFilters(Filter filter)
+    private static IQueryable<T> Filter<T>(
+        IQueryable<T> queryable, Filter filter)
     {
-        List<Filter> filters = new();
-        GetFilters(filter, filters);
-        return filters;
+        var filters = GetAllFilters(filter);
+
+        var values = new object[filters.Count];
+        for (int i = 0; i < filters.Count; i++)
+        {
+            var f = filters[i];
+            if (f.Operator == "jsonsearch")
+            {
+                // We store the search string for case-insensitive .Contains(...) check
+                values[i] = f.Value;
+            }
+            else if (DateTime.TryParse(f.Value, out DateTime dateTime))
+            {
+                values[i] = dateTime.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
+                    : dateTime.ToUniversalTime();
+            }
+            else
+            {
+                values[i] = f.Value;
+            }
+        }
+
+        var where = Transform(filter, filters);
+        if (!string.IsNullOrWhiteSpace(where))
+        {
+            queryable = queryable.Where(where, values);
+        }
+        return queryable;
     }
 
-    private static void GetFilters(Filter filter, IList<Filter> filters)
+    private static string Transform(Filter filter, IList<Filter> allFilters)
     {
-        filters.Add(filter);
-        if (filter.Filters is not null && filter.Filters.Any())
-            foreach (Filter item in filter.Filters)
-                GetFilters(item, filters);
-    }
-    private static string Transform(Filter filter, IList<Filter> filters)
-    {
-        int index = filters.IndexOf(filter);
+        int index = allFilters.IndexOf(filter);
         string comparison = Operators[filter.Operator];
-        StringBuilder where = new();
+        var where = new StringBuilder();
 
         if (!string.IsNullOrEmpty(filter.Value))
         {
             if (filter.Operator == "jsonsearch")
             {
-                where.Append($"(CAST({filter.Field} AS text) ILIKE '%' || @{index} || '%')");
+                // Use a dynamic-linq-friendly expression:
+                // "np(Field) != null && np(Field).ToLower().Contains(@index.ToLower())"
+                // np(...) is from System.Linq.Dynamic.Core to handle null-propagation.
+                // This ensures EF tries to translate a normal string .Contains(...) if the column is a string.
+                // If your column is JsonDocument or another type, it may do client eval. Adjust as needed.
+                where.Append($"(np({filter.Field}) != null && np({filter.Field}).ToLower().Contains(@{index}.ToLower()))");
             }
             else if (filter.Operator == "doesnotcontain")
             {
+                // e.g. "!np(Field).Contains(@index)"
                 where.Append($"(!np({filter.Field}).{comparison}(@{index}))");
             }
             else if (comparison == "StartsWith" ||
@@ -112,6 +109,7 @@ public static class IQueryableDynamicFilterExtensions
             }
             else
             {
+                // eq, neq, lt, lte, gt, gte
                 where.Append($"np({filter.Field}) {comparison} @{index}");
             }
         }
@@ -125,73 +123,40 @@ public static class IQueryableDynamicFilterExtensions
             var validFilters = filter.Filters.Where(f => f != null).ToList();
             if (validFilters.Any())
             {
-                string joinedFilters = string.Join($" {filter.Logic} ", validFilters.Select(f => Transform(f, filters)));
-                return where.Length > 0 
+                var joinedFilters = string.Join($" {filter.Logic} ", validFilters.Select(f => Transform(f, allFilters)));
+                return where.Length > 0
                     ? $"({where} {filter.Logic} ({joinedFilters}))"
                     : $"({joinedFilters})";
             }
         }
-        
-        Console.WriteLine($"Generated Query: {where.ToString()}");
-        foreach (var param in filters.Select((filter, i) => new { Index = i, Value = filter.Value }))
-        {
-            Console.WriteLine($"@{param.Index} = {param.Value}");
-        }
 
+        Console.WriteLine($"Generated Query: {where}");
+        foreach (var param in allFilters.Select((flt, i) => new { Index = i, Value = flt.Value }))
+            Console.WriteLine($"@{param.Index} = {param.Value}");
 
         return where.ToString();
     }
 
-
-private static IQueryable<T> Filter<T>(
-    IQueryable<T> queryable, Filter filter)
-{
-    IList<Filter> filters = GetAllFilters(filter);
-    
-    object[] values = new object[filters.Count];
-    for (int i = 0; i < filters.Count; i++)
+    public static IList<Filter> GetAllFilters(Filter filter)
     {
-        Filter f = filters[i];
-        if (f.Operator == "jsonsearch")
-        {
-            values[i] = f.Value;
-        }
-        else if (DateTime.TryParse(f.Value, out DateTime dateTime))
-        {
-            values[i] = dateTime.Kind == DateTimeKind.Unspecified 
-                ? DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
-                : dateTime.ToUniversalTime();
-        }
-        else
-        {
-            values[i] = f.Value;
-        }
+        var list = new List<Filter>();
+        GetFiltersRecursive(filter, list);
+        return list;
     }
 
-    string where = Transform(filter, filters);
-    if (!string.IsNullOrWhiteSpace(where))
+    private static void GetFiltersRecursive(Filter filter, IList<Filter> filters)
     {
-        queryable = queryable.Where(where, values);
+        filters.Add(filter);
+        if (filter.Filters is not null && filter.Filters.Any())
+        {
+            foreach (var item in filter.Filters)
+                GetFiltersRecursive(item, filters);
+        }
     }
-
-    return queryable;
-}
 
     public static IQueryable<T> ApplyDynamicRequest<T>(
-        this IQueryable<T> query,
-        DynamicRequest request)
+        this IQueryable<T> query, DynamicRequest request)
     {
         return query.ToDynamic(request);
-    }
-    
-    private static object NormalizeValue(string value)
-    {
-        if (DateTime.TryParse(value, out DateTime dateTime))
-        {
-            return dateTime.Kind == DateTimeKind.Unspecified 
-                ? DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
-                : dateTime.ToUniversalTime();
-        }
-        return value;
     }
 }
