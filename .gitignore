@@ -15,6 +15,9 @@
 *.userosscache
 *.sln.docstates
 
+# k8s/overlays/production
+
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
