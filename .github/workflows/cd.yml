@@ -63,9 +63,9 @@ jobs:
 
       - name: Verify Kubernetes connection
         run: |
-          kubectl cluster-info
+          kubectl version
           kubectl get nodes
-
+      
       - name: Update Kubernetes resources
         run: |
           cd k8s/overlays/production

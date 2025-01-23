@@ -13,7 +13,7 @@ public record MatchQueueRequest(
 
 public record OfflineMatchRequest(
     string? QueueName,
-    JsonDocument? Criteria 
+    MatchingCriteria? Criteria 
 );
 
 public record FindMatchRequest(

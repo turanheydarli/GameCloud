@@ -8,7 +8,6 @@ using GameCloud.Application.Features.Matchmakers.Responses;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Entities.Matchmaking;
 using GameCloud.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace GameCloud.Business.Services;
 
@@ -39,13 +38,10 @@ public class MatchmakingService : IMatchmakingService
 
     #region Offline / Single-Player
 
-    // A new method to create a match with an "offline" or "AI" opponent.
-    // The client passes e.g. an "OfflineMatchRequest" with any needed filtering.
-    // The system picks an opponent, forms the match immediately, no second ticket.
     public async Task<MatchResponse> CreateOfflineMatchAsync(OfflineMatchRequest request, Guid playerId)
     {
         var attacker = playerId;
-        var offlineOpponentId = await FindOfflineOpponentAsync(request.Criteria); 
+        var offlineOpponentId = await FindOfflineOpponentAsync(request.Criteria);
         if (offlineOpponentId == null) throw new ApplicationException("No valid offline opponent found.");
 
         var match = new Match
@@ -61,21 +57,9 @@ public class MatchmakingService : IMatchmakingService
         return _mapper.Map<MatchResponse>(match);
     }
 
-    // Example: find a random offline user who meets some criteria
-    private async Task<Guid?> FindOfflineOpponentAsync(JsonDocument? criteria)
+    public async Task<Guid?> FindOfflineOpponentAsync(MatchingCriteria? criteria)
     {
-        // Pseudocode: do a DB query for any user that is offline, or can be attacked
-        var possiblePlayers = await SomeCustomPlayerQueryAsync(criteria);
-        if (!possiblePlayers.Any()) return null;
-        var random = new Random();
-        var pick = possiblePlayers[random.Next(possiblePlayers.Count)];
-        return pick.Id;
-    }
-
-    private Task<List<Player>> SomeCustomPlayerQueryAsync(JsonDocument? criteria)
-    {
-        // Implementation depends on your schema. This is just a placeholder:
-        return Task.FromResult(new List<Player>());
+        throw new NotImplementedException();
     }
 
     #endregion
@@ -123,7 +107,8 @@ public class MatchmakingService : IMatchmakingService
         if (queue != null) await _queueRepository.DeleteAsync(queue);
     }
 
-    public async Task<MatchmakingResponse?> GetQueueAsync(Guid? queueId = null, Guid? gameId = null, string? queueName = null)
+    public async Task<MatchmakingResponse?> GetQueueAsync(Guid? queueId = null, Guid? gameId = null,
+        string? queueName = null)
     {
         MatchmakingQueue? queue = null;
         if (queueId.HasValue) queue = await _queueRepository.GetByIdAsync(queueId.Value);
@@ -139,7 +124,8 @@ public class MatchmakingService : IMatchmakingService
 
     public async Task<MatchResponse> FindOrCreateMatchAsync(FindMatchRequest request, Guid playerId)
     {
-        var ticket = await EnqueuePlayerAsync(_gameContext.GameId, playerId, request.QueueName, request.CustomProperties);
+        var ticket =
+            await EnqueuePlayerAsync(_gameContext.GameId, playerId, request.QueueName, request.CustomProperties);
         await ProcessMatchmakingAsync();
         var updatedTicket = await _ticketRepository.GetByIdAsync(ticket.Id);
         if (updatedTicket?.MatchId != null)
@@ -147,10 +133,12 @@ public class MatchmakingService : IMatchmakingService
             var match = await _matchRepository.GetByIdAsync(updatedTicket.MatchId.Value);
             if (match != null) return _mapper.Map<MatchResponse>(match);
         }
+
         throw new ApplicationException("No match formed yet. Try again or poll status.");
     }
 
-    public async Task<MatchTicketResponse> EnqueuePlayerAsync(Guid gameId, Guid playerId, string queueName, JsonDocument? customProperties = null)
+    public async Task<MatchTicketResponse> EnqueuePlayerAsync(Guid gameId, Guid playerId, string queueName,
+        JsonDocument? customProperties = null)
     {
         var queue = await _queueRepository.GetByGameAndNameAsync(gameId, queueName);
         if (queue == null) throw new NotFoundException("MatchmakingQueue", $"{gameId}/{queueName}");
@@ -279,6 +267,7 @@ public class MatchmakingService : IMatchmakingService
                     t.Status = TicketStatus.Matching;
                     t.UpdatedAt = DateTime.UtcNow;
                 }
+
                 await _ticketRepository.UpdateRangeAsync(group);
 
                 var match = new Match
@@ -298,11 +287,13 @@ public class MatchmakingService : IMatchmakingService
                     t.Status = TicketStatus.MatchFound;
                     t.UpdatedAt = DateTime.UtcNow;
                 }
+
                 await _ticketRepository.UpdateRangeAsync(group);
 
                 createdMatches.Add(match);
             }
         }
+
         return createdMatches.Select(m => _mapper.Map<MatchResponse>(m)).ToList();
     }
 
@@ -318,15 +309,18 @@ public class MatchmakingService : IMatchmakingService
         foreach (var anchor in tickets)
         {
             if (used.Contains(anchor.PlayerId)) continue;
-            var anchorAttrs = await _playerAttributeRepository.GetMatchingAttributesAsync(anchor.PlayerId, c.Attributes);
+            var anchorAttrs =
+                await _playerAttributeRepository.GetMatchingAttributesAsync(anchor.PlayerId, c.Attributes);
             var possible = new List<(MatchTicket Ticket, double Score)>();
 
             foreach (var candidate in tickets.Where(x => x.Id != anchor.Id && !used.Contains(x.PlayerId)))
             {
-                var candAttrs = await _playerAttributeRepository.GetMatchingAttributesAsync(candidate.PlayerId, c.Attributes);
+                var candAttrs =
+                    await _playerAttributeRepository.GetMatchingAttributesAsync(candidate.PlayerId, c.Attributes);
                 var score = CalculateScore(anchorAttrs, candAttrs, c.Attributes, anchor.CreatedAt);
                 if (score > 0) possible.Add((candidate, score));
             }
+
             if (possible.Count >= q.MinPlayers - 1)
             {
                 var best = possible.OrderByDescending(x => x.Score)
@@ -339,6 +333,7 @@ public class MatchmakingService : IMatchmakingService
                 if (group.Count >= q.MinPlayers) return group;
             }
         }
+
         if (tickets.Count >= q.MinPlayers && used.Count == 0)
             return tickets.Take(Math.Min(q.MaxPlayers, tickets.Count)).ToList();
 
@@ -356,6 +351,7 @@ public class MatchmakingService : IMatchmakingService
             if (a == null || cd == null) continue;
             total += ScoreCriterion(a.Value, cd.Value, c, anchorCreated);
         }
+
         return total / max;
     }
 
@@ -388,6 +384,7 @@ public class MatchmakingService : IMatchmakingService
             if (op == "startswith" && candVal.StartsWith(anchorVal)) return 100;
             if (op == "endswith" && candVal.EndsWith(anchorVal)) return 100;
         }
+
         return 0;
     }
 
