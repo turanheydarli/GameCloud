@@ -12,7 +12,7 @@ spec:
       http:
         paths:
           - path: /api
-            pathType: Prefix     # Changed to Prefix since you want to match /api/*
+            pathType: Prefix  
             backend:
               service:
                 name: gamecloud-main

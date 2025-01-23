@@ -1,10 +1,7 @@
-using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Matchmakers;
 using GameCloud.Application.Features.Matchmakers.Requests;
 using GameCloud.Application.Features.Matchmakers.Responses;
 using GameCloud.Application.Features.Players;
-using GameCloud.Application.Features.Sessions;
-using GameCloud.Application.Features.Games;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -16,24 +13,11 @@ namespace GameCloud.WebAPI.Controllers.V1
     [Route("api/v1/[controller]")]
     [ApiController]
     [Authorize(Policy = "HasGameKey")]
-    public class MatchmakingController : BaseController
+    public class MatchmakingController(
+        IMatchmakingService matchmakingService,
+        IPlayerService playerService)
+        : BaseController
     {
-        private readonly ISessionService _sessionService;
-        private readonly IMatchmakingService _matchmakingService;
-        private readonly IGameContext _gameContext;
-        private readonly IPlayerService _playerService;
-
-        public MatchmakingController(
-            ISessionService sessionService,
-            IMatchmakingService matchmakingService,
-            IGameContext gameContext,
-            IPlayerService playerService)
-        {
-            _sessionService = sessionService;
-            _matchmakingService = matchmakingService;
-            _gameContext = gameContext;
-            _playerService = playerService;
-        }
 
         #region Queue Management
 
@@ -41,7 +25,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType(typeof(MatchmakingResponse), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> CreateQueue([FromBody] MatchQueueRequest request)
         {
-            var response = await _matchmakingService.CreateQueueAsync(request);
+            var response = await matchmakingService.CreateQueueAsync(request);
             return Ok(response);
         }
 
@@ -50,7 +34,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> GetQueue([FromRoute] Guid queueId)
         {
-            var queue = await _matchmakingService.GetQueueAsync(queueId: queueId);
+            var queue = await matchmakingService.GetQueueAsync(queueId: queueId);
             return Ok(queue);
         }
 
@@ -58,7 +42,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType(typeof(MatchmakingResponse), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateQueue([FromRoute] Guid queueId, [FromBody] MatchQueueRequest request)
         {
-            var updated = await _matchmakingService.UpdateQueueAsync(queueId, request);
+            var updated = await matchmakingService.UpdateQueueAsync(queueId, request);
             return Ok(updated);
         }
 
@@ -66,7 +50,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType((int)HttpStatusCode.NoContent)]
         public async Task<IActionResult> DeleteQueue([FromRoute] Guid queueId)
         {
-            await _matchmakingService.DeleteQueueAsync(queueId);
+            await matchmakingService.DeleteQueueAsync(queueId);
             return NoContent();
         }
 
@@ -79,8 +63,8 @@ namespace GameCloud.WebAPI.Controllers.V1
         public async Task<IActionResult> FindOrCreateMatch([FromBody] FindMatchRequest request)
         {
             var userId = GetUserIdFromClaims();
-            var player = await _playerService.GetByUserIdAsync(userId);
-            var match = await _matchmakingService.FindOrCreateMatchAsync(request, player.Id);
+            var player = await playerService.GetByUserIdAsync(userId);
+            var match = await matchmakingService.FindOrCreateMatchAsync(request, player.Id);
             return Ok(match);
         }
 
@@ -96,7 +80,7 @@ namespace GameCloud.WebAPI.Controllers.V1
             // that includes { GameId, PlayerId, QueueName, CustomProperties } 
             // or reuse direct parameters.
 
-            var ticket = await _matchmakingService.EnqueuePlayerAsync(
+            var ticket = await matchmakingService.EnqueuePlayerAsync(
                 request.GameId,
                 request.PlayerId,
                 request.QueueName,
@@ -110,7 +94,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType((int)HttpStatusCode.NoContent)]
         public async Task<IActionResult> CancelTicket([FromRoute] Guid ticketId)
         {
-            await _matchmakingService.CancelTicketAsync(ticketId);
+            await matchmakingService.CancelTicketAsync(ticketId);
             return NoContent();
         }
 
@@ -120,7 +104,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> GetTicket([FromRoute] Guid ticketId)
         {
-            var ticket = await _matchmakingService.GetTicketAsync(ticketId);
+            var ticket = await matchmakingService.GetTicketAsync(ticketId);
             if (ticket == null)
                 return NotFound();
 
@@ -136,7 +120,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType((int)HttpStatusCode.NoContent)]
         public async Task<IActionResult> AcceptMatch([FromRoute] Guid ticketId)
         {
-            await _matchmakingService.AcceptMatchAsync(ticketId);
+            await matchmakingService.AcceptMatchAsync(ticketId);
             return NoContent();
         }
 
@@ -145,7 +129,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType((int)HttpStatusCode.NoContent)]
         public async Task<IActionResult> DeclineMatch([FromRoute] Guid ticketId)
         {
-            await _matchmakingService.DeclineMatchAsync(ticketId);
+            await matchmakingService.DeclineMatchAsync(ticketId);
             return NoContent();
         }
 
@@ -159,7 +143,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> GetMatch([FromRoute] Guid matchId)
         {
-            var match = await _matchmakingService.GetMatchAsync(matchId);
+            var match = await matchmakingService.GetMatchAsync(matchId);
             if (match == null)
                 return NotFound();
 
@@ -173,35 +157,31 @@ namespace GameCloud.WebAPI.Controllers.V1
             [FromBody] MatchState request)
         {
             // e.g. { newState = "InProgress" }
-            var updated = await _matchmakingService.UpdateMatchStateAsync(matchId, request);
+            var updated = await matchmakingService.UpdateMatchStateAsync(matchId, request);
             return Ok(updated);
         }
 
-        // DELETE /api/v1/matchmaking/matches/{matchId}
         [HttpDelete("matches/{matchId:guid}")]
-        [ProducesResponseType((int)HttpStatusCode.NoContent)]
         public async Task<IActionResult> CancelMatch([FromRoute] Guid matchId)
         {
-            await _matchmakingService.CancelMatchAsync(matchId);
+            await matchmakingService.CancelMatchAsync(matchId);
             return NoContent();
         }
 
-        // POST /api/v1/matchmaking/matches/process
         [HttpPost("matches/process")]
         [ProducesResponseType(typeof(List<MatchResponse>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> ProcessMatchmaking([FromQuery] Guid? queueId = null)
         {
-            var matches = await _matchmakingService.ProcessMatchmakingAsync(queueId);
+            var matches = await matchmakingService.ProcessMatchmakingAsync(queueId);
             return Ok(matches);
         }
 
-        // GET /api/v1/matchmaking/tickets/{ticketId}/match
         [HttpGet("tickets/{ticketId:guid}/match")]
         [ProducesResponseType(typeof(MatchResponse), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> CheckMatchStatus([FromRoute] Guid ticketId)
         {
-            var match = await _matchmakingService.CheckMatchStatusAsync(ticketId);
-            return Ok(match); // could be null; handle accordingly
+            var match = await matchmakingService.CheckMatchStatusAsync(ticketId);
+            return Ok(match); 
         }
 
         #endregion
