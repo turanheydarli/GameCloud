@@ -14,11 +14,11 @@ namespace GameCloud.WebAPI.Controllers.V1
     [Route("api/v1/[controller]")]
     [ApiController]
     [Authorize(Policy = "HasGameKey")]
-    public class LeaderboardController(ILeaderboardService leaderboardService) : BaseController
+    public class LeaderboardsController(ILeaderboardService leaderboardService) : BaseController
     {
         #region Leaderboard Management
 
-        [HttpPost("leaderboards")]
+        [HttpPost]
         [ProducesResponseType(typeof(LeaderboardResponse), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> CreateLeaderboard([FromBody] LeaderboardRequest request)
         {
@@ -26,7 +26,7 @@ namespace GameCloud.WebAPI.Controllers.V1
             return Ok(created);
         }
 
-        [HttpGet("leaderboards/{leaderboardId:guid}")]
+        [HttpGet("{leaderboardId:guid}")]
         [ProducesResponseType(typeof(LeaderboardResponse), (int)HttpStatusCode.OK)]
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> GetLeaderboard([FromRoute] Guid leaderboardId)
@@ -38,7 +38,7 @@ namespace GameCloud.WebAPI.Controllers.V1
             return Ok(leaderboard);
         }
 
-        [HttpPut("leaderboards/{leaderboardId:guid}")]
+        [HttpPut("{leaderboardId:guid}")]
         [ProducesResponseType(typeof(LeaderboardResponse), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateLeaderboard(
             [FromRoute] Guid leaderboardId,
@@ -48,8 +48,7 @@ namespace GameCloud.WebAPI.Controllers.V1
             return Ok(updated);
         }
 
-        // DELETE /api/v1/leaderboard/leaderboards/{leaderboardId}
-        [HttpDelete("leaderboards/{leaderboardId:guid}")]
+        [HttpDelete("{leaderboardId:guid}")]
         [ProducesResponseType((int)HttpStatusCode.NoContent)]
         public async Task<IActionResult> DeleteLeaderboard([FromRoute] Guid leaderboardId)
         {
@@ -57,8 +56,7 @@ namespace GameCloud.WebAPI.Controllers.V1
             return NoContent();
         }
 
-        // GET /api/v1/leaderboard/leaderboards (paged/dynamic)
-        [HttpGet("leaderboards")]
+        [HttpGet]
         [ProducesResponseType(typeof(PageableListResponse<LeaderboardResponse>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> GetLeaderboards([FromQuery] DynamicRequest request)
         {
