@@ -32,7 +32,7 @@ jobs:
       - name: Login to Yandex Cloud Container Registry
         uses: yc-actions/yc-cr-login@v1
         with:
-          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+          yc-sa-json-credentials: ${{ secrets.YC_K8S_JSON_CREDENTIALS }}
 
       - name: Build and push
         run: |
@@ -50,16 +50,16 @@ jobs:
           export PATH="/home/runner/yandex-cloud/bin:${PATH}"
           source "/home/runner/.bashrc"
 
-      - name: Configure Yandex Cloud CLI and get cluster credentials
+      - name: Configure Yandex Cloud CLI
         env:
-          YC_TOKEN: ${{ secrets.YC_IAM_TOKEN }}
+          YC_SERVICE_ACCOUNT_KEY_FILE: ${{ secrets.YC_K8S_JSON_CREDENTIALS }}
         run: |
           export PATH=$PATH:~/yandex-cloud/bin
-          yc config profile create default || true
-          yc config set token $YC_TOKEN
+          yc config profile create sa-profile || true
+          yc config set service-account-key <(echo "$YC_SERVICE_ACCOUNT_KEY_FILE")
           yc config set cloud-id ${{ secrets.YC_CLOUD_ID }}
           yc config set folder-id ${{ secrets.YC_FOLDER_ID }}
-          yc managed-kubernetes cluster get-credentials ${{ secrets.YC_CLUSTER_ID }} --external --force
+          yc managed-kubernetes cluster get-credentials ${{ secrets.YC_CLUSTER_ID }} --external
 
       - name: Create .env.prod from secrets
         run: |
@@ -73,7 +73,8 @@ jobs:
           echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> k8s/overlays/production/.env.prod
 
           echo "DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }}" >> k8s/overlays/production/.env.prod
-
+      
+      
       - name: Update Kubernetes resources
         run: |
           cd k8s/overlays/production
