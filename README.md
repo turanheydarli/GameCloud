@@ -13,9 +13,7 @@ The primary goal of GameCloud is to empower game developers with the tools they 
 - **Comprehensive Entity Model**: The backend provides a set of core entities and relationships for managing games, sessions, players, and game states:
   - `Developer`: Manages games, configurations, and cloud integrations. 
   - `Game`: Contains metadata, rules, limits, and references associated projects.
-  - `FirebaseProject`: Links games to Firebase for analytics and notifications.
   - `Session`: Represents active matches with participants and current state.
-  - `GameState`: Tracks the current and historical states of a game session.
   - `Player`: Manages player roles, scores, and interactions within a session.
   - `User`: Represents a platform-wide user with notification subscriptions.
 
@@ -27,13 +25,13 @@ The primary goal of GameCloud is to empower game developers with the tools they 
 
 To begin using GameCloud for your game, follow these steps:
 
-1. Register for a GameCloud developer account at [gamecloud.io](https://cloud.playables.studio).
+1. Register for a GameCloud developer account at [cloud.playables.studio](https://cloud.playables.studio).
 2. Create a new game project and configure your preferred cloud provider.
 3. Define your game rules, session flow, and custom function endpoints. 
 4. Integrate the GameCloud client SDK into your game app.
 5. Deploy your custom functions and start running matches!
 
-For more details and API references, check out the [official documentation](https://cloud.playables.studio).
+For more details and API references, check out the [official documentation](https://docs.cloud.playables.studio).
 
 ## License
 
