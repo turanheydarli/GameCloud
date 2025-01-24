@@ -7,7 +7,20 @@ namespace GameCloud.Persistence.Repositories;
 
 public class GameKeyRepository(GameCloudDbContext context) : IGameKeyRepository
 {
-    private DbSet<GameKey> GameKeys => context.Set<GameKey>();
+    private DbSet<GameKey?> GameKeys => context.Set<GameKey>();
+
+    public async Task<GameKey> CreateAsync(GameKey gameKey)
+    {
+        context.Entry(gameKey).State = EntityState.Added;
+        await context.SaveChangesAsync();
+
+        return gameKey;
+    }
+
+    public async Task<GameKey?> GetDefaultByGameId(Guid gameId)
+    {
+        return await GameKeys.FirstOrDefaultAsync(gk => gk.GameId == gameId && gk.IsDefault);
+    }
 
     public async Task<GameKey> GetByApiKeyAsync(string gameKey)
     {

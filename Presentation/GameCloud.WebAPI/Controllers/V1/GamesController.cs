@@ -111,6 +111,13 @@ public class GamesController(
     #region Game Keys
 
     [Authorize(Policy = "OwnsGame")]
+    [HttpGet("{gameId:guid}/keys/default")]
+    public async Task<IActionResult> GetDefaultKey([FromRoute] Guid gameId)
+    {
+        return Ok(await gameService.GetOrCreateDefaultGameKey(gameId));
+    }
+
+    [Authorize(Policy = "OwnsGame")]
     [HttpGet("{gameId:guid}/keys")]
     public async Task<IActionResult> GetKeys([FromRoute] Guid gameId, [FromQuery] PageableRequest request)
     {

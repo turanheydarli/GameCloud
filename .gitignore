@@ -16,6 +16,7 @@
 *.sln.docstates
 
 # k8s/overlays/production
+k8s/overlays/production/.env.prod
 
 
 # User-specific files (MonoDevelop/Xamarin Studio)

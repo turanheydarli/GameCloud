@@ -11,7 +11,10 @@ public class GameKeyEntityConfiguration : IEntityTypeConfiguration<GameKey>
         builder.HasOne(g => g.Game)
             .WithMany(d => d.GameKeys)
             .HasForeignKey(g => g.GameId);
-        
+
+        builder.HasIndex(p => p.ApiKey)
+            .IsUnique();
+
         builder.HasKey(p => p.Id);
     }
 }
