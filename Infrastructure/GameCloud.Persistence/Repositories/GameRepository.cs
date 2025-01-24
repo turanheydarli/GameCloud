@@ -50,7 +50,7 @@ public class GameRepository(GameCloudDbContext context) : IGameRepository
     {
         IQueryable<GameKey> queryable = context.Set<GameKey>();
 
-        queryable = queryable.Where(k => k.GameId == gameId);
+        queryable = queryable.Where(k => k.GameId == gameId && !k.IsDefault);
 
         return await queryable.ToPaginateAsync(index, size, 0);
     }

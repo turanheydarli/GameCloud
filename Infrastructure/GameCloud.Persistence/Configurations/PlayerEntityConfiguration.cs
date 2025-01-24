@@ -9,5 +9,7 @@ public class PlayerEntityConfiguration : IEntityTypeConfiguration<Player>
     public void Configure(EntityTypeBuilder<Player> builder)
     {
         builder.HasKey(p => p.Id);
+
+        builder.HasIndex(p => p.Username).IsUnique();
     }
 }

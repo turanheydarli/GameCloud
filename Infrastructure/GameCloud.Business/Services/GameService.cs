@@ -82,13 +82,44 @@ public class GameService(
             GameId = gameId,
             ApiKey = $"{Guid.NewGuid()}".Split("-")[0],
             Status = GameKeyStatus.Active,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDefault = false
         };
 
         game.GameKeys = new List<GameKey> { gameKey };
         await gameRepository.UpdateAsync(game);
 
         return mapper.Map<GameKeyResponse>(gameKey);
+    }
+
+    public async Task<GameKeyResponse> GetOrCreateDefaultGameKey(Guid gameId)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId);
+
+        if (game is null)
+        {
+            throw new NotFoundException("Game", gameId);
+        }
+
+        var defaultGameKey = await gameKeyRepository.GetDefaultByGameId(gameId);
+
+        if (defaultGameKey is null)
+        {
+            var gameKey = new GameKey
+            {
+                GameId = gameId,
+                ApiKey = $"{Guid.NewGuid()}".Split("-")[0],
+                Status = GameKeyStatus.Active,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                IsDefault = true
+            };
+
+            defaultGameKey = await gameKeyRepository.CreateAsync(gameKey);
+        }
+
+        return mapper.Map<GameKeyResponse>(defaultGameKey);
     }
 
     public async Task<ImageResponse> SetGameImage(Guid gameId, ImageUploadRequest request)
@@ -210,6 +241,11 @@ public class GameService(
         if (gameKey is null)
         {
             throw new NotFoundException("GameKey", gameId);
+        }
+
+        if (gameKey is { IsDefault: true })
+        {
+            throw new ApplicationException("Default game key cannot be revoked");
         }
 
         await gameKeyRepository.RevokeAsync(gameKey);

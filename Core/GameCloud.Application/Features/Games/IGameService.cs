@@ -14,6 +14,7 @@ public interface IGameService
     Task<PageableListResponse<PlayerResponse>> GetAllPlayersAsync(Guid gameId, PageableRequest request);
     Task<GameResponse> CreateGameAsync(GameRequest request, Guid userId);
     Task<GameKeyResponse> CreateGameKey(Guid gameId);
+    Task<GameKeyResponse> GetOrCreateDefaultGameKey(Guid gameId);
     Task<ImageResponse> SetGameImage(Guid gameId, ImageUploadRequest request);
     Task<ImageResponse> GetImageDetails(Guid gameId);
     Task<GameResponse> GetById(Guid gameId);
