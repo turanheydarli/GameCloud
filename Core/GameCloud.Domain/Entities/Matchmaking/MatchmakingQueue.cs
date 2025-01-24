@@ -6,12 +6,17 @@ public class MatchmakingQueue : BaseEntity
 {
     public Guid GameId { get; set; }
     public string Name { get; set; }
+    public string Description { get; set; }
+    public bool IsEnabled { get; set; }
 
     public int MinPlayers { get; set; }
     public int MaxPlayers { get; set; }
     public TimeSpan TicketTTL { get; set; }
+    public TimeSpan? TurnTimeout { get; set; }
+    public TimeSpan? MatchTimeout { get; set; }
 
     public JsonDocument Criteria { get; set; }
+    public JsonDocument Rules { get; set; }
 
     public virtual Game Game { get; set; }
 }
@@ -35,11 +40,11 @@ public class MatchTicket : BaseEntity
     public string QueueName { get; set; }
     public TicketStatus Status { get; set; }
 
-    public JsonDocument CustomProperties { get; set; }
+    public JsonDocument MatchCriteria { get; set; }
+    public JsonDocument Properties { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
-
     public Guid? MatchId { get; set; }
 
     public virtual Player Player { get; set; }
@@ -53,13 +58,32 @@ public class Match : BaseEntity
     public MatchState State { get; set; }
 
     public List<Guid> PlayerIds { get; set; }
+    public Guid? CurrentPlayerId { get; set; }
+    public JsonDocument PlayerStates { get; set; }
+    public JsonDocument MatchState { get; set; }
+    public JsonDocument TurnHistory { get; set; }
 
-    public JsonDocument MatchData { get; set; }
-
+    // Timing
     public DateTime CreatedAt { get; set; }
     public DateTime? StartedAt { get; set; }
+    public DateTime? LastActionAt { get; set; }
+    public DateTime? NextActionDeadline { get; set; }
+    public DateTime? CompletedAt { get; set; }
 
     public virtual ICollection<MatchTicket> Tickets { get; set; }
+    public virtual ICollection<MatchAction> Actions { get; set; }
+}
+
+public class MatchAction : BaseEntity
+{
+    public Guid MatchId { get; set; }
+    public Guid PlayerId { get; set; }
+    public DateTime Timestamp { get; set; }
+    public string ActionType { get; set; }
+    public JsonDocument ActionData { get; set; }
+
+    public virtual Match Match { get; set; }
+    public virtual Player Player { get; set; }
 }
 
 public enum TicketStatus

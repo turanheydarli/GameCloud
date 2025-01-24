@@ -8,7 +8,7 @@ POD_NAME := gamecloud-main-65cd865ff9-f9g6c
 
 run:
 	@echo "Starting application in default mode..."
-	dotnet run --project $(API_PROJ)
+	ASPNETCORE_ENVIRONMENT=Development dotnet run --project $(API_PROJ) --launch-profile https
 
 run-debug:
 	@echo "Starting application in debug mode..."
