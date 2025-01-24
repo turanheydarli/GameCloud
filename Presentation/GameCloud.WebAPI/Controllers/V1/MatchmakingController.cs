@@ -18,7 +18,6 @@ namespace GameCloud.WebAPI.Controllers.V1
         IPlayerService playerService)
         : BaseController
     {
-
         #region Queue Management
 
         [HttpPost("queues")]
@@ -64,7 +63,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         {
             var userId = GetUserIdFromClaims();
             var player = await playerService.GetByUserIdAsync(userId);
-            var match = await matchmakingService.FindOrCreateMatchAsync(request, player.Id);
+            var match = await matchmakingService.FindMatchAsync(request, player.Id);
             return Ok(match);
         }
 
@@ -80,13 +79,14 @@ namespace GameCloud.WebAPI.Controllers.V1
             // that includes { GameId, PlayerId, QueueName, CustomProperties } 
             // or reuse direct parameters.
 
-            var ticket = await matchmakingService.EnqueuePlayerAsync(
-                request.GameId,
-                request.PlayerId,
-                request.QueueName,
-                request.CustomProperties);
+            // var ticket = await matchmakingService.EnqueuePlayerAsync(
+            //     request.GameId,
+            //     request.PlayerId,
+            //     request.QueueName,
+            //     request.CustomProperties);
 
-            return Ok(ticket);
+            // return Ok(ticket);
+            return Ok();
         }
 
         // DELETE /api/v1/matchmaking/tickets/{ticketId}
@@ -157,7 +157,7 @@ namespace GameCloud.WebAPI.Controllers.V1
             [FromBody] MatchState request)
         {
             // e.g. { newState = "InProgress" }
-            var updated = await matchmakingService.UpdateMatchStateAsync(matchId, request);
+            var updated = await matchmakingService.UpdateMatchStateAsync(matchId, null, null);
             return Ok(updated);
         }
 
@@ -181,7 +181,7 @@ namespace GameCloud.WebAPI.Controllers.V1
         public async Task<IActionResult> CheckMatchStatus([FromRoute] Guid ticketId)
         {
             var match = await matchmakingService.CheckMatchStatusAsync(ticketId);
-            return Ok(match); 
+            return Ok(match);
         }
 
         #endregion
