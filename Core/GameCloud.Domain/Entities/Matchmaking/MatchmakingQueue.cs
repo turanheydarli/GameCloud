@@ -14,11 +14,26 @@ public class MatchmakingQueue : BaseEntity
     public TimeSpan TicketTTL { get; set; }
     public TimeSpan? TurnTimeout { get; set; }
     public TimeSpan? MatchTimeout { get; set; }
-
-    public JsonDocument Criteria { get; set; }
     public JsonDocument Rules { get; set; }
 
     public virtual Game Game { get; set; }
+
+    public Guid? MatchmakerFunctionId {get;set;}
+    public virtual FunctionConfig? MatchmakerFunction {get;set;}
+
+    public bool UseCustomMatchmaker { get; set; } = false;  
+    
+    public QueueType QueueType { get; set; } = QueueType.TurnBased;
+    
+    public virtual ICollection<MatchTicket> Tickets { get; set; }
+    public virtual ICollection<MatchAction> Actions { get; set; }
+}
+
+public enum QueueType
+{
+    TurnBased,      // Chess, Tic-tac-toe
+    Simultaneous,   // Tetris, Racing
+    Asynchronous    // Dice Dreams, Mob Control
 }
 
 public record MatchingCriteria(List<AttributeCriteria> Attributes);
@@ -39,10 +54,7 @@ public class MatchTicket : BaseEntity
     public Guid PlayerId { get; set; }
     public string QueueName { get; set; }
     public TicketStatus Status { get; set; }
-
-    public JsonDocument MatchCriteria { get; set; }
     public JsonDocument Properties { get; set; }
-
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
     public Guid? MatchId { get; set; }
@@ -63,8 +75,8 @@ public class Match : BaseEntity
     public JsonDocument MatchState { get; set; }
     public JsonDocument TurnHistory { get; set; }
 
-    // Timing
-    public DateTime CreatedAt { get; set; }
+    public TimeSpan? MatchTimeout { get; set; }
+    public TimeSpan? TurnTimeout { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? LastActionAt { get; set; }
     public DateTime? NextActionDeadline { get; set; }

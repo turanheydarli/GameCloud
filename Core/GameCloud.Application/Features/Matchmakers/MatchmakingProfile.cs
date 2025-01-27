@@ -13,13 +13,10 @@ public class MatchmakingProfile : Profile
         CreateMap<MatchmakingQueue, MatchmakingResponse>();
         
         CreateMap<MatchTicket, MatchTicketResponse>();
+        CreateMap<MatchAction, MatchActionResponse>();
 
         CreateMap<Match, MatchResponse>();
 
-        CreateMap<MatchQueueRequest, MatchmakingQueue>()
-            .ForMember(dest => dest.Criteria, opt =>
-                opt.MapFrom(src =>
-                    JsonSerializer.SerializeToDocument(src.Criteria, new JsonSerializerOptions())
-                ));
+        CreateMap<MatchQueueRequest, MatchmakingQueue>();
     }
 }

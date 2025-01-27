@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameCloud.Persistence.Migrations
 {
     [DbContext(typeof(GameCloudDbContext))]
-    partial class GameCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250124184038_MatchActionsAdded")]
+    partial class MatchActionsAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,6 +45,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ErrorCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("ErrorMessage")
                         .HasColumnType("text");
 
@@ -53,9 +59,6 @@ namespace GameCloud.Persistence.Migrations
 
                     b.Property<Guid>("FunctionId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("IsSuccess")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTestMode")
                         .HasColumnType("boolean");
@@ -83,6 +86,9 @@ namespace GameCloud.Persistence.Migrations
 
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<double>("TotalLatencyMs")
                         .HasColumnType("double precision");
@@ -609,9 +615,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("MatchId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("MatchmakingQueueId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("PlayerId")
                         .HasColumnType("uuid");
 
@@ -624,8 +627,6 @@ namespace GameCloud.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MatchId");
-
-                    b.HasIndex("MatchmakingQueueId");
 
                     b.HasIndex("PlayerId");
 
@@ -647,10 +648,11 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("MatchId")
-                        .HasColumnType("uuid");
+                    b.Property<JsonDocument>("MatchCriteria")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
-                    b.Property<Guid?>("MatchmakingQueueId")
+                    b.Property<Guid?>("MatchId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("PlayerId")
@@ -674,8 +676,6 @@ namespace GameCloud.Persistence.Migrations
 
                     b.HasIndex("MatchId");
 
-                    b.HasIndex("MatchmakingQueueId");
-
                     b.HasIndex("PlayerId");
 
                     b.ToTable("MatchTickets", "gc");
@@ -690,6 +690,10 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<JsonDocument>("Criteria")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -703,9 +707,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<TimeSpan?>("MatchTimeout")
                         .HasColumnType("interval");
 
-                    b.Property<Guid?>("MatchmakerFunctionId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("MaxPlayers")
                         .HasColumnType("integer");
 
@@ -715,9 +716,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("QueueType")
-                        .HasColumnType("integer");
 
                     b.Property<JsonDocument>("Rules")
                         .IsRequired()
@@ -732,14 +730,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("UseCustomMatchmaker")
-                        .HasColumnType("boolean");
-
                     b.HasKey("Id");
 
                     b.HasIndex("GameId");
-
-                    b.HasIndex("MatchmakerFunctionId");
 
                     b.ToTable("MatchmakingQueues", "gc");
                 });
@@ -1125,10 +1118,6 @@ namespace GameCloud.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GameCloud.Domain.Entities.Matchmaking.MatchmakingQueue", null)
-                        .WithMany("Actions")
-                        .HasForeignKey("MatchmakingQueueId");
-
                     b.HasOne("GameCloud.Domain.Entities.Player", "Player")
                         .WithMany()
                         .HasForeignKey("PlayerId")
@@ -1145,10 +1134,6 @@ namespace GameCloud.Persistence.Migrations
                     b.HasOne("GameCloud.Domain.Entities.Matchmaking.Match", "Match")
                         .WithMany("Tickets")
                         .HasForeignKey("MatchId");
-
-                    b.HasOne("GameCloud.Domain.Entities.Matchmaking.MatchmakingQueue", null)
-                        .WithMany("Tickets")
-                        .HasForeignKey("MatchmakingQueueId");
 
                     b.HasOne("GameCloud.Domain.Entities.Player", "Player")
                         .WithMany()
@@ -1169,13 +1154,7 @@ namespace GameCloud.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GameCloud.Domain.Entities.FunctionConfig", "MatchmakerFunction")
-                        .WithMany()
-                        .HasForeignKey("MatchmakerFunctionId");
-
                     b.Navigation("Game");
-
-                    b.Navigation("MatchmakerFunction");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>
@@ -1284,13 +1263,6 @@ namespace GameCloud.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.Match", b =>
-                {
-                    b.Navigation("Actions");
-
-                    b.Navigation("Tickets");
-                });
-
-            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.MatchmakingQueue", b =>
                 {
                     b.Navigation("Actions");
 

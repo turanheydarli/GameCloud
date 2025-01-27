@@ -1,25 +1,25 @@
 using GameCloud.Application.Features.Functions.Responses;
+using GameCloud.Domain.Entities;
 using GameCloud.Domain.Enums;
 
 namespace GameCloud.Application.Exceptions;
 
 public class FunctionResultException : Exception
 {
-    public FunctionStatus Status { get; }
-
-    public FunctionError? Error { get; }
+    public bool IsSuccess { get; set; }
+    public string Error { get; }
 
     public FunctionResultException(FunctionResult result)
         : base(GenerateMessage(result))
     {
-        Status = result.Status;
-        Error = result.Error;
+        IsSuccess = result.IsSuccess;
+        Error = result.ErrorMessage;
     }
 
     private static string GenerateMessage(FunctionResult result)
     {
-        var errorMessage = result.Error?.Message ?? "No error details available.";
-        return $"FunctionResult indicates a failure with status '{result.Status}': {errorMessage}";
+        var errorMessage = result.ErrorMessage ?? "No error details available.";
+        return $"FunctionResult indicates a failure with status '{result.IsSuccess}': {errorMessage}";
     }
 }
 

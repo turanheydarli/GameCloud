@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameCloud.Persistence.Migrations
 {
     [DbContext(typeof(GameCloudDbContext))]
-    partial class GameCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250125150845_MatcmakingMovedToActions")]
+    partial class MatcmakingMovedToActions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -647,6 +650,10 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
+                    b.Property<JsonDocument>("MatchCriteria")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid?>("MatchId")
                         .HasColumnType("uuid");
 
@@ -689,6 +696,10 @@ namespace GameCloud.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<JsonDocument>("Criteria")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Description")
                         .IsRequired()

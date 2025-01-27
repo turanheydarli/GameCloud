@@ -18,8 +18,7 @@ public class ActionLog : BaseEntity
     public DateTime CompletedAt { get; set; }
     public double ExecutionTimeMs { get; set; }
     public double TotalLatencyMs { get; set; }
-    public FunctionStatus Status { get; set; }
-    public string? ErrorCode { get; set; }
+    public bool IsSuccess { get; set; }
     public string? ErrorMessage { get; set; }
     public int RetryCount { get; set; }
     public int PayloadSizeBytes { get; set; }
@@ -27,8 +26,4 @@ public class ActionLog : BaseEntity
     public Dictionary<string, string>? Metadata { get; set; }
     public FunctionConfig? Function { get; set; }
 
-    public bool IsSuccess()
-    {
-        return Status != FunctionStatus.Failed;
-    }
 }

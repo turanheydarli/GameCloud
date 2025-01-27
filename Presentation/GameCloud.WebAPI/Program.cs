@@ -12,6 +12,18 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<RequireGameKeyFilter>();
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .WithExposedHeaders("X-Pagination");
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -55,6 +67,7 @@ app.UseHttpsRedirection();
 
 app.UseExceptionHandler(_ => { });
 
+app.UseCors();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

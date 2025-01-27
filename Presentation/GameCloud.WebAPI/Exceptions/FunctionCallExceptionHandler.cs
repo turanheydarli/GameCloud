@@ -18,37 +18,25 @@ public class FunctionCallExceptionHandler(IProblemDetailsService problemDetailsS
             return false;
         }
 
-        if (fre.Status == FunctionStatus.Success)
+        if (!fre.IsSuccess)
         {
             return false;
         }
-
-        var statusCode = fre.Status switch
-        {
-            FunctionStatus.PartialSuccess => StatusCodes.Status206PartialContent,
-            FunctionStatus.Pending        => StatusCodes.Status202Accepted,
-            _                             => StatusCodes.Status400BadRequest
-        };
 
         var problemDetails = new ProblemDetails
         {
             Type     = exception.GetType().Name, 
             Detail   = exception.Message,
-            Status   = statusCode,
+            Status   = StatusCodes.Status400BadRequest,
             Instance = $"{httpContext.Request.Method} {httpContext.Request.Path}",
             Extensions =
             {
                 ["requestId"] = httpContext.TraceIdentifier,
-                ["functionStatus"] = fre.Status.ToString()
+                ["functionStatus"] = fre.IsSuccess.ToString()
             }
         };
 
-        if (!string.IsNullOrEmpty(fre.Error?.Code))
-        {
-            problemDetails.Extensions["errorCode"] = fre.Error.Code;
-        }
-
-        httpContext.Response.StatusCode = statusCode;
+        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
 
         await problemDetailsService.WriteAsync(new ProblemDetailsContext
         {
