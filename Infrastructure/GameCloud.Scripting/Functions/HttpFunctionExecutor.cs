@@ -7,13 +7,14 @@ using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
 using GameCloud.Application.Features.Functions.Responses;
+using GameCloud.Domain.Entities;
 using GameCloud.Domain.Enums;
 
 namespace GameCloud.Functioning.Functions;
 
 public class HttpFunctionExecutor(IHttpClientFactory httpClientFactory) : IFunctionExecutor
 {
-    public async Task<FunctionResult?> InvokeAsync(FunctionInvokeRequest request)
+    public async Task<FunctionResult> InvokeAsync(FunctionInvokeRequest request)
     {
         if (request is null)
             throw new ArgumentNullException(nameof(request));
@@ -26,7 +27,7 @@ public class HttpFunctionExecutor(IHttpClientFactory httpClientFactory) : IFunct
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        string payloadJson = JsonSerializer.Serialize(request, jsonOptions);
+        string payloadJson = JsonSerializer.Serialize(request.Payload, jsonOptions);
         using var httpContent = new StringContent(payloadJson, Encoding.UTF8, "application/json");
 
         var stopwatch = Stopwatch.StartNew();
@@ -70,7 +71,7 @@ public class HttpFunctionExecutor(IHttpClientFactory httpClientFactory) : IFunct
             );
         }
 
-        if (functionResult?.Status != FunctionStatus.Success)
+        if (!functionResult.IsSuccess)
         {
             throw new FunctionResultException(functionResult!);
         }

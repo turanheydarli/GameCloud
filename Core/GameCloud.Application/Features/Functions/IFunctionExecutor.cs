@@ -1,9 +1,9 @@
 using GameCloud.Application.Features.Functions.Requests;
-using GameCloud.Application.Features.Functions.Responses;
+using GameCloud.Domain.Entities;
 
 namespace GameCloud.Application.Features.Functions;
 
 public interface IFunctionExecutor
 {
-    Task<FunctionResult?> InvokeAsync(FunctionInvokeRequest request);
+    Task<FunctionResult> InvokeAsync(FunctionInvokeRequest request);
 }

@@ -66,6 +66,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<INotificationRepository, NotificationRepository>()        
             .AddScoped<IMatchRepository, MatchRepository>()
             .AddScoped<IMatchmakingQueueRepository, MatchmakingQueueRepository>()
+            .AddScoped<IMatchActionRepository, MatchActionRepository>()
             .AddScoped<IMatchTicketRepository, MatchTicketRepository>();
     }
 

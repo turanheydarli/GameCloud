@@ -1,10 +1,12 @@
 using System.Text.Json;
+using GameCloud.Domain.Entities;
 using GameCloud.Domain.Enums;
 
 namespace GameCloud.Application.Features.Actions.Responses;
 
 public record ActionResponse(
     Guid Id,
+    FunctionResult Result,
     Guid SessionId = default,
     Guid PlayerId = default,
     Guid FunctionId = default,
@@ -14,14 +16,13 @@ public record ActionResponse(
     DateTime CompletedAt = default,
     double ExecutionTimeMs = 0,
     double TotalLatencyMs = 0,
-    FunctionStatus Status = FunctionStatus.Pending,
     string? ErrorCode = null,
     string? ErrorMessage = null,
     int RetryCount = 0,
     JsonDocument? Payload = null,
-    JsonDocument? Result = null,
     int PayloadSizeBytes = 0,
     int ResultSizeBytes = 0,
+    bool IsSuccess = false,
     IDictionary<string, string>? Metadata = null
 );
 
@@ -49,7 +50,6 @@ public record ActionStatsResponse(
 );
 
 public record ErrorStat(
-    string Code,
     string Message,
     int Count,
     DateTime LastOccurred,

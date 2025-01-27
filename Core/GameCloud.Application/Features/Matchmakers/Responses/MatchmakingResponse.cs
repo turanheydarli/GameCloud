@@ -11,7 +11,6 @@ public record MatchTicketResponse(
     Guid PlayerId,
     string QueueName,
     string Status,
-    JsonDocument? MatchCriteria,
     JsonDocument? Properties,
     DateTime CreatedAt,
     DateTime ExpiresAt,
@@ -29,7 +28,6 @@ public record MatchmakingResponse(
     TimeSpan TicketTTL,
     TimeSpan? TurnTimeout,
     TimeSpan? MatchTimeout,
-    JsonDocument Criteria,
     JsonDocument Rules,
     DateTime CreatedAt,
     DateTime? UpdatedAt

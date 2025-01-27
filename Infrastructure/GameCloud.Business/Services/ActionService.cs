@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using AutoMapper;
-using GameCloud.Application.Common.Interfaces;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Actions;
@@ -9,13 +8,11 @@ using GameCloud.Application.Features.Actions.Requests;
 using GameCloud.Application.Features.Actions.Responses;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Functions.Requests;
-using GameCloud.Application.Features.Functions.Responses;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
 using GameCloud.Domain.Dynamics;
 using GameCloud.Domain.Entities;
-using GameCloud.Domain.Enums;
 using GameCloud.Domain.Repositories;
 
 namespace GameCloud.Business.Services;
@@ -52,17 +49,18 @@ public class ActionService(
             PayloadSizeBytes = System.Text.Encoding.UTF8.GetBytes(
                 request.Payload.ToString()).Length
         };
+        
+        FunctionConfig functionConfig =
+            await functionRepository.GetByActionTypeAsync(gameContext.GameId, request.ActionType);
+
+        if (functionConfig == null)
+        {
+            throw new ApplicationException($"Action type '{request.ActionType}' not found.");
+        }
 
         try
         {
             executionContextAccessor.SetContext(ActionExecutionContext.Function);
-
-            FunctionConfig functionConfig = await functionRepository.GetByActionTypeAsync(gameContext.GameId,request.ActionType);
-
-            if (functionConfig == null)
-            {
-                throw new ApplicationException($"Action type '{request.ActionType}' not found.");
-            }
 
             actionLog.FunctionId = functionConfig.Id;
 
@@ -78,7 +76,7 @@ public class ActionService(
             );
 
             var executionSw = Stopwatch.StartNew();
-            FunctionResult? functionResult = await functionExecutor.InvokeAsync(invokeRequest);
+            FunctionResult functionResult = await functionExecutor.InvokeAsync(invokeRequest);
             executionSw.Stop();
 
             if (functionResult == null)
@@ -86,28 +84,10 @@ public class ActionService(
                 throw new ApplicationException("FunctionExecutor returned null result unexpectedly.");
             }
 
-            if (functionResult.EntityUpdates is not null)
-            {
-                foreach (var (entityId, attributeUpdates) in functionResult.EntityUpdates)
-                {
-                    // await eventPublisher.PublishAsync(new AttributeUpdateEvent(
-                    //     userId,
-                    //     entityId,
-                    //     attributeUpdates));
 
-                    await playerService.ApplyAttributeUpdatesAsync(entityId, attributeUpdates);
-                }
-            }
-
-            if (functionResult.Notifications is not null)
-            {
-                await notificationService.RegisterNotificationList(functionResult.Notifications);
-            }
-
-            actionLog.Status = functionResult.Status;
-            actionLog.ErrorCode = functionResult.Error?.Code;
-            actionLog.ErrorMessage = functionResult.Error?.Message;
+            actionLog.ErrorMessage = functionResult.ErrorMessage;
             actionLog.ExecutionTimeMs = executionSw.ElapsedMilliseconds;
+            actionLog.IsSuccess = functionResult.IsSuccess;
             actionLog.Result = JsonSerializer.SerializeToDocument(functionResult);
             actionLog.ResultSizeBytes = System.Text.Encoding.UTF8.GetBytes(
                 functionResult.ToString()).Length;
@@ -123,18 +103,34 @@ public class ActionService(
 
             await actionLogRepository.CreateAsync(actionLog);
 
-            if (functionResult.Status != FunctionStatus.Success)
+            if (!functionResult.IsSuccess)
             {
-                throw new ApplicationException($"Action failed: {functionResult.Error?.Message}");
+                throw new ApplicationException($"Action failed: {functionResult.ErrorMessage}");
             }
 
-            return mapper.Map<ActionResponse>(actionLog);
+            return new ActionResponse(
+                Id: actionLog.Id,
+                SessionId: actionLog.SessionId,
+                ActionType: actionLog.ActionType,
+                FunctionId: actionLog.FunctionId,
+                IsSuccess: actionLog.IsSuccess,
+                ErrorMessage: actionLog.ErrorMessage,
+                ExecutionTimeMs: actionLog.ExecutionTimeMs,
+                TotalLatencyMs: actionLog.TotalLatencyMs,
+                Result: functionResult,
+                CreatedAt: actionLog.CreatedAt,
+                StartedAt: actionLog.StartedAt,
+                CompletedAt: actionLog.CompletedAt,
+                Metadata: actionLog.Metadata,
+                Payload: actionLog.Payload,
+                PayloadSizeBytes: actionLog.PayloadSizeBytes,
+                ResultSizeBytes: actionLog.ResultSizeBytes,
+                RetryCount: actionLog.RetryCount
+            );
         }
         catch (Exception ex)
         {
-            actionLog.Status = FunctionStatus.Failed;
             actionLog.ErrorMessage = ex.Message;
-            actionLog.ErrorCode = ex.GetType().Name;
             actionLog.CompletedAt = DateTime.UtcNow;
             actionLog.TotalLatencyMs = sw.ElapsedMilliseconds;
 
@@ -163,14 +159,13 @@ public class ActionService(
             range.To);
 
         var totalCount = actions.Count();
-        var successCount = actions.Count(a => a.IsSuccess());
+        var successCount = actions.Count(a => a.IsSuccess);
         var errorCount = totalCount - successCount;
 
         var topErrors = actions
-            .Where(a => !a.IsSuccess())
-            .GroupBy(a => new { a.ErrorCode, a.ErrorMessage })
+            .Where(a => !a.IsSuccess)
+            .GroupBy(a => new { a.ErrorMessage })
             .Select(g => new ErrorStat(
-                g.Key.ErrorCode ?? "Unknown",
                 g.Key.ErrorMessage ?? "Unknown error",
                 g.Count(),
                 g.Max(a => a.ExecutedAt),
@@ -201,8 +196,8 @@ public class ActionService(
             AveragePayloadSizeBytes: actions.Any() ? actions.Average(a => a.PayloadSizeBytes) : 0,
             AverageResultSizeBytes: actions.Any() ? actions.Average(a => a.ResultSizeBytes) : 0,
             LastExecutedAt: actions.MaxBy(a => a.ExecutedAt)?.ExecutedAt,
-            LastErrorCode: actions.Where(a => !a.IsSuccess()).MaxBy(a => a.ExecutedAt)?.ErrorCode,
-            LastErrorMessage: actions.Where(a => !a.IsSuccess()).MaxBy(a => a.ExecutedAt)?.ErrorMessage,
+            LastErrorCode: actions.Where(a => !a.IsSuccess).MaxBy(a => a.ExecutedAt)?.ErrorMessage,
+            LastErrorMessage: actions.Where(a => !a.IsSuccess).MaxBy(a => a.ExecutedAt)?.ErrorMessage,
             TopErrors: topErrors,
             WindowStart: range.From,
             WindowEnd: range.To

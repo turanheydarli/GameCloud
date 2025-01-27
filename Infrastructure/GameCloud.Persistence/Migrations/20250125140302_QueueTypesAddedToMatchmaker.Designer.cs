@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameCloud.Persistence.Migrations
 {
     [DbContext(typeof(GameCloudDbContext))]
-    partial class GameCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250125140302_QueueTypesAddedToMatchmaker")]
+    partial class QueueTypesAddedToMatchmaker
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,6 +45,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ErrorCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("ErrorMessage")
                         .HasColumnType("text");
 
@@ -53,9 +59,6 @@ namespace GameCloud.Persistence.Migrations
 
                     b.Property<Guid>("FunctionId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("IsSuccess")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTestMode")
                         .HasColumnType("boolean");
@@ -83,6 +86,9 @@ namespace GameCloud.Persistence.Migrations
 
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<double>("TotalLatencyMs")
                         .HasColumnType("double precision");
@@ -647,6 +653,10 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
+                    b.Property<JsonDocument>("MatchCriteria")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid?>("MatchId")
                         .HasColumnType("uuid");
 
@@ -689,6 +699,10 @@ namespace GameCloud.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<JsonDocument>("Criteria")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Description")
                         .IsRequired()

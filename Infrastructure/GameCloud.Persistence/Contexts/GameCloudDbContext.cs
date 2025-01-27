@@ -24,6 +24,7 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<MatchmakingQueue> MatchmakingQueues { get; set; }
         public DbSet<MatchTicket> MatchTickets { get; set; }
         public DbSet<Match> Matches { get; set; }
+        public DbSet<MatchAction> MatchActions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

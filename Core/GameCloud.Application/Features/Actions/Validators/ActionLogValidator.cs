@@ -20,7 +20,7 @@ public class ActionValidator : AbstractValidator<ActionRequest>
             .Must(BeValidJson).WithMessage("Parameters must be valid JSON.");
     }
 
-    private bool BeValidJson(JsonElement parameters)
+    private bool BeValidJson(JsonDocument parameters)
     {
         try
         {
