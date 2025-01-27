@@ -1,3 +1,7 @@
+using System.Text.Json;
+
+namespace GameCloud.Domain.Entities.Matchmaking;
+
 public class MatchPresence
 {
     public Guid PlayerId { get; set; }
