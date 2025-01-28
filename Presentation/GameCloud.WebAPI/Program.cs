@@ -41,6 +41,10 @@ builder.Services.AddScriptingServices();
 
 builder.Services.AddProblemDetails();
 
+builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -69,6 +73,7 @@ app.UseExceptionHandler(_ => { });
 
 app.UseCors();
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

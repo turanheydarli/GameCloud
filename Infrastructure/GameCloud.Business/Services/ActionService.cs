@@ -14,6 +14,7 @@ using GameCloud.Application.Features.Players;
 using GameCloud.Domain.Dynamics;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace GameCloud.Business.Services;
 
@@ -25,7 +26,8 @@ public class ActionService(
     INotificationService notificationService,
     IGameContext gameContext,
     IMapper mapper,
-    IExecutionContextAccessor executionContextAccessor)
+    IExecutionContextAccessor executionContextAccessor,
+    ILogger<ActionService> logger)
     : IActionService
 {
     public async Task<ActionResponse> ExecuteActionAsync(

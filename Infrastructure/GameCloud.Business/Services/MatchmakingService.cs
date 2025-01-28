@@ -426,7 +426,7 @@ public class MatchmakingService(
         var newState = await HandleMatchEvent(match, "presence_update", new
         {
             matchState,
-            playerId,
+            playerId = playerId.ToString(),
             sessionId,
             status = (int)status,
             meta
