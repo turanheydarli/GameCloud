@@ -125,6 +125,32 @@ public class MatchmakingController : BaseController
         var match = await _matchmakingService.MarkPlayerReadyAsync(matchId, player.Id);
         return Ok(match);
     }
+    // Add this request record at the bottom of the file
+    public record UpdatePresenceRequest(
+        string SessionId,
+        PresenceStatus Status,
+        JsonDocument? Meta = null
+    );
+    
+    [HttpPost("matches/{matchId:guid}/presence")]
+    [ProducesResponseType(typeof(MatchResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> UpdatePresence(
+        [FromRoute] Guid matchId,
+        [FromBody] UpdatePresenceRequest request)
+    {
+        var userId = GetUserIdFromClaims();
+        var player = await _playerService.GetByUserIdAsync(userId);
+        
+        var result = await _matchmakingService.UpdatePresenceAsync(
+            matchId,
+            player.Id,
+            request.SessionId,
+            request.Status,
+            request.Meta ?? JsonDocument.Parse("{}")
+        );
+        
+        return Ok(result);
+    }
 }
 
 public record CreateTicketRequest(

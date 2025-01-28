@@ -1,9 +1,10 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GameCloud.Domain.Entities;
 
 public record FunctionResult(
-    JsonDocument? Data,
-    bool IsSuccess,
-    string? ErrorMessage = null
+    [field: JsonPropertyName("data")] JsonDocument? Data,
+    [field: JsonPropertyName("isSuccess")] bool IsSuccess,
+    [field: JsonPropertyName("errorMessage")] string? ErrorMessage = null
 );

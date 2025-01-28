@@ -6,16 +6,14 @@ namespace GameCloud.Application.Features.Matchmakers;
 
 public interface IMatchmakingService
 {
-    // Queue Management
     Task<MatchmakingResponse> CreateQueueAsync(MatchQueueRequest queueRequest);
     Task<MatchmakingResponse?> GetQueueAsync(Guid? queueId = null, Guid? gameId = null, string? queueName = null);
 
-    // Matchmaking
     Task<MatchTicketResponse> CreateTicketAsync(Guid gameId, Guid playerId, string queueName, JsonDocument? properties = null);
     Task<List<MatchResponse>> ProcessMatchmakingAsync(Guid? queueId = null);
     Task<MatchResponse> MarkPlayerReadyAsync(Guid matchId, Guid playerId);
+      Task<MatchResponse> UpdatePresenceAsync(Guid matchId, Guid playerId, string sessionId,        PresenceStatus status, JsonDocument meta);
 
-    // Match Management
     Task<MatchResponse?> GetMatchAsync(Guid matchId);
     Task<JsonDocument> GetMatchStateAsync(Guid matchId);
     Task<MatchActionResponse> SubmitActionAsync(Guid matchId, Guid playerId, MatchActionRequest action);

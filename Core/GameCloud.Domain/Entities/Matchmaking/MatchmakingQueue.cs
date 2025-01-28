@@ -67,7 +67,7 @@ public class Match : BaseEntity
 {
     public Guid GameId { get; set; }
     public string QueueName { get; set; }
-    public MatchState State { get; set; }
+    public MatchStatus State { get; set; }
 
     public List<Guid> PlayerIds { get; set; }
     public Guid? CurrentPlayerId { get; set; }
@@ -146,7 +146,7 @@ public enum TicketStatus
     Error = 8
 }
 
-public enum MatchState
+public enum MatchStatus
 {
     /// <summary>
     /// Match is created but not all players accepted yet
