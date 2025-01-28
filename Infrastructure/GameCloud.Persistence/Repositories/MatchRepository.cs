@@ -30,15 +30,15 @@ public class MatchRepository(GameCloudDbContext context) : IMatchRepository
         return await context.Set<Match>()
             .Where(m =>
                 // Match is in progress or waiting for turn
-                (m.State == MatchState.InProgress || m.State == MatchState.WaitingTurn) &&
+                (m.State == MatchStatus.InProgress || m.State == MatchStatus.WaitingTurn) &&
                 // Has a next action deadline
                 m.NextActionDeadline.HasValue &&
                 // Deadline has passed
                 m.NextActionDeadline.Value < utcNow &&
                 // Not already handled
-                m.State != MatchState.Completed &&
-                m.State != MatchState.Cancelled &&
-                m.State != MatchState.Error
+                m.State != MatchStatus.Completed &&
+                m.State != MatchStatus.Cancelled &&
+                m.State != MatchStatus.Error
             )
             .ToListAsync();
     }
@@ -48,10 +48,10 @@ public class MatchRepository(GameCloudDbContext context) : IMatchRepository
         return await context.Set<Match>()
             .Where(m =>
                 m.PlayerIds.Contains(playerId) &&
-                (m.State == MatchState.Created ||
-                 m.State == MatchState.Ready ||
-                 m.State == MatchState.InProgress ||
-                 m.State == MatchState.WaitingTurn) &&
+                (m.State == MatchStatus.Created ||
+                 m.State == MatchStatus.Ready ||
+                 m.State == MatchStatus.InProgress ||
+                 m.State == MatchStatus.WaitingTurn) &&
                 (!m.MatchTimeout.HasValue ||
                  m.CreatedAt.AddTicks(m.MatchTimeout.Value.Ticks) > DateTime.UtcNow)
             )
