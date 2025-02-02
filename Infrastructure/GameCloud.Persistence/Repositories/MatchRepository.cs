@@ -99,7 +99,7 @@ public class MatchTicketRepository(GameCloudDbContext context) : IMatchTicketRep
                 t.QueueName == queue.Name &&
                 t.Status == TicketStatus.Queued &&
                 t.ExpiresAt > DateTime.UtcNow)
-            .OrderBy(t => t.CreatedAt)
+            .OrderBy(t => t.CreatedAt).Include(p => p.Player)
             .ToListAsync();
     }
 

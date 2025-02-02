@@ -2,7 +2,7 @@ PROJ_NAME := GameCloud
 API_PROJ := ./Presentation/GameCloud.WebAPI
 INFRA_PROJ := ./Infrastructure/GameCloud.Persistence
 K8S_NAMESPACE := gamecloud
-POD_NAME := gamecloud-main-6bcd8476d-bcv2x
+POD_NAME := gamecloud-main-975cf8bdf-8hnrq  
 DEPLOYMENT_NAME := gamecloud-main
 IMAGE_TAG := latest
 
@@ -77,8 +77,7 @@ test:
 
 update-pod-name:
 	@echo "Updating POD_NAME in Makefile..."
-	@POD=$$(kubectl get pods -n $(K8S_NAMESPACE) -l app=$(DEPLOYMENT_NAME) -o jsonpath='{.items[0].metadata.name}') && \
-	sed -i '' 's/POD_NAME := gamecloud-main-6bcd8476d-bcv2x
+	@POD=$$(kubectl get pods -n $(K8S_NAMESPACE) -l app=$(DEPLOYMENT_NAME) -o jsonpath='{.items[0].metadata.name}')
 
 # Add to deploy target
 deploy:

@@ -55,12 +55,27 @@ public class MatchmakingController : BaseController
     {
         var userId = GetUserIdFromClaims();
         var player = await _playerService.GetByUserIdAsync(userId);
-        
+
         var ticket = await _matchmakingService.CreateTicketAsync(
             _gameContext.GameId,
             player.Id,
             request.QueueName,
             request.Properties
+        );
+        return Ok(ticket);
+    }
+
+    [HttpGet("tickets/{ticketId:guid}")]
+    [ProducesResponseType(typeof(MatchTicketResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> CreateTicket(Guid ticketId)
+    {
+        var userId = GetUserIdFromClaims();
+        var player = await _playerService.GetByUserIdAsync(userId);
+
+        var ticket = await _matchmakingService.GetTicket(
+            _gameContext.GameId,
+            player.Id,
+            ticketId
         );
         return Ok(ticket);
     }
@@ -120,18 +135,19 @@ public class MatchmakingController : BaseController
     {
         var userId = GetUserIdFromClaims();
         var player = await _playerService.GetByUserIdAsync(userId);
-        
+
         // Add this method to your MatchmakingService
         var match = await _matchmakingService.MarkPlayerReadyAsync(matchId, player.Id);
         return Ok(match);
     }
+
     // Add this request record at the bottom of the file
     public record UpdatePresenceRequest(
         string SessionId,
         PresenceStatus Status,
         JsonDocument? Meta = null
     );
-    
+
     [HttpPost("matches/{matchId:guid}/presence")]
     [ProducesResponseType(typeof(MatchResponse), (int)HttpStatusCode.OK)]
     public async Task<IActionResult> UpdatePresence(
@@ -140,7 +156,7 @@ public class MatchmakingController : BaseController
     {
         var userId = GetUserIdFromClaims();
         var player = await _playerService.GetByUserIdAsync(userId);
-        
+
         var result = await _matchmakingService.UpdatePresenceAsync(
             matchId,
             player.Id,
@@ -148,7 +164,7 @@ public class MatchmakingController : BaseController
             request.Status,
             request.Meta ?? JsonDocument.Parse("{}")
         );
-        
+
         return Ok(result);
     }
 }

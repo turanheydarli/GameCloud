@@ -102,13 +102,14 @@ public class ActionService(
                 ["clientVersion"] = request.ClientVersion,
                 ["clientPlatform"] = request.ClientPlatform
             };
-
-            await actionLogRepository.CreateAsync(actionLog);
-
+            
             if (!functionResult.IsSuccess)
             {
                 throw new ApplicationException($"Action failed: {functionResult.ErrorMessage}");
             }
+            
+            await actionLogRepository.CreateAsync(actionLog);
+
 
             return new ActionResponse(
                 Id: actionLog.Id,
