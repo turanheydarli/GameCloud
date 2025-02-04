@@ -232,7 +232,7 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
-
+    
     public static IServiceCollection AddMessageQueue(
         this IServiceCollection services,
         IConfiguration configuration)
