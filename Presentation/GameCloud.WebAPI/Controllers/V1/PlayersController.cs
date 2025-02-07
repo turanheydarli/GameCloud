@@ -12,35 +12,60 @@ using Microsoft.AspNetCore.Mvc;
 namespace GameCloud.WebAPI.Controllers.V1;
 
 [Route("api/v1/[controller]")]
-public class PlayersController : BaseController
+public class PlayersController(
+    IPlayerService playerService,
+    INotificationService notificationService,
+    IUserService userService)
+    : BaseController
 {
-    private readonly IPlayerService _playerService;
-    private readonly INotificationService _notificationService;
-    private readonly IUserService _userService;
-
-    public PlayersController(
-        IPlayerService playerService,
-        INotificationService notificationService,
-        IUserService userService)
+    [HttpPost("authenticate/device")]
+    [RequireGameKey]
+    public async Task<IActionResult> AuthenticateDevice(
+        [FromBody] DeviceAuthRequest request)
     {
-        _playerService = playerService;
-        _notificationService = notificationService;
-        _userService = userService;
+        var response = await playerService.AuthenticateWithDeviceAsync(
+            request.DeviceId,
+            request.Metadata);
+        
+        return Ok(response);
     }
+
+    [HttpPost("authenticate/custom")]
+    [RequireGameKey]
+    public async Task<IActionResult> AuthenticateCustom(
+        [FromBody] CustomAuthRequest request)
+    {
+        var response = await playerService.AuthenticateWithCustomIdAsync(
+            request.CustomId,
+            request.Metadata,
+            request.Create);
+        
+        return Ok(response);
+    }
+
+    [HttpPost("authenticate/refresh")]
+    [RequireGameKey]
+    public async Task<IActionResult> RefreshSession(
+        [FromBody] SessionRefreshRequest request)
+    {
+        var response = await playerService.RefreshSessionAsync(request.SessionId);
+        return Ok(response);
+    }
+
 
     [HttpGet("me")]
     [Authorize(Policy = "HasGameKey", Roles = "Player")]
     public async Task<IActionResult> GetMe()
     {
         var userId = GetUserIdFromClaims();
-        return Ok(await _playerService.GetByUserIdAsync(userId));
+        return Ok(await playerService.GetByUserIdAsync(userId));
     }
 
     [RequireGameKey]
     [HttpPost("authenticate")]
     public async Task<IActionResult> Auth(AuthPlayerRequest request)
     {
-        return Ok(await _userService.AuthenticatePlayerAsync(request));
+        return Ok(await userService.AuthenticatePlayerAsync(request));
     }
 
     [HttpGet("{username}/notifications")]
@@ -49,7 +74,7 @@ public class PlayersController : BaseController
         [FromQuery] PageableRequest request,
         [FromQuery] NotificationStatus status = NotificationStatus.Sent)
     {
-        var notifications = await _notificationService.GetPlayerNotificationsAsync(
+        var notifications = await notificationService.GetPlayerNotificationsAsync(
             username, status, request);
         return Ok(notifications);
     }
@@ -57,7 +82,7 @@ public class PlayersController : BaseController
     [HttpGet("{username}/attributes/{collection}")]
     public async Task<IActionResult> GetAttributes(string username, string collection)
     {
-        var attributes = await _playerService.GetAttributesAsync(collection, username);
+        var attributes = await playerService.GetAttributesAsync(collection, username);
         return Ok(attributes);
     }
 
@@ -67,7 +92,7 @@ public class PlayersController : BaseController
         string collection,
         string key)
     {
-        var attribute = await _playerService.GetAttributeAsync(username, collection, key);
+        var attribute = await playerService.GetAttributeAsync(username, collection, key);
         return Ok(attribute);
     }
 
@@ -78,7 +103,7 @@ public class PlayersController : BaseController
         string collection,
         [FromBody] AttributeRequest request)
     {
-        await _playerService.SetAttributeAsync(username, collection, request);
+        await playerService.SetAttributeAsync(username, collection, request);
         return Ok();
     }
 
@@ -88,7 +113,25 @@ public class PlayersController : BaseController
         string collection,
         string key)
     {
-        await _playerService.RemoveAttributeAsync(username, collection, key);
+        await playerService.RemoveAttributeAsync(username, collection, key);
         return NoContent();
     }
+}
+
+public class DeviceAuthRequest
+{
+    public string DeviceId { get; set; }
+    public Dictionary<string, object>? Metadata { get; set; }
+}
+
+public class CustomAuthRequest
+{
+    public string CustomId { get; set; }
+    public Dictionary<string, object>? Metadata { get; set; }
+    public bool Create { get; set; } = true;
+}
+
+public class SessionRefreshRequest
+{
+    public string SessionId { get; set; }
 }

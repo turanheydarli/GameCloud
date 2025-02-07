@@ -86,7 +86,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<IUserService, UserService>()
             .AddScoped<IFunctionService, FunctionService>()
             .AddScoped<IMatchmakingService, MatchmakingService>()
-            .AddScoped<INotificationService, NotificationService>();
+            .AddScoped<INotificationService, NotificationService>()
+            .AddScoped<ITokenService, TokenService>();
     }
 
     private static IServiceCollection AddAuthorizationHandlers(this IServiceCollection services)

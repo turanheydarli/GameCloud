@@ -23,8 +23,4 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Common\Requests\" />
-  </ItemGroup>
-
 </Project>

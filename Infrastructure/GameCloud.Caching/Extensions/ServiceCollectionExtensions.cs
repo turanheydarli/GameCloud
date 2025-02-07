@@ -1,3 +1,4 @@
+using GameCloud.Application.Common.Interfaces;
 using GameCloud.Application.Features.Matchmakers;
 using GameCloud.Caching.Redis;
 using Microsoft.Extensions.Configuration;
@@ -13,18 +14,26 @@ public static class ServiceCollectionExtensions
         var redisConnection = configuration.GetConnectionString("Redis") 
                               ?? throw new InvalidOperationException("Redis connection string is not configured.");
 
-        services.AddStackExchangeRedisCache(options =>
+        var options = new ConfigurationOptions
         {
-            options.Configuration = redisConnection;
-            options.InstanceName = "GameCloud_";
+            EndPoints = { redisConnection },
+            AbortOnConnectFail = false,
+            ConnectTimeout = 5000,
+            SyncTimeout = 5000
+        };
+
+        services.AddStackExchangeRedisCache(redisOptions =>
+        {
+            redisOptions.ConfigurationOptions = options;
+            redisOptions.InstanceName = "GameCloud_";
         });
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect(redisConnection));
+            ConnectionMultiplexer.Connect(options));
 
         services.AddSingleton<IMatchStateCache, RedisMatchStateCache>();
+        services.AddSingleton<ISessionCache, RedisSessionCache>();
 
         return services;
     }
-
 }
