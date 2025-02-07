@@ -2,7 +2,7 @@ PROJ_NAME := GameCloud
 API_PROJ := ./Presentation/GameCloud.WebAPI
 INFRA_PROJ := ./Infrastructure/GameCloud.Persistence
 K8S_NAMESPACE := gamecloud
-POD_NAME := gamecloud-main-975cf8bdf-8hnrq  
+POD_NAME := gamecloud-main-76fdf55976-4762k   
 DEPLOYMENT_NAME := gamecloud-main
 IMAGE_TAG := latest
 
