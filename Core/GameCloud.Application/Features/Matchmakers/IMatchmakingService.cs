@@ -18,4 +18,5 @@ public interface IMatchmakingService
     Task<JsonDocument> GetMatchStateAsync(Guid matchId);
     Task<MatchActionResponse> SubmitActionAsync(Guid matchId, Guid playerId, MatchActionRequest action);
     Task<List<MatchActionResponse>> GetMatchActionsAsync(Guid matchId, DateTime? since = null, int? limit = null);
+    Task<MatchTicketResponse?> GetTicket(Guid gameDi, Guid playerId, Guid ticketId);
 }

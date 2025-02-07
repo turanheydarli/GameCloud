@@ -22,6 +22,7 @@ public class MatchmakingService(
     IGameContext gameContext,
     IActionService actionService,
     IFunctionRepository functionRepository,
+    IMatchStateCache matchStateCache,
     ILogger<MatchmakingService> logger)
     : IMatchmakingService
 {
@@ -145,7 +146,7 @@ public class MatchmakingService(
                     new ActionRequest(queue.Id, "match.initialize",
                         JsonSerializer.SerializeToDocument(new
                         {
-                            players = group.Select(t => t.Properties ?? JsonDocument.Parse("{}")),
+                            players = group.Select(t => JsonSerializer.Serialize(t.Player)),
                             rules = queue.Rules,
                             metadata = new
                             {
@@ -185,7 +186,7 @@ public class MatchmakingService(
                 };
 
                 var matchState = match.MatchState.Deserialize<Dictionary<string, JsonElement>>();
-                matchState["Presences"] = JsonSerializer.SerializeToElement(new List<Dictionary<string, object>>());
+                matchState["presences"] = JsonSerializer.SerializeToElement(new List<Dictionary<string, object>>());
                 match.MatchState = JsonSerializer.SerializeToDocument(matchState);
 
                 await matchRepository.CreateAsync(match);
@@ -204,7 +205,7 @@ public class MatchmakingService(
                 createdMatches.Count, queue.Id);
         }
 
-        return createdMatches.Select(m => mapper.Map<MatchResponse>(m)).ToList();
+        return createdMatches.Select(mapper.Map<MatchResponse>).ToList();
     }
 
     private async Task<List<List<MatchTicket>>> FindMatchingPlayers(List<MatchTicket> tickets, MatchmakingQueue queue)
@@ -217,8 +218,7 @@ public class MatchmakingService(
         return await ExecuteDefaultMatchmaker(tickets, queue);
     }
 
-    private async Task<List<List<MatchTicket>>> ExecuteCustomMatchmaker(List<MatchTicket> tickets,
-        MatchmakingQueue queue)
+    private async Task<List<List<MatchTicket>>> ExecuteCustomMatchmaker(List<MatchTicket> tickets, MatchmakingQueue queue)
     {
         var ticketData = tickets.Select(t => new
         {
@@ -244,9 +244,8 @@ public class MatchmakingService(
         if (!result.IsSuccess || result.Result.Data == null)
             return new List<List<MatchTicket>>();
 
-        var groups = JsonSerializer.Deserialize<List<List<Guid>>>(result.Result.Data);
-        return groups?.Select(group =>
-                   tickets.Where(t => group.Contains(t.Id)).ToList()).ToList()
+        var groups = result.Result.Data.Deserialize<List<List<Guid>>>();
+        return groups?.Select(group => tickets.Where(t => group.Contains(t.Id)).ToList()).ToList()
                ?? new List<List<MatchTicket>>();
     }
 
@@ -263,7 +262,7 @@ public class MatchmakingService(
             remainingTickets = remainingTickets.Skip(queue.MaxPlayers).ToList();
         }
 
-        return groups;
+        return await Task.FromResult(groups);
     }
 
     private MatchStatus MapMatchStatus(MatchStateStatus status)
@@ -278,7 +277,7 @@ public class MatchmakingService(
         };
     }
 
-    private async Task<MatchState> TransitionMatchState(Match match, MatchState currentState, string trigger,
+    private async Task<MatchState> TransitionMatchState(Match match, MatchState currentState, MatchActionRequest trigger,
         Guid playerId)
     {
         logger.LogDebug("Transitioning match {MatchId} state with trigger {Trigger}",
@@ -294,17 +293,22 @@ public class MatchmakingService(
                 {
                     matchId = match.Id,
                     playerId = playerId.ToString(),
-                    action = trigger,
+                    action = trigger.ActionData,
                     state = currentState,
-                    trigger,
+                    trigger = trigger.ActionType,
                     rules = queue.Rules
                 })
             )
         );
 
-        return transitionResult.IsSuccess && transitionResult.Result.Data != null
+        var newState = transitionResult.IsSuccess && transitionResult.Result.Data != null
             ? JsonSerializer.Deserialize<MatchState>(transitionResult.Result.Data)
             : currentState;
+
+        await matchStateCache.SetMatchStateAsync(match.Id, newState);
+        logger.LogDebug("Updated match state in cache after transition for {MatchId}", match.Id);
+
+        return newState;
     }
 
     private PresenceState ValidateAndGetPresence(MatchState matchState, Guid playerId, Guid matchId)
@@ -363,14 +367,20 @@ public class MatchmakingService(
 
         var matchAction = await CreateMatchAction(matchId, playerId, action);
 
-        var newState = await TransitionMatchState(match, matchState, action.ActionType, playerId);
+        var newState = await TransitionMatchState(match, matchState, action, playerId);
         match.MatchState = JsonSerializer.SerializeToDocument(newState);
         match.State = MapMatchStatus(newState.Status);
         match.LastActionAt = DateTime.UtcNow;
 
+        // Update cache before database
+        await matchStateCache.SetMatchStateAsync(matchId, newState);
+        logger.LogDebug("Updated match state in cache after action for {MatchId}", matchId);
+
         if (match.State == MatchStatus.Completed)
         {
             match.CompletedAt = DateTime.UtcNow;
+            await matchStateCache.RemoveMatchStateAsync(matchId);
+            logger.LogInformation("Removed completed match {MatchId} from cache", matchId);
         }
 
         await matchRepository.UpdateAsync(match);
@@ -401,8 +411,24 @@ public class MatchmakingService(
 
     public async Task<JsonDocument> GetMatchStateAsync(Guid matchId)
     {
+        var cachedState = await matchStateCache.GetMatchStateAsync(matchId);
+        if (cachedState != null)
+        {
+            return JsonSerializer.SerializeToDocument(cachedState);
+        }
+
         var match = await matchRepository.GetByIdAsync(matchId);
-        return match?.MatchState ?? throw new NotFoundException("Match", matchId);
+        if (match?.MatchState == null)
+            throw new NotFoundException("Match", matchId);
+
+        var matchState = match.MatchState.Deserialize<MatchState>();
+        if (matchState != null)
+        {
+            await matchStateCache.SetMatchStateAsync(matchId, matchState);
+            logger.LogDebug("Cached match state for {MatchId}", matchId);
+        }
+
+        return match.MatchState;
     }
 
     public async Task<List<MatchActionResponse>> GetMatchActionsAsync(Guid matchId, DateTime? since = null,
@@ -412,29 +438,46 @@ public class MatchmakingService(
         return actions.Select(a => mapper.Map<MatchActionResponse>(a)).ToList();
     }
 
+    public async Task<MatchTicketResponse?> GetTicket(Guid gameId, Guid playerId, Guid ticketId)
+    {
+        var ticket = await ticketRepository.GetByIdAsync(ticketId);
+
+        return mapper.Map<MatchTicketResponse>(ticket);
+    }
+
     public async Task<MatchResponse> UpdatePresenceAsync(Guid matchId, Guid playerId, string sessionId,
         PresenceStatus status, JsonDocument meta)
     {
         var match = await matchRepository.GetByIdAsync(matchId);
-        if (match == null)
-            throw new NotFoundException("Match", matchId);
+        if (match == null) throw new NotFoundException("Match", matchId);
 
-        if (!match.PlayerIds.Contains(playerId))
-            throw new InvalidOperationException("Player is not a participant in this match");
+        var matchState = match.MatchState.RootElement.Deserialize<MatchState>
+            (new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var matchState = match.MatchState.Deserialize<MatchState>();
-        var newState = await HandleMatchEvent(match, "presence_update", new
+        var presence = matchState.Presences.FirstOrDefault(p => p.PlayerId == playerId.ToString());
+        if (presence == null)
         {
-            matchState,
-            playerId = playerId.ToString(),
-            sessionId,
-            status = (int)status,
-            meta
-        });
+            matchState.Presences.Add(new PresenceState
+            {
+                PlayerId = playerId.ToString(),
+                SessionId = sessionId,
+                Status = status,
+                Meta = meta,
+                JoinedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            presence.SessionId = sessionId;
+            presence.Status = status;
+            presence.Meta = meta;
+        }
 
-        match.MatchState = JsonSerializer.SerializeToDocument(newState);
-        match.State = MapMatchStatus(newState.Status);
+        match.MatchState = JsonSerializer.SerializeToDocument(matchState);
         match.LastActionAt = DateTime.UtcNow;
+
+        await matchStateCache.SetMatchStateAsync(matchId, matchState);
+        logger.LogDebug("Updated presence in cache for match {MatchId}, player {PlayerId}", matchId, playerId);
 
         await matchRepository.UpdateAsync(match);
         return mapper.Map<MatchResponse>(match);
@@ -471,6 +514,14 @@ public class MatchmakingService(
         match.MatchState = JsonSerializer.SerializeToDocument(matchState);
         match.State = allReady.GetValueOrDefault() ? MatchStatus.InProgress : MatchStatus.Ready;
 
+        await matchStateCache.SetMatchStateAsync(matchId, matchState);
+        logger.LogDebug("Updated ready state in cache for match {MatchId}, player {PlayerId}", matchId, playerId);
+
+        if (allReady.GetValueOrDefault())
+        {
+            logger.LogInformation("All players ready in match {MatchId}, transitioning to active state", matchId);
+        }
+
         await matchRepository.UpdateAsync(match);
         return mapper.Map<MatchResponse>(match);
     }
@@ -493,8 +544,13 @@ public class MatchmakingService(
             )
         );
 
-        return result.IsSuccess && result.Result.Data != null
+        var newState = result.IsSuccess && result.Result.Data != null
             ? JsonSerializer.Deserialize<MatchState>(result.Result.Data)
             : matchState;
+
+        await matchStateCache.SetMatchStateAsync(match.Id, newState);
+        logger.LogDebug("Updated match state in cache after {EventType} event", eventType);
+
+        return newState;
     }
 }

@@ -41,3 +41,23 @@ spec:
                 secretKeyRef:
                   name: gamecloud-secrets
                   key: DB_CONNECTION_STRING
+            - name: ConnectionStrings__Redis
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: REDIS_CONNECTION_STRING
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: JWT_KEY
+            - name: YandexStorage__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: YANDEX_STORAGE_ACCESS_KEY
+            - name: YandexStorage__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: YANDEX_STORAGE_SECRET_KEY

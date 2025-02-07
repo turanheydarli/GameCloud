@@ -13,4 +13,7 @@ public interface IPlayerRepository
     Task<Player?> GetByUsernameAsync(string playerId);
     Task<Player> UpdateAsync(Player player);
     Task<IPaginate<Player>> GetAllByGameId(Guid gameId, int index, int size, bool enableTracking = true);
+    
+    Task<Player> GetByDeviceIdAsync(Guid gameId, string deviceId);
+    Task<Player> GetByCustomIdAsync(Guid gameId, string customId);
 }

@@ -54,12 +54,24 @@ services:
       - gamecloud_network
     restart: unless-stopped
 
+  redis:
+    image: redis:latest
+    container_name: gamecloud_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - gamecloud_network
+
 networks:
   gamecloud_network:
     name: ${NETWORK_NAME:-gamecloud_network}
     driver: bridge
 
 volumes:
+  redis_data:
   postgres_data:
     name: ${POSTGRES_VOLUME_NAME:-gamecloud_postgres_data}
   rabbitmq_data:

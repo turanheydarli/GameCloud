@@ -1,4 +1,6 @@
+using System.Text.Json;
 using AutoMapper;
+using GameCloud.Application.Common.Interfaces;
 using GameCloud.Application.Common.Paging;
 using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
@@ -7,6 +9,7 @@ using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Players;
 using GameCloud.Application.Features.Players.Requests;
 using GameCloud.Application.Features.Players.Responses;
+using GameCloud.Application.Features.Sessions.Models;
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Repositories;
 using Microsoft.AspNetCore.Http;
@@ -18,9 +21,115 @@ public class PlayerService(
     IMapper mapper,
     IGameContext gameContext,
     IPlayerAttributeService attributeService,
-    IHttpContextAccessor httpContextAccessor)
+    IHttpContextAccessor httpContextAccessor,
+    ITokenService tokenService,
+    ISessionCache sessionCache)
     : IPlayerService
 {
+    public async Task<AuthenticationResponse> AuthenticateWithDeviceAsync(string deviceId, Dictionary<string, object> metadata = null)
+    {
+        var player = await playerRepository.GetByDeviceIdAsync(gameContext.GameId, deviceId);
+
+        if (player == null)
+        {
+            player = new Player
+            {
+                Id = Guid.NewGuid(),
+                DeviceId = deviceId,
+                Username = $"device_{Guid.NewGuid().ToString("N").Substring(0, 8)}",
+                DisplayName = $"Player_{Random.Shared.Next(1000, 9999)}",
+                GameId = gameContext.GameId,
+                Metadata = JsonSerializer.SerializeToDocument(metadata ?? new Dictionary<string, object>()),
+                CreatedAt = DateTime.UtcNow,
+                LastLoginAt = DateTime.UtcNow
+            };
+
+            await playerRepository.CreateAsync(player);
+        }
+
+        return await CreateAuthenticationResponseAsync(player, deviceId);
+    }
+
+    public async Task<AuthenticationResponse> AuthenticateWithCustomIdAsync(string customId,
+        Dictionary<string, object> metadata = null, bool create = true)
+    {
+        var player = await playerRepository.GetByCustomIdAsync(gameContext.GameId, customId);
+
+        if (player == null && !create)
+            throw new NotFoundException($"Player with custom id {customId} not found");
+
+        if (player == null)
+        {
+            player = new Player
+            {
+                Id = Guid.NewGuid(),
+                CustomId = customId,
+                Username = $"custom_{Guid.NewGuid().ToString("N").Substring(0, 8)}",
+                DisplayName = $"Player_{Random.Shared.Next(1000, 9999)}",
+                GameId = gameContext.GameId,
+                Metadata = JsonSerializer.SerializeToDocument(metadata ?? new Dictionary<string, object>()),
+                CreatedAt = DateTime.UtcNow,
+                LastLoginAt = DateTime.UtcNow
+            };
+
+            await playerRepository.CreateAsync(player);
+        }
+
+        return await CreateAuthenticationResponseAsync(player, null);
+    }
+
+    public async Task<AuthenticationResponse> RefreshSessionAsync(string sessionId)
+    {
+        var session = await sessionCache.GetSessionAsync(sessionId);
+        if (session == null)
+            throw new UnauthorizedAccessException("Invalid session");
+
+        var player = await playerRepository.GetByIdAsync(session.PlayerId);
+        if (player == null)
+            throw new NotFoundException("Player", session.PlayerId);
+
+        return await CreateAuthenticationResponseAsync(player, session.DeviceId);
+    }
+
+    private async Task<AuthenticationResponse> CreateAuthenticationResponseAsync(Player player, string deviceId = null)
+    {
+        var sessionId = Guid.NewGuid().ToString();
+        var issuedAt = DateTime.UtcNow;
+        var expiresAt = issuedAt.AddHours(1);
+
+        var token = await tokenService.GenerateTokenAsync(new TokenGenerationRequest
+        {
+            PlayerId = player.Id,
+            Username = player.Username,
+            SessionId = sessionId,
+            DeviceId = deviceId,
+            IssuedAt = issuedAt,
+            ExpiresAt = expiresAt
+        });
+
+        await sessionCache.SetSessionAsync(sessionId, new SessionInfo
+        {
+            PlayerId = player.Id,
+            SessionId = sessionId,
+            DeviceId = deviceId,
+            ExpiresAt = expiresAt
+        });
+
+        return new AuthenticationResponse
+        {
+            Player = mapper.Map<PlayerResponse>(player),
+            Token = token,
+            SessionId = sessionId,
+            DeviceId = deviceId,
+            IssuedAt = issuedAt,
+            ExpiresAt = expiresAt,
+            Vars = new Dictionary<string, string>
+            {
+                ["game_id"] = gameContext.GameId.ToString()
+            }
+        };
+    }
+
     public async Task<PlayerResponse> GetByIdAsync(Guid id)
     {
         var player = await playerRepository.GetByIdAsync(id);

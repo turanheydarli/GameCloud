@@ -1,4 +1,5 @@
 using GameCloud.Business.Extensions;
+using GameCloud.Caching.Extensions;
 using GameCloud.Functioning.Extensions;
 using GameCloud.Persistence.Contexts;
 using GameCloud.WebAPI.Exceptions;
@@ -37,6 +38,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddRedisCache(builder.Configuration);
 builder.Services.AddScriptingServices();
 
 builder.Services.AddProblemDetails();

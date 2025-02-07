@@ -86,7 +86,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<IUserService, UserService>()
             .AddScoped<IFunctionService, FunctionService>()
             .AddScoped<IMatchmakingService, MatchmakingService>()
-            .AddScoped<INotificationService, NotificationService>();
+            .AddScoped<INotificationService, NotificationService>()
+            .AddScoped<ITokenService, TokenService>();
     }
 
     private static IServiceCollection AddAuthorizationHandlers(this IServiceCollection services)
@@ -232,7 +233,7 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
-
+    
     public static IServiceCollection AddMessageQueue(
         this IServiceCollection services,
         IConfiguration configuration)

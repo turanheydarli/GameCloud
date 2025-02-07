@@ -70,6 +70,20 @@ public class PlayerRepository(GameCloudDbContext context) : IPlayerRepository
         return player;
     }
 
+    public async Task<Player> GetByDeviceIdAsync(Guid gameId, string deviceId)
+    {
+        IQueryable<Player?> queryable = context.Set<Player>();
+
+        return await queryable.FirstOrDefaultAsync(p => p.DeviceId == deviceId && p.GameId == gameId);
+    }
+
+    public async Task<Player> GetByCustomIdAsync(Guid gameId, string customId)
+    {
+        IQueryable<Player?> queryable = context.Set<Player>();
+
+        return await queryable.FirstOrDefaultAsync(p => p.CustomId == customId && p.GameId == gameId);
+    }
+
     public async Task<IPaginate<Player>> GetAllByGameId(Guid gameId, int index, int size, bool enableTracking = true)
     {
         IQueryable<Player?> queryable = context.Set<Player>();

@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\GameCloud.Application\GameCloud.Application.csproj" />
     <ProjectReference Include="..\..\Infrastructure\GameCloud.Business\GameCloud.Business.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\GameCloud.Caching\GameCloud.Caching.csproj" />
     <ProjectReference Include="..\..\Infrastructure\GameCloud.Scripting\GameCloud.Scripting.csproj" />
   </ItemGroup>
 
