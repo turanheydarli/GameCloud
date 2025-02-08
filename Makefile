@@ -2,7 +2,7 @@ PROJ_NAME := GameCloud
 API_PROJ := ./Presentation/GameCloud.WebAPI
 INFRA_PROJ := ./Infrastructure/GameCloud.Persistence
 K8S_NAMESPACE := gamecloud
-POD_NAME := gamecloud-main-76fdf55976-4762k   
+POD_NAME := gamecloud-main-576ccfc9d6-5g2hf    
 DEPLOYMENT_NAME := gamecloud-main
 IMAGE_TAG := latest
 
@@ -111,8 +111,3 @@ get-nodes:
 cluster-info:
 	@echo "Displaying cluster information..."
 	kubectl cluster-info
-
-# Usage examples as comments:
-# make scale 3        # Scale to 3 replicas
-# make deploy        # Deploy the application
-# make rollout-undo # Rollback to previous version
