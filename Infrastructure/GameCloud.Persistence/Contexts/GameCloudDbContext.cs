@@ -25,18 +25,14 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<MatchTicket> MatchTickets { get; set; }
         public DbSet<Match> Matches { get; set; }
         public DbSet<MatchAction> MatchActions { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            base.OnConfiguring(optionsBuilder);
-        }
-
+        public DbSet<StoredMatch> StoredMatches { get; set; }
+        public DbSet<StoredPlayer> StoredPlayers { get; set; }
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("gc");
-
             base.OnModelCreating(modelBuilder);
-
+            
             modelBuilder.ApplyConfiguration(new AppUserEntityConfiguration());
             modelBuilder.ApplyConfiguration(new AppRoleEntityConfiguration());
             modelBuilder.ApplyConfiguration(new GameEntityConfiguration());
@@ -48,6 +44,8 @@ namespace GameCloud.Persistence.Contexts
             modelBuilder.ApplyConfiguration(new PlayerEntityConfiguration());
             modelBuilder.ApplyConfiguration(new ImageDocumentEntityConfiguration());
             modelBuilder.ApplyConfiguration(new ActionLogEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new StoredMatchEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new StoredPlayerEntityConfiguration());
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using Amazon.S3;
 using FirebaseAdmin;
@@ -67,6 +68,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<IMatchRepository, MatchRepository>()
             .AddScoped<IMatchmakingQueueRepository, MatchmakingQueueRepository>()
             .AddScoped<IMatchActionRepository, MatchActionRepository>()
+            .AddScoped<IStoredMatchRepository, StoredMatchRepository>()
+            .AddScoped<IStoredPlayerRepository, StoredPlayerRepository>()
             .AddScoped<IMatchTicketRepository, MatchTicketRepository>();
     }
 
@@ -197,7 +200,7 @@ public static class ServiceCollectionExtensions
         var jwtIssuer = configuration["Jwt:Issuer"];
         var jwtAudience = configuration["Jwt:Audience"];
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-
+    
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -205,20 +208,20 @@ public static class ServiceCollectionExtensions
             })
             .AddJwtBearer(cfg =>
             {
-                cfg.RequireHttpsMetadata = false;
-                cfg.SaveToken = true;
                 cfg.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidIssuer = jwtIssuer,
-                    ValidAudience = jwtAudience,
+                    ValidateIssuerSigningKey = true,
                     IssuerSigningKey = key,
                     ValidateIssuer = true,
+                    ValidIssuer = jwtIssuer,
                     ValidateAudience = true,
+                    ValidAudience = jwtAudience,
                     ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
+                    NameClaimType = ClaimTypes.Name,
+                    RoleClaimType = ClaimTypes.Role
                 };
-
+    
                 cfg.Events = new JwtBearerEvents
                 {
                     OnChallenge = context =>
@@ -230,7 +233,7 @@ public static class ServiceCollectionExtensions
                         throw new UnauthorizedAccessException("You have not access to this operation.")
                 };
             });
-
+    
         return services;
     }
     

@@ -24,12 +24,3 @@ public interface IMatchTicketRepository
     Task<List<MatchTicket>> GetMatchTicketsAsync(Guid matchId);
     Task<List<MatchTicket>> GetPlayerActiveTicketsAsync(Guid playerId);
 }
-
-public interface IMatchRepository
-{
-    Task<Match?> GetByIdAsync(Guid matchId);
-    Task CreateAsync(Match match);
-    Task UpdateAsync(Match match);
-    Task<List<Match>> GetTimeoutMatchesAsync(DateTime utcNow);
-    Task<List<Match>> GetPlayerActiveMatchesAsync(Guid playerId);
-}

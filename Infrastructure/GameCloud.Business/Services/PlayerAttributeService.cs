@@ -22,7 +22,7 @@ public class PlayerAttributeService(
     private const int MaxValueLength = 1024 * 1024;
     private readonly IMapper _mapper = mapper;
 
-    public async Task<Dictionary<string, AttributeResponse>> GetCollectionAsync(
+    public async Task<AttributeCollectionResponse> GetCollectionAsync(
         string username,
         string collection)
     {
@@ -51,8 +51,7 @@ public class PlayerAttributeService(
             )
         );
 
-        // await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
-        return result;
+        return new AttributeCollectionResponse(Collections: result);
     }
 
     public async Task<AttributeResponse?> GetAsync(

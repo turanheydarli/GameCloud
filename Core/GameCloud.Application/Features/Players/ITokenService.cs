@@ -8,6 +8,8 @@ public class TokenGenerationRequest
     public string DeviceId { get; set; }
     public DateTime IssuedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
+        public string? Role { get; set; }
+
 }
 
 public interface ITokenService

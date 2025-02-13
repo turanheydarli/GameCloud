@@ -24,7 +24,14 @@ public class MatchRepository(GameCloudDbContext context) : IMatchRepository
         context.Entry(match).State = EntityState.Modified;
         await context.SaveChangesAsync();
     }
+    public async Task<Match?> GetPlayerActiveMatchAsync(Guid playerId)
+    {
+        IQueryable<Match?> queryable = context.Set<Match>();
 
+        return await queryable.FirstOrDefaultAsync(m =>
+            m.PlayerIds.Contains(playerId) &&
+            (m.State == MatchStatus.InProgress || m.State == MatchStatus.Ready));
+    }
     public async Task<List<Match>> GetTimeoutMatchesAsync(DateTime utcNow)
     {
         return await context.Set<Match>()

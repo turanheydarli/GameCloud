@@ -4,7 +4,7 @@ namespace GameCloud.Application.Features.Players;
 
 public interface IPlayerAttributeService
 {
-    Task<Dictionary<string, AttributeResponse>> GetCollectionAsync(string username, string collection);
+    Task<AttributeCollectionResponse> GetCollectionAsync(string username, string collection);
     Task<AttributeResponse?> GetAsync(string username, string collection, string key);
 
     Task SetAsync(string username, string collection, string key, string value, string? expectedVersion = null,

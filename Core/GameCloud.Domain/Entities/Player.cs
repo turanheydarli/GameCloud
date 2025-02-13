@@ -5,7 +5,7 @@ namespace GameCloud.Domain.Entities;
 
 public class Player : BaseEntity
 {
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
     public string Username { get; set; }
     public string DisplayName { get; set; }
     public string CustomId { get; set; }
@@ -14,7 +14,7 @@ public class Player : BaseEntity
     public PlayerStatus Status { get; set; }
     public AuthProvider AuthProvider { get; set; }
 
-    public virtual AppUser User { get; set; }
+    public virtual AppUser? User { get; set; }
 
     public virtual ICollection<PlayerAttribute> Attributes { get; set; }
     public string DeviceId { get; set; }

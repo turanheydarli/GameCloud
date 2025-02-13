@@ -23,6 +23,8 @@ public class MatchmakingService(
     IActionService actionService,
     IFunctionRepository functionRepository,
     IMatchStateCache matchStateCache,
+    IStoredMatchRepository storedMatchRepository,
+    IStoredPlayerRepository storedPlayerRepository,
     ILogger<MatchmakingService> logger)
     : IMatchmakingService
 {
@@ -30,34 +32,41 @@ public class MatchmakingService(
     {
         logger.LogInformation("Creating match queue {QueueName} for game {GameId}", request.Name, gameContext.GameId);
 
-        var matchmaker = await functionRepository.GetByActionTypeAsync(
-            gameContext.GameId,
-            request.matchmakerFunctionName!);
-
-        if (matchmaker == null)
-        {
-            logger.LogWarning("Matchmaker function {FunctionName} not found for game {GameId}",
-                request.matchmakerFunctionName, gameContext.GameId);
-            throw new MatchmakerFunctionNotFoundException(request.matchmakerFunctionName!, gameContext.GameId);
-        }
-
-        if (matchmaker == null)
-        {
-            throw new NotFoundException("The matchmaker was not found");
-        }
-
         var queue = new MatchmakingQueue
         {
             GameId = gameContext.GameId,
             Name = request.Name,
             Description = request.Description,
+            QueueType = request.QueueType,
             IsEnabled = true,
             MinPlayers = request.MinPlayers,
             MaxPlayers = request.MaxPlayers,
             TicketTTL = request.TicketTTL,
             Rules = request.Rules,
-            MatchmakerFunctionId = matchmaker.Id
+            UseCustomMatchmaker = request.UseCustomMatchmaker,
         };
+
+        if (request.UseCustomMatchmaker)
+        {
+            var matchmaker = await functionRepository.GetByActionTypeAsync(
+                gameContext.GameId,
+                request.matchmakerFunctionName!);
+
+            if (matchmaker == null)
+            {
+                logger.LogWarning("Matchmaker function {FunctionName} not found for game {GameId}",
+                    request.matchmakerFunctionName, gameContext.GameId);
+                throw new MatchmakerFunctionNotFoundException(request.matchmakerFunctionName!, gameContext.GameId);
+            }
+
+            if (matchmaker == null)
+            {
+                throw new NotFoundException("The matchmaker was not found");
+            }
+
+            queue.MatchmakerFunctionId = matchmaker.Id;
+            queue.MatchmakerFunction = matchmaker;
+        }
 
         await queueRepository.CreateAsync(queue);
 
@@ -150,7 +159,6 @@ public class MatchmakingService(
                             rules = queue.Rules,
                             metadata = new
                             {
-                                gameMode = queue.Rules.RootElement.GetProperty("gameMode").GetString() ?? "default",
                                 version = "1.0"
                             }
                         })
@@ -210,7 +218,12 @@ public class MatchmakingService(
 
     private async Task<List<List<MatchTicket>>> FindMatchingPlayers(List<MatchTicket> tickets, MatchmakingQueue queue)
     {
-        if (queue.MatchmakerFunctionId.HasValue)
+        if (queue.QueueType == QueueType.Asynchronous)
+        {
+            return await FindAsyncMatch(tickets.First(), queue);
+        }
+
+        if (queue is { UseCustomMatchmaker: true, MatchmakerFunctionId: not null })
         {
             return await ExecuteCustomMatchmaker(tickets, queue);
         }
@@ -218,7 +231,232 @@ public class MatchmakingService(
         return await ExecuteDefaultMatchmaker(tickets, queue);
     }
 
-    private async Task<List<List<MatchTicket>>> ExecuteCustomMatchmaker(List<MatchTicket> tickets, MatchmakingQueue queue)
+    private async Task<StoredPlayerState> GetPlayerState(Guid playerId)
+    {
+        var recentMatches = await storedMatchRepository.GetByGameAndQueueAsync(
+            gameContext.GameId,
+            null,
+            match => match.Players.Any(p => p.Id == playerId),
+            10
+        );
+
+        return new StoredPlayerState
+        {
+            PlayerId = playerId,
+            RecentOpponents = recentMatches?.SelectMany(m => m.Players)
+                ?.Where(p => p.Id != playerId)
+                ?.Select(p => p.Id)
+                ?.ToList(),
+            AverageScore = recentMatches?.SelectMany(m => m.Players)
+                ?.Where(p => p.Id == playerId)
+                ?.Select(p => p.Statistics?.Deserialize<PlayerMatchStatistics>()?.Score ?? 0)
+                ?.DefaultIfEmpty(0)
+                ?.Average() ?? 0,
+            LastPlayedAt = recentMatches?.SelectMany(m => m.Players)
+                ?.Where(p => p.Id == playerId)
+                ?.Select(p => p.LastPlayedAt)
+                ?.DefaultIfEmpty(DateTime.MinValue)
+                ?.Max() ?? DateTime.MinValue
+        };
+    }
+
+    private async Task<JsonDocument> PrepareReplayState(StoredMatch storedMatch, Guid activePlayerId)
+    {
+        var replayState = new
+        {
+            originalMatchId = storedMatch.OriginalMatchId,
+            timestamp = DateTime.UtcNow,
+            mode = "replay",
+            activePlayer = activePlayerId,
+            originalPlayers = storedMatch.Players.Select(p => new
+            {
+                PlayerId = p.Id,
+                p.Statistics,
+                p.LastPlayedAt
+            }),
+            gameState = storedMatch.GameState,
+        };
+
+        return JsonSerializer.SerializeToDocument(replayState);
+    }
+
+    private async Task<StoredMatch> CreateBotMatch(MatchTicket activeTicket, MatchmakingQueue queue)
+    {
+        var botMatch = new StoredMatch
+        {
+            GameId = queue.GameId,
+            QueueName = queue.Name,
+            MatchType = "bot",
+            Label = "bot-label",
+            Metadata = JsonDocument.Parse("{}"),
+            GameState = JsonSerializer.SerializeToDocument(new
+            {
+                type = "bot_match",
+                difficulty = "adaptive",
+                initialState = queue.Rules ?? JsonDocument.Parse("{}")
+            }),
+            Players = new List<StoredPlayer>(),
+            IsAvailableForMatching = true,
+            CompletedAt = DateTime.UtcNow,
+        };
+
+        botMatch = await storedMatchRepository.CreateAsync(botMatch);
+        
+        var storedPlayer = await storedPlayerRepository.CreateAsync(new StoredPlayer
+        {
+            Id = activeTicket.PlayerId,
+            LastPlayedAt = DateTime.UtcNow,
+            Statistics = JsonSerializer.SerializeToDocument(new PlayerMatchStatistics
+            {
+                Score = 1000,
+                IsBot = false
+            }),
+            StoredMatchId = botMatch.Id,
+            Actions = JsonDocument.Parse("{}"),
+            Mode = "player",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        botMatch.Players.Add(storedPlayer);
+
+        await storedMatchRepository.UpdateAsync(botMatch);
+
+        return botMatch;
+    }
+
+    private async Task<List<List<MatchTicket>>> FindAsyncMatch(MatchTicket activeTicket, MatchmakingQueue queue)
+    {
+        var playerState = await GetPlayerState(activeTicket.PlayerId);
+        var playerProps = activeTicket.Properties.Deserialize<PlayerMatchProperties>();
+
+        var storedMatches = await storedMatchRepository.GetByGameAndQueueAsync(
+            queue.GameId,
+            queue.Name,
+            filter: match =>
+                match.IsAvailableForMatching &&
+                match.CompletedAt > DateTime.UtcNow.AddDays(-7) &&
+                match.Players.Count <= queue.MaxPlayers &&
+                !match.Players.Any(p => playerState.RecentOpponents.Contains(p.Id)),
+            limit: queue.MaxPlayers - 1
+        );
+
+        if (!storedMatches.Any())
+        {
+            var botMatch = await CreateBotMatch(activeTicket, queue);
+            storedMatches = new List<StoredMatch> { botMatch };
+        }
+
+        var matchGroup = new List<MatchTicket> { activeTicket };
+
+        foreach (var storedMatch in storedMatches.OrderByDescending(m => CalculateMatchQuality(m, playerProps)))
+        {
+            foreach (var storedPlayer in storedMatch.Players.OrderBy(p => p.LastPlayedAt))
+            {
+                if (await IsPlayerInActiveMatch(storedPlayer.Id))
+                    continue;
+
+                var replayState = await PrepareReplayState(storedMatch, activeTicket.PlayerId);
+
+                var virtualTicket = new MatchTicket
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = queue.GameId,
+                    PlayerId = storedPlayer.Id,
+                    QueueName = queue.Name,
+                    Status = TicketStatus.Matched,
+                    Properties = JsonSerializer.SerializeToDocument(new PlayerMatchProperties
+                    {
+                        IsStoredPlayer = true,
+                        StoredMatchId = storedMatch.Id,
+                        Statistics = storedPlayer.Statistics != null
+                            ? storedPlayer.Statistics.Deserialize<PlayerMatchStatistics>()
+                            : new PlayerMatchStatistics(),
+                        LastPlayedAt = storedPlayer.LastPlayedAt,
+                        Mode = "async",
+                        GameData = replayState
+                    }),
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.Add(queue.TicketTTL)
+                };
+
+                matchGroup.Add(virtualTicket);
+
+                if (matchGroup.Count >= queue.MaxPlayers)
+                    break;
+            }
+
+            if (matchGroup.Count >= queue.MinPlayers)
+                break;
+        }
+
+        return matchGroup.Count >= queue.MinPlayers
+            ? new List<List<MatchTicket>> { matchGroup }
+            : new List<List<MatchTicket>>();
+    }
+
+    private double CalculateMatchQuality(StoredMatch match, PlayerMatchProperties activePlayerProps)
+    {
+        double score = 0;
+
+        score += (DateTime.UtcNow - match.CompletedAt).TotalDays * -0.1;
+
+        if (activePlayerProps.Statistics?.Score != null)
+        {
+            var avgMatchScore =
+                match.Players.Average(p => p.Statistics.Deserialize<PlayerMatchStatistics>()?.Score ?? 0);
+            var scoreDiff = Math.Abs(activePlayerProps.Statistics.Score - avgMatchScore);
+            score += 1.0 / (1 + scoreDiff * 0.1);
+        }
+
+        return score;
+    }
+
+    public class StoredPlayerState
+    {
+        public Guid PlayerId { get; set; }
+        public List<Guid>? RecentOpponents { get; set; } = new();
+        public double AverageScore { get; set; }
+        public DateTime LastPlayedAt { get; set; }
+    }
+
+    private async Task<bool> IsPlayerInActiveMatch(Guid playerId)
+    {
+        var activeMatch = await matchRepository.GetPlayerActiveMatchAsync(playerId);
+        return activeMatch != null;
+    }
+
+    private async Task StoreCompletedMatch(Match match)
+    {
+        if (match.State != MatchStatus.Completed)
+            return;
+
+        var matchState = match.MatchState.Deserialize<MatchState>();
+
+        var storedMatch = new StoredMatch
+        {
+            OriginalMatchId = match.Id,
+            GameId = match.GameId,
+            QueueName = match.QueueName,
+            MatchType = matchState.MatchType,
+            FinalScore = matchState.FinalScore,
+            Duration = (match.CompletedAt - match.StartedAt)?.TotalSeconds ?? 0,
+            CompletedAt = match.CompletedAt ?? DateTime.UtcNow,
+            IsAvailableForMatching = true,
+            Players = match.PlayerIds.Select(playerId => new StoredPlayer
+            {
+                Id = playerId,
+                LastPlayedAt = match.CompletedAt ?? DateTime.UtcNow
+            }).ToList()
+        };
+
+        await storedMatchRepository.CreateAsync(storedMatch);
+        logger.LogInformation("Stored match metadata for {MatchId}", match.Id);
+    }
+
+
+    private async Task<List<List<MatchTicket>>> ExecuteCustomMatchmaker(List<MatchTicket> tickets,
+        MatchmakingQueue queue)
     {
         var ticketData = tickets.Select(t => new
         {
@@ -277,7 +515,8 @@ public class MatchmakingService(
         };
     }
 
-    private async Task<MatchState> TransitionMatchState(Match match, MatchState currentState, MatchActionRequest trigger,
+    private async Task<MatchState> TransitionMatchState(Match match, MatchState currentState,
+        MatchActionRequest trigger,
         Guid playerId)
     {
         logger.LogDebug("Transitioning match {MatchId} state with trigger {Trigger}",
@@ -380,7 +619,8 @@ public class MatchmakingService(
         {
             match.CompletedAt = DateTime.UtcNow;
             await matchStateCache.RemoveMatchStateAsync(matchId);
-            logger.LogInformation("Removed completed match {MatchId} from cache", matchId);
+            await StoreCompletedMatch(match);
+            logger.LogInformation("Stored completed match {MatchId} for future matchmaking", matchId);
         }
 
         await matchRepository.UpdateAsync(match);
@@ -544,8 +784,8 @@ public class MatchmakingService(
             )
         );
 
-        var newState = result.IsSuccess && result.Result.Data != null
-            ? JsonSerializer.Deserialize<MatchState>(result.Result.Data)
+        var newState = result is { IsSuccess: true, Result.Data: not null }
+            ? result.Result.Data.Deserialize<MatchState>()
             : matchState;
 
         await matchStateCache.SetMatchStateAsync(match.Id, newState);

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GameCloud.Domain.Entities.Matchmaking;
 
@@ -18,22 +19,23 @@ public class MatchmakingQueue : BaseEntity
 
     public virtual Game Game { get; set; }
 
-    public Guid? MatchmakerFunctionId {get;set;}
-    public virtual FunctionConfig? MatchmakerFunction {get;set;}
+    public Guid? MatchmakerFunctionId { get; set; }
+    public virtual FunctionConfig? MatchmakerFunction { get; set; }
 
-    public bool UseCustomMatchmaker { get; set; } = false;  
-    
+    public bool UseCustomMatchmaker { get; set; } = false;
+
     public QueueType QueueType { get; set; } = QueueType.TurnBased;
-    
+
     public virtual ICollection<MatchTicket> Tickets { get; set; }
     public virtual ICollection<MatchAction> Actions { get; set; }
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum QueueType
 {
-    TurnBased,      // Chess, Tic-tac-toe
-    Simultaneous,   // Tetris, Racing
-    Asynchronous    // Dice Dreams, Mob Control
+    [JsonPropertyName("turnBased")] TurnBased,
+    [JsonPropertyName("simultaneous")] Simultaneous,
+    [JsonPropertyName("asynchronous")] Asynchronous
 }
 
 public record MatchingCriteria(List<AttributeCriteria> Attributes);
@@ -68,6 +70,7 @@ public class Match : BaseEntity
     public Guid GameId { get; set; }
     public string QueueName { get; set; }
     public MatchStatus State { get; set; }
+    public MatchType MatchType { get; set; }
 
     public List<Guid> PlayerIds { get; set; }
     public Guid? CurrentPlayerId { get; set; }

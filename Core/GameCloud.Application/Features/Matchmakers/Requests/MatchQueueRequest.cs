@@ -13,9 +13,11 @@ public record MatchQueueRequest(
     TimeSpan TicketTTL,
     TimeSpan? TurnTimeout,
     TimeSpan? MatchTimeout,
+    QueueType QueueType,
     JsonDocument Rules,
     Guid MatchmakerFunctionId,
     bool IsEnabled = true,
+    bool UseCustomMatchmaker = true,
     string? matchmakerFunctionName = null
 );
 

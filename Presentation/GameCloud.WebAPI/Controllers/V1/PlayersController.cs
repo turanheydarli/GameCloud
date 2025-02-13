@@ -116,6 +116,16 @@ public class PlayersController(
         await playerService.RemoveAttributeAsync(username, collection, key);
         return NoContent();
     }
+    [HttpGet("{id:guid}")]
+    [Authorize(Policy = "HasGameKey")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var player = await playerService.GetByIdAsync(id);
+        if (player == null)
+            return NotFound();
+            
+        return Ok(player);
+    }
 }
 
 public class DeviceAuthRequest

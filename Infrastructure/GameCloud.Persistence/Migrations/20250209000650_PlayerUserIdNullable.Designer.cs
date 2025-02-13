@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameCloud.Persistence.Migrations
 {
     [DbContext(typeof(GameCloudDbContext))]
-    partial class GameCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250209000650_PlayerUserIdNullable")]
+    partial class PlayerUserIdNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -553,9 +556,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<TimeSpan?>("MatchTimeout")
                         .HasColumnType("interval");
 
-                    b.Property<int>("MatchType")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("NextActionDeadline")
                         .HasColumnType("timestamp with time zone");
 
@@ -745,104 +745,6 @@ namespace GameCloud.Persistence.Migrations
                     b.HasIndex("MatchmakerFunctionId");
 
                     b.ToTable("MatchmakingQueues", "gc");
-                });
-
-            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredMatch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("Duration")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("FinalScore")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("GameId")
-                        .HasColumnType("uuid");
-
-                    b.Property<JsonDocument>("GameState")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<bool>("IsAvailableForMatching")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("MatchQuality")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("MatchType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<JsonDocument>("Metadata")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("OriginalMatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("QueueName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Size")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("StoredMatches", "gc");
-                });
-
-            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<JsonDocument>("Actions")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("LastPlayedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Mode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<JsonDocument>("Statistics")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("StoredMatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StoredMatchId");
-
-                    b.ToTable("StoredPlayers", "gc");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Notification", b =>
@@ -1294,15 +1196,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Navigation("MatchmakerFunction");
                 });
 
-            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", b =>
-                {
-                    b.HasOne("GameCloud.Domain.Entities.Matchmaking.StoredMatch", null)
-                        .WithMany("Players")
-                        .HasForeignKey("StoredMatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>
                 {
                     b.HasOne("GameCloud.Domain.Entities.Game", null)
@@ -1418,11 +1311,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Navigation("Actions");
 
                     b.Navigation("Tickets");
-                });
-
-            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredMatch", b =>
-                {
-                    b.Navigation("Players");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>
