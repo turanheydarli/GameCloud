@@ -28,5 +28,4 @@ public class StoredPlayer : BaseEntity
     public string Mode { get; set; } = "player";
     public Guid StoredMatchId { get; set; }
     public Guid PlayerId { get; set; }
-    public Player Player { get; set; }
 }

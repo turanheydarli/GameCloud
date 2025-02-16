@@ -13,7 +13,7 @@ public class StoredPlayerEntityConfiguration : IEntityTypeConfiguration<StoredPl
 
         builder.HasOne<Player>()
             .WithOne()
-            .HasForeignKey<StoredPlayer>(a => a.PlayerId)
+            .HasForeignKey<StoredPlayer>()
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

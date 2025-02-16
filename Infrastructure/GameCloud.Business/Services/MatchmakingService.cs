@@ -7,7 +7,10 @@ using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Matchmakers;
 using GameCloud.Application.Features.Matchmakers.Requests;
 using GameCloud.Application.Features.Matchmakers.Responses;
+using GameCloud.Application.Features.Players;
+using GameCloud.Application.Features.Players.Requests;
 using GameCloud.Domain.Entities.Matchmaking;
+using GameCloud.Domain.Enums;
 using GameCloud.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -25,6 +28,7 @@ public class MatchmakingService(
     IMatchStateCache matchStateCache,
     IStoredMatchRepository storedMatchRepository,
     IStoredPlayerRepository storedPlayerRepository,
+    IPlayerService playerService,
     ILogger<MatchmakingService> logger)
     : IMatchmakingService
 {
@@ -144,76 +148,105 @@ public class MatchmakingService(
             logger.LogDebug("Processing queue {QueueName} ({QueueId})", queue.Name, queue.Id);
 
             var activeTickets = await ticketRepository.GetActiveTicketsAsync(queue.Id);
-            if (activeTickets.Count < queue.MinPlayers) continue;
 
-            var matchedGroups = await FindMatchingPlayers(activeTickets, queue);
-            foreach (var group in matchedGroups)
+            if (!activeTickets.Any()) continue;
+
+            if (queue.QueueType == QueueType.Asynchronous)
             {
-                var initialState = await actionService.ExecuteActionAsync(
-                    queue.Id,
-                    queue.GameId,
-                    new ActionRequest(queue.Id, "match.initialize",
-                        JsonSerializer.SerializeToDocument(new
-                        {
-                            players = group.Select(t => JsonSerializer.Serialize(t.Player)),
-                            rules = queue.Rules,
-                            metadata = new
-                            {
-                                version = "1.0"
-                            }
-                        })
-                    )
-                );
-
-                if (!initialState.IsSuccess)
-                    continue;
-
-                var match = new Match
+                foreach (var ticket in activeTickets)
                 {
-                    GameId = queue.GameId,
-                    QueueName = queue.Name,
-                    State = MatchStatus.Ready,
-                    CreatedAt = DateTime.UtcNow,
-                    LastActionAt = DateTime.UtcNow,
-                    PlayerIds = group.Select(t => t.PlayerId).ToList(),
-                    PlayerStates = JsonSerializer.SerializeToDocument(
-                        group.Select(t => t.Properties ?? JsonDocument.Parse("{}"))
-                    ),
-                    MatchState = initialState.Result.Data ?? JsonSerializer.SerializeToDocument(new MatchState
+                    var matchedGroups = await FindMatchingPlayers(new List<MatchTicket> { ticket }, queue);
+                    if (matchedGroups.Any())
                     {
-                        Status = MatchStateStatus.Joining,
-                        Phase = MatchPhase.Initialization,
-                        StartedAt = null,
-                        GameState = queue.Rules.RootElement.TryGetProperty("initialState", out var initialStateValue)
-                            ? JsonDocument.Parse(initialStateValue.ToString())
-                            : JsonDocument.Parse("{}"),
-                        Metadata = JsonDocument.Parse("{}"),
-                        Presences = new List<PresenceState>()
-                    }),
-                    TurnHistory = JsonDocument.Parse("[]")
-                };
-
-                var matchState = match.MatchState.Deserialize<Dictionary<string, JsonElement>>();
-                matchState["presences"] = JsonSerializer.SerializeToElement(new List<Dictionary<string, object>>());
-                match.MatchState = JsonSerializer.SerializeToDocument(matchState);
-
-                await matchRepository.CreateAsync(match);
-                createdMatches.Add(match);
-
-                foreach (var ticket in group)
-                {
-                    ticket.Status = TicketStatus.Matched;
-                    ticket.MatchId = match.Id;
-
-                    await ticketRepository.UpdateAsync(ticket);
+                        createdMatches.AddRange(await CreateMatchesFromGroups(matchedGroups, queue));
+                    }
                 }
+
+                continue;
             }
 
-            logger.LogInformation("Created {MatchCount} matches from queue {QueueId}",
-                createdMatches.Count, queue.Id);
+            if (activeTickets.Count < queue.MinPlayers) continue;
+
+            var matchedRealGroups = await FindMatchingPlayers(activeTickets, queue);
+            if (matchedRealGroups.Any())
+            {
+                createdMatches.AddRange(await CreateMatchesFromGroups(matchedRealGroups, queue));
+            }
         }
 
         return createdMatches.Select(mapper.Map<MatchResponse>).ToList();
+    }
+
+    private async Task<List<Match>> CreateMatchesFromGroups(List<List<MatchTicket>> matchedGroups,
+        MatchmakingQueue queue)
+    {
+        var createdMatches = new List<Match>();
+
+        foreach (var group in matchedGroups)
+        {
+            var initialState = await actionService.ExecuteActionAsync(
+                queue.Id,
+                queue.GameId,
+                new ActionRequest(queue.Id, "match.initialize",
+                    JsonSerializer.SerializeToDocument(new
+                    {
+                        players = group.Select(t => JsonSerializer.Serialize(t.Player)),
+                        rules = queue.Rules,
+                        metadata = new
+                        {
+                            version = "1.0"
+                        }
+                    })
+                )
+            );
+
+            if (!initialState.IsSuccess)
+                continue;
+
+            var match = new Match
+            {
+                GameId = queue.GameId,
+                QueueName = queue.Name,
+                State = MatchStatus.Ready,
+                CreatedAt = DateTime.UtcNow,
+                LastActionAt = DateTime.UtcNow,
+                PlayerIds = group.Select(t => t.PlayerId).ToList(),
+                PlayerStates = JsonSerializer.SerializeToDocument(
+                    group.Select(t => t.Properties ?? JsonDocument.Parse("{}"))
+                ),
+                MatchState = initialState.Result.Data ?? JsonSerializer.SerializeToDocument(new MatchState
+                {
+                    Status = MatchStateStatus.Joining,
+                    Phase = MatchPhase.Initialization,
+                    StartedAt = null,
+                    GameState = queue.Rules.RootElement.TryGetProperty("initialState", out var initialStateValue)
+                        ? JsonDocument.Parse(initialStateValue.ToString())
+                        : JsonDocument.Parse("{}"),
+                    Metadata = JsonDocument.Parse("{}"),
+                    Presences = new List<PresenceState>()
+                }),
+                TurnHistory = JsonDocument.Parse("[]")
+            };
+
+            var matchState = match.MatchState.Deserialize<Dictionary<string, JsonElement>>();
+            matchState["presences"] = JsonSerializer.SerializeToElement(new List<Dictionary<string, object>>());
+            match.MatchState = JsonSerializer.SerializeToDocument(matchState);
+
+            await matchRepository.CreateAsync(match);
+            createdMatches.Add(match);
+
+            foreach (var ticket in group)
+            {
+                if (!ticket.IsStoredPlayer)
+                {
+                    ticket.Status = TicketStatus.Matched;
+                    ticket.MatchId = match.Id;
+                    await ticketRepository.UpdateAsync(ticket);
+                }
+            }
+        }
+
+        return createdMatches;
     }
 
     private async Task<List<List<MatchTicket>>> FindMatchingPlayers(List<MatchTicket> tickets, MatchmakingQueue queue)
@@ -282,17 +315,36 @@ public class MatchmakingService(
 
     private async Task<StoredMatch> CreateBotMatch(MatchTicket activeTicket, MatchmakingQueue queue)
     {
+        var player = await playerService.GetByIdAsync(activeTicket.PlayerId);
+
         var botMatch = new StoredMatch
         {
             GameId = queue.GameId,
             QueueName = queue.Name,
             MatchType = "bot",
-            Label = "bot-label",
-            Metadata = JsonDocument.Parse("{}"),
+            Label = "bot-match",
+            Metadata = JsonSerializer.SerializeToDocument(new
+            {
+                type = "bot_match",
+                botConfig = new
+                {
+                    difficulty = "adaptive",
+                    behavior = "default"
+                }
+            }),
             GameState = JsonSerializer.SerializeToDocument(new
             {
                 type = "bot_match",
-                difficulty = "adaptive",
+                virtualPlayers = new[]
+                {
+                    new
+                    {
+                        id = $"bot_{Guid.NewGuid()}",
+                        type = "ai",
+                        difficulty = "adaptive",
+                        behavior = "default"
+                    }
+                },
                 initialState = queue.Rules ?? JsonDocument.Parse("{}")
             }),
             Players = new List<StoredPlayer>(),
@@ -301,25 +353,25 @@ public class MatchmakingService(
         };
 
         botMatch = await storedMatchRepository.CreateAsync(botMatch);
-        
-        var storedPlayer = await storedPlayerRepository.CreateAsync(new StoredPlayer
+
+        var matchHistoryEntry = await storedPlayerRepository.CreateAsync(new StoredPlayer
         {
             Id = activeTicket.PlayerId,
             LastPlayedAt = DateTime.UtcNow,
             Statistics = JsonSerializer.SerializeToDocument(new PlayerMatchStatistics
             {
                 Score = 1000,
-                IsBot = false
+                IsBot = false,
             }),
             StoredMatchId = botMatch.Id,
             Actions = JsonDocument.Parse("{}"),
             Mode = "player",
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            PlayerId = player.Id
         });
 
-        botMatch.Players.Add(storedPlayer);
-
+        botMatch.Players.Add(matchHistoryEntry);
         await storedMatchRepository.UpdateAsync(botMatch);
 
         return botMatch;
@@ -367,7 +419,6 @@ public class MatchmakingService(
                     Status = TicketStatus.Matched,
                     Properties = JsonSerializer.SerializeToDocument(new PlayerMatchProperties
                     {
-                        IsStoredPlayer = true,
                         StoredMatchId = storedMatch.Id,
                         Statistics = storedPlayer.Statistics != null
                             ? storedPlayer.Statistics.Deserialize<PlayerMatchStatistics>()
@@ -376,6 +427,7 @@ public class MatchmakingService(
                         Mode = "async",
                         GameData = replayState
                     }),
+                    IsStoredPlayer = true,
                     CreatedAt = DateTime.UtcNow,
                     ExpiresAt = DateTime.UtcNow.Add(queue.TicketTTL)
                 };

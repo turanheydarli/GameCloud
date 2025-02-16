@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameCloud.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameCloud.Persistence.Migrations
 {
     [DbContext(typeof(GameCloudDbContext))]
-    partial class GameCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250214104204_StoredPlayerPlayerRelationAdded")]
+    partial class StoredPlayerPlayerRelationAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -650,9 +653,6 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsStoredPlayer")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid?>("MatchId")
                         .HasColumnType("uuid");
 
@@ -814,7 +814,6 @@ namespace GameCloud.Persistence.Migrations
             modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<JsonDocument>("Actions")
@@ -846,8 +845,7 @@ namespace GameCloud.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlayerId")
-                        .IsUnique();
+                    b.HasIndex("PlayerId");
 
                     b.HasIndex("StoredMatchId");
 
@@ -1307,7 +1305,13 @@ namespace GameCloud.Persistence.Migrations
                 {
                     b.HasOne("GameCloud.Domain.Entities.Player", null)
                         .WithOne()
-                        .HasForeignKey("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", "PlayerId")
+                        .HasForeignKey("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GameCloud.Domain.Entities.Player", "Player")
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1316,6 +1320,8 @@ namespace GameCloud.Persistence.Migrations
                         .HasForeignKey("StoredMatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Player");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>

@@ -63,6 +63,7 @@ public class MatchTicket : BaseEntity
 
     public virtual Player Player { get; set; }
     public virtual Match Match { get; set; }
+    public bool IsStoredPlayer { get; set; }
 }
 
 public class Match : BaseEntity

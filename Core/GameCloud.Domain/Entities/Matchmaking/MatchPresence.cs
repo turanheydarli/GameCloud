@@ -13,8 +13,4 @@ public class MatchPresenceState
     public JsonDocument Meta { get; set; }
 }
 
-public enum MatchType
-{
-    Realtime,
-    Passive
-}
+ 
