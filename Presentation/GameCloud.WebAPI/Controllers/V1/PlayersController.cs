@@ -26,7 +26,7 @@ public class PlayersController(
         var response = await playerService.AuthenticateWithDeviceAsync(
             request.DeviceId,
             request.Metadata);
-        
+
         return Ok(response);
     }
 
@@ -39,7 +39,7 @@ public class PlayersController(
             request.CustomId,
             request.Metadata,
             request.Create);
-        
+
         return Ok(response);
     }
 
@@ -57,8 +57,16 @@ public class PlayersController(
     [Authorize(Policy = "HasGameKey", Roles = "Player")]
     public async Task<IActionResult> GetMe()
     {
-        var userId = GetUserIdFromClaims();
-        return Ok(await playerService.GetByUserIdAsync(userId));
+        var playerId = GetPlayerIdFromClaims();
+        return Ok(await playerService.GetByIdAsync(playerId));
+    }
+
+    [HttpPut("me")]
+    [Authorize(Policy = "HasGameKey", Roles = "Player")]
+    public async Task<IActionResult> Update(PlayerRequest player)
+    {
+        var playerId = GetPlayerIdFromClaims();
+        return Ok(await playerService.UpdateAsync(playerId, player));
     }
 
     [RequireGameKey]
@@ -96,7 +104,7 @@ public class PlayersController(
         return Ok(attribute);
     }
 
-    
+
     [HttpPut("{username}/attributes/{collection}")]
     public async Task<IActionResult> SetAttribute(
         string username,
@@ -116,6 +124,7 @@ public class PlayersController(
         await playerService.RemoveAttributeAsync(username, collection, key);
         return NoContent();
     }
+
     [HttpGet("{id:guid}")]
     [Authorize(Policy = "HasGameKey")]
     public async Task<IActionResult> GetById(Guid id)
@@ -123,7 +132,7 @@ public class PlayersController(
         var player = await playerService.GetByIdAsync(id);
         if (player == null)
             return NotFound();
-            
+
         return Ok(player);
     }
 }

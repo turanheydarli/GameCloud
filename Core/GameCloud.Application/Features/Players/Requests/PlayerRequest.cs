@@ -6,4 +6,5 @@ public record PlayerRequest(
     Guid Id,
     AuthProvider AuthProvider,
     string? Username,
+    string? DisplayName,
     Guid UserId);

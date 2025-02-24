@@ -1,0 +1,1367 @@
+{
+	"info": {
+		"_postman_id": "35ad2956-505c-43d1-9fd1-6b4e2c3c9a74",
+		"name": "Game API Copy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17271797"
+	},
+	"item": [
+		{
+			"name": "Games",
+			"item": [
+				{
+					"name": "Create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var responseJson = pm.response.json();",
+									"",
+									"pm.environment.set(\"gameId\", responseJson.id)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Code and Chess\",\n  \"description\": \"Chess game for testing GameCloud\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Code and Chess\",\n  \"description\": \"Chess game for testing GameCloud\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:47:06 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"0195330f-c858-726c-85bf-66dfb79ac6df\",\n    \"name\": \"Code and Chess\",\n    \"description\": \"Chess game for testing GameCloud\",\n    \"developerId\": \"01952892-189e-724f-87ad-cb62a82a2e4a\",\n    \"imageId\": \"00000000-0000-0000-0000-000000000000\",\n    \"imageUrl\": null,\n    \"createdAt\": \"0001-01-01T00:00:00\",\n    \"updatedAt\": \"0001-01-01T00:00:00\"\n}"
+						},
+						{
+							"name": "Unvalidated",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"description\": \"Chess game for testing GameCloud\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:47:31 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"type\": \"https://tools.ietf.org/html/rfc9110#section-15.5.1\",\n    \"title\": \"One or more validation errors occurred.\",\n    \"status\": 400,\n    \"errors\": {\n        \"Name\": [\n            \"The Name field is required.\"\n        ]\n    },\n    \"traceId\": \"00-dd5003f77442a23524559e61d0de42ce-c4a3c42ae1e8cc58-00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Game",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:50:33 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"01953312-3dc0-70b4-87a0-5664c82f6f3a\",\n    \"name\": \"Code and Chess\",\n    \"description\": \"Chess game for testing GameCloud\",\n    \"developerId\": \"01952892-189e-724f-87ad-cb62a82a2e4a\",\n    \"imageId\": \"00000000-0000-0000-0000-000000000000\",\n    \"imageUrl\": null,\n    \"createdAt\": \"0001-01-01T00:00:00\",\n    \"updatedAt\": \"0001-01-01T00:00:00\"\n}"
+						},
+						{
+							"name": "NotFound",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Length",
+									"value": "0"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:50:12 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								}
+							],
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:53:10 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache,no-store"
+								},
+								{
+									"key": "Expires",
+									"value": "-1"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"type\": \"UnauthorizedAccessException\",\n    \"title\": \"Unauthorized\",\n    \"status\": 401,\n    \"detail\": \"You have not access to this operation.\",\n    \"instance\": \"GET /api/v1/games/019523f7-f61f-7b42-b5d9-467c0213a2f4\",\n    \"requestId\": \"0HNAK21OUBAQ2:00000001\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Game Detail",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"details"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/details",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"details"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:59:26 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"019528ac-adf7-73e7-af00-054fab3870d9\",\n    \"name\": \"Code and Chess\",\n    \"description\": \"Chess game for testing GameCloud\",\n    \"developerId\": \"01952892-189e-724f-87ad-cb62a82a2e4a\",\n    \"imageId\": null,\n    \"imageUrl\": null,\n    \"createdAt\": \"0001-01-01T00:00:00\",\n    \"updatedAt\": \"0001-01-01T00:00:00\",\n    \"totalPlayerCount\": 0,\n    \"activePlayerCount\": 0,\n    \"functionCount\": 0,\n    \"keyCount\": 0,\n    \"recentActivity\": []\n}"
+						},
+						{
+							"name": "Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/details",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"details"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:58:20 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache,no-store"
+								},
+								{
+									"key": "Expires",
+									"value": "-1"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"type\": \"UnauthorizedAccessException\",\n    \"title\": \"Unauthorized\",\n    \"status\": 401,\n    \"detail\": \"You have not access to this operation.\",\n    \"instance\": \"GET /api/v1/games/01953312-3dc0-70b4-87a0-5664c82f6f3a/details\",\n    \"requestId\": \"0HNAK21OUBAQ4:00000001\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Set Image",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": "/Users/turanheydarli/Downloads/Artboard 7.png"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/icon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"icon"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Unvalidated",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/Users/turanheydarli/Downloads/Artboard 7.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/icon",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"icon"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:53:35 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"type\": \"https://tools.ietf.org/html/rfc9110#section-15.5.1\",\n    \"title\": \"One or more validation errors occurred.\",\n    \"status\": 400,\n    \"errors\": {\n        \"image\": [\n            \"The image field is required.\"\n        ]\n    },\n    \"traceId\": \"00-f892e1e330cd5ef1ce20995d9cb0664d-6e192b78b452b4e5-00\"\n}"
+						},
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/Users/turanheydarli/Downloads/10il-Code-Academy-Cutted-Logo.jpg"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/icon",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"icon"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:54:04 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"01953316-263d-79dc-a520-77242ecc9847\",\n    \"url\": \"gameicon/ad0db2f2-3592-49af-8c46-5316c4834669/original.jpg\",\n    \"width\": 400,\n    \"height\": 400,\n    \"fileType\": \"image/jpeg\",\n    \"storageProvider\": \"Firebase\",\n    \"type\": 0,\n    \"variants\": [\n        {\n            \"url\": \"gameicon/ad0db2f2-3592-49af-8c46-5316c4834669/200x200.jpg\",\n            \"width\": 200,\n            \"height\": 200,\n            \"variantType\": \"medium\",\n            \"imageDocumentId\": \"01953316-263d-79dc-a520-77242ecc9847\",\n            \"id\": \"01953316-2659-78e4-88b6-d625895187f2\",\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"0001-01-01T00:00:00\"\n        },\n        {\n            \"url\": \"gameicon/ad0db2f2-3592-49af-8c46-5316c4834669/100x100.jpg\",\n            \"width\": 100,\n            \"height\": 100,\n            \"variantType\": \"thumbnail\",\n            \"imageDocumentId\": \"01953316-263d-79dc-a520-77242ecc9847\",\n            \"id\": \"01953316-265a-7832-ae98-8f29517102ef\",\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"0001-01-01T00:00:00\"\n        }\n    ],\n    \"createdAt\": \"2025-02-23T13:54:04.469562Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Images",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/images",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"images"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/images",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"images"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:54:31 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"01953316-263d-79dc-a520-77242ecc9847\",\n    \"url\": \"gameicon/ad0db2f2-3592-49af-8c46-5316c4834669/original.jpg\",\n    \"width\": 400,\n    \"height\": 400,\n    \"fileType\": \"image/jpeg\",\n    \"storageProvider\": \"Firebase\",\n    \"type\": 0,\n    \"variants\": [\n        {\n            \"url\": \"gameicon/ad0db2f2-3592-49af-8c46-5316c4834669/200x200.jpg\",\n            \"width\": 200,\n            \"height\": 200,\n            \"variantType\": \"medium\",\n            \"imageDocumentId\": \"01953316-263d-79dc-a520-77242ecc9847\",\n            \"id\": \"01953316-2659-78e4-88b6-d625895187f2\",\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"0001-01-01T00:00:00\"\n        },\n        {\n            \"url\": \"gameicon/ad0db2f2-3592-49af-8c46-5316c4834669/100x100.jpg\",\n            \"width\": 100,\n            \"height\": 100,\n            \"variantType\": \"thumbnail\",\n            \"imageDocumentId\": \"01953316-263d-79dc-a520-77242ecc9847\",\n            \"id\": \"01953316-265a-7832-ae98-8f29517102ef\",\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"0001-01-01T00:00:00\"\n        }\n    ],\n    \"createdAt\": \"2025-02-23T13:54:04.469562Z\"\n}"
+						},
+						{
+							"name": "NotFound",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/images",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"images"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Length",
+									"value": "0"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:54:50 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								}
+							],
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get Games",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Paginated",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:55:02 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"index\": 0,\n    \"size\": 10,\n    \"count\": 4,\n    \"pages\": 1,\n    \"hasPreviousPage\": false,\n    \"hasNextPage\": false,\n    \"items\": [\n        {\n            \"id\": \"019528ac-adf7-73e7-af00-054fab3870d9\",\n            \"name\": \"Code and Chess\",\n            \"description\": \"Chess game for testing GameCloud\",\n            \"developerId\": \"01952892-189e-724f-87ad-cb62a82a2e4a\",\n            \"imageId\": \"00000000-0000-0000-0000-000000000000\",\n            \"imageUrl\": null,\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"0001-01-01T00:00:00\"\n        },\n        {\n            \"id\": \"0195330f-c858-726c-85bf-66dfb79ac6df\",\n            \"name\": \"Code and Chess\",\n            \"description\": \"Chess game for testing GameCloud\",\n            \"developerId\": \"01952892-189e-724f-87ad-cb62a82a2e4a\",\n            \"imageId\": \"00000000-0000-0000-0000-000000000000\",\n            \"imageUrl\": null,\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"0001-01-01T00:00:00\"\n        },\n        {\n            \"id\": \"01953312-3dc0-70b4-87a0-5664c82f6f3a\",\n            \"name\": \"Code and Chess\",\n            \"description\": \"Chess game for testing GameCloud\",\n            \"developerId\": \"01952892-189e-724f-87ad-cb62a82a2e4a\",\n            \"imageId\": \"00000000-0000-0000-0000-000000000000\",\n            \"imageUrl\": null,\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"0001-01-01T00:00:00\"\n        },\n        {\n            \"id\": \"01952e33-788d-74ae-aeb6-7f5d5069e579\",\n            \"name\": \"Code and Chess\",\n            \"description\": \"Chess game for testing GameCloud\",\n            \"developerId\": \"01952892-189e-724f-87ad-cb62a82a2e4a\",\n            \"imageId\": \"01952e36-5df0-7410-954f-bfba53047a8d\",\n            \"imageUrl\": \"gameicon/8aeadd57-28f3-46ee-99e7-2554113841fb/original.png\",\n            \"createdAt\": \"0001-01-01T00:00:00\",\n            \"updatedAt\": \"2025-02-22T15:11:09.872156Z\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Battle Mobs\",\n  \"description\": \"A battle mobs game\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Unauthorized",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Battle Mobs\",\n  \"description\": \"A battle mobs game\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 23 Feb 2025 13:56:21 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache,no-store"
+								},
+								{
+									"key": "Expires",
+									"value": "-1"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"type\": \"UnauthorizedAccessException\",\n    \"title\": \"Unauthorized\",\n    \"status\": 401,\n    \"detail\": \"You have not access to this operation.\",\n    \"instance\": \"DELETE /api/v1/games/01953312-3dc0-70b4-87a0-5664c82f6f3a\",\n    \"requestId\": \"0HNAK21OUBAQ2:0000000E\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Keys",
+			"item": [
+				{
+					"name": "Create Key",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/keys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Keys",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var responseJson = pm.response.json();",
+									"",
+									"pm.environment.set(\"gameKey\", responseJson.items[0].apiKey)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/keys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/keys/8f6146be",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"keys",
+								"8f6146be"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Functions",
+			"item": [
+				{
+					"name": "Get Functions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"functions"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Paginated",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"functions"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Feb 2025 10:27:16 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"index\": 0,\n    \"size\": 10,\n    \"count\": 3,\n    \"pages\": 1,\n    \"hasPreviousPage\": false,\n    \"hasNextPage\": false,\n    \"items\": [\n        {\n            \"id\": \"01953321-ae20-7d24-87e6-1e138230ddd6\",\n            \"gameId\": \"019528ac-adf7-73e7-af00-054fab3870d9\",\n            \"name\": \"Chess Move\",\n            \"description\": null,\n            \"actionType\": \"move\",\n            \"endpoint\": \"https://functions.yandexcloud.net/d4eh8hc6g19867vska27\",\n            \"isEnabled\": true,\n            \"createdAt\": \"2025-02-23T14:06:40.156888Z\",\n            \"timeout\": \"00:00:30\",\n            \"headers\": {},\n            \"maxRetries\": 0\n        },\n        {\n            \"id\": \"0195377e-6773-71fa-8e81-ff57cd2be8c0\",\n            \"gameId\": \"019528ac-adf7-73e7-af00-054fab3870d9\",\n            \"name\": \"Matchmaking Function\",\n            \"description\": null,\n            \"actionType\": \"Matchmaker\",\n            \"endpoint\": \"https://example.com/matchmaker\",\n            \"isEnabled\": true,\n            \"createdAt\": \"2025-02-24T10:26:25.766165Z\",\n            \"timeout\": \"00:00:30\",\n            \"headers\": {},\n            \"maxRetries\": 0\n        },\n        {\n            \"id\": \"0195377e-a421-77ff-8db5-9a99d4621afd\",\n            \"gameId\": \"019528ac-adf7-73e7-af00-054fab3870d9\",\n            \"name\": \"Matchmaking Function\",\n            \"description\": null,\n            \"actionType\": \"Matchmaker\",\n            \"endpoint\": \"https://example.com/matchmaker\",\n            \"isEnabled\": true,\n            \"createdAt\": \"2025-02-24T10:26:41.312535Z\",\n            \"timeout\": \"00:00:30\",\n            \"headers\": {},\n            \"maxRetries\": 0\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Function",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"functions",
+								"{{functionId}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"functions",
+										"{{functionId}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Feb 2025 10:27:30 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"01953321-ae20-7d24-87e6-1e138230ddd6\",\n    \"gameId\": \"019528ac-adf7-73e7-af00-054fab3870d9\",\n    \"name\": \"Chess Move\",\n    \"description\": null,\n    \"actionType\": \"move\",\n    \"endpoint\": \"https://functions.yandexcloud.net/d4eh8hc6g19867vska27\",\n    \"isEnabled\": true,\n    \"createdAt\": \"2025-02-23T14:06:40.156888Z\",\n    \"timeout\": \"00:00:30\",\n    \"headers\": {},\n    \"maxRetries\": 0\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Function",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-GameKey",
+								"value": "{{gameKey}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Matchmaking Function\",\n  \"description\": \"Handles custom matchmaking logic.\",\n  \"actionType\": \"Matchmaker\",\n  \"endpoint\": \"https://example.com/matchmaker\",\n  \"isEnabled\": true,\n  \"timeout\": \"00:30:00\",\n  \"maxRetries\": 3\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"games",
+								"{{gameId}}",
+								"functions"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-GameKey",
+										"value": "{{gameKey}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Matchmaking Function\",\n  \"description\": \"Handles custom matchmaking logic.\",\n  \"actionType\": \"Matchmaker\",\n  \"endpoint\": \"https://example.com/matchmaker\",\n  \"isEnabled\": true,\n  \"timeout\": \"00:30:00\",\n  \"maxRetries\": 3\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"functions"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Feb 2025 10:26:25 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"0195377e-6773-71fa-8e81-ff57cd2be8c0\",\n    \"gameId\": \"019528ac-adf7-73e7-af00-054fab3870d9\",\n    \"name\": \"Matchmaking Function\",\n    \"description\": null,\n    \"actionType\": \"Matchmaker\",\n    \"endpoint\": \"https://example.com/matchmaker\",\n    \"isEnabled\": true,\n    \"createdAt\": \"2025-02-24T10:26:25.766165Z\",\n    \"timeout\": \"00:00:30\",\n    \"headers\": {},\n    \"maxRetries\": 0\n}"
+						},
+						{
+							"name": "Unvalidated",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-GameKey",
+										"value": "{{gameKey}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Matchmaking Function\",\n  \n  \"maxRetries\": 3\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"games",
+										"{{gameId}}",
+										"functions"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Feb 2025 10:26:48 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Kestrel"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"type\": \"https://tools.ietf.org/html/rfc9110#section-15.5.1\",\n    \"title\": \"One or more validation errors occurred.\",\n    \"status\": 400,\n    \"errors\": {\n        \"Endpoint\": [\n            \"The Endpoint field is required.\"\n        ],\n        \"ActionType\": [\n            \"The ActionType field is required.\"\n        ]\n    },\n    \"traceId\": \"00-b5a85634565f45cd83bb91d01fdb3245-6969777fd59347ee-00\"\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

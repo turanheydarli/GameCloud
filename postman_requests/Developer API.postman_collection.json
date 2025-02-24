@@ -1,0 +1,230 @@
+{
+    "info": {
+        "_postman_id": "551f6942-794b-4942-827a-0f2ebc855ee1",
+        "name": "Developer API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "17271797"
+    },
+    "item": [
+        {
+            "name": "Public",
+            "item": [
+                {
+                    "name": "Register",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var responseJson = pm.response.json();",
+                                    "    pm.environment.set('accessToken', responseJson.token);",
+                                    "    pm.environment.set('currentUserId', responseJson.userId);",
+                                    "    console.log('Authentication successful');",
+                                    "    console.log('Token expires at: ' + responseJson.expiresAt);",
+                                    "} else {",
+                                    "    console.error('Authentication failed');",
+                                    "    pm.environment.unset('accessToken');",
+                                    "    pm.environment.unset('currentUserId');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Test Developer\",\n    \"email\": \"developer@test.com\",\n    \"password\": \"123456\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/developers",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "developers"]
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// Global pre-request script",
+                                    "if (!pm.environment.get('baseUrl')) {",
+                                    "    pm.environment.set('baseUrl', 'https://localhost:7257');",
+                                    "}"
+                                ]
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// Global test script",
+                                    "if (pm.response.code === 401) {",
+                                    "    console.log('Token expired or invalid. Please login again.');",
+                                    "    pm.environment.unset('accessToken');",
+                                    "    pm.environment.unset('currentUserId');",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"developer@test.com\",\n    \"password\": \"123456\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/developers/login",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "developers", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Developer List",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/developers?pageIndex=1&pageSize=10",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "developers"],
+                            "query": [
+                                {
+                                    "key": "pageIndex",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "pageSize",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Developer By Id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/developers/{{developerId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "developers", "{{developerId}}"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Authenticated",
+            "item": [
+                {
+                    "name": "Get Current Developer",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{accessToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/developers/me",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "developers", "me"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Current Developer",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{accessToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Updated Developer Name\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/developers/me",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "developers", "me"]
+                        }
+                    }
+                },
+                {
+                    "name": "Set Profile Photo",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{accessToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/developers/me/photo",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "developers", "me", "photo"]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

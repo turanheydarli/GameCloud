@@ -6,13 +6,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
+using GameCloud.Application.Common.Paging;
+using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Features.Games;
 
 namespace GameCloud.WebAPI.Controllers.V1;
 
 [ApiController]
-[Authorize(Policy = "HasGameKey")]
 [Route("api/v1/[controller]")]
+[Authorize(Policy = "HasGameKey")]
 public class MatchmakingController(
     IMatchmakingService matchmakingService,
     IPlayerService playerService,
@@ -83,6 +85,7 @@ public class MatchmakingController(
         var state = await matchmakingService.GetMatchStateAsync(matchId);
         return Ok(state);
     }
+    
 
     [HttpPost("matches/{matchId:guid}/actions")]
     [ProducesResponseType(typeof(MatchActionResponse), (int)HttpStatusCode.OK)]
@@ -91,7 +94,7 @@ public class MatchmakingController(
         [FromBody] MatchActionRequest request)
     {
         var playerId = GetPlayerIdFromClaims();
-        
+
         var action = await matchmakingService.SubmitActionAsync(matchId, playerId, request);
         return Ok(action);
     }
@@ -148,7 +151,168 @@ public class MatchmakingController(
 
         return Ok(result);
     }
+
+    [HttpPost("matches/{matchId:guid}/end")]
+    [ProducesResponseType(typeof(MatchResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> EndMatch(
+        [FromRoute] Guid matchId,
+        [FromBody] JsonDocument? finalState = null)
+    {
+        var playerId = GetPlayerIdFromClaims();
+        var result = await matchmakingService.EndMatchAsync(matchId, playerId, finalState);
+        return Ok(result);
+    }
+
+    [HttpPost("matches/{matchId:guid}/leave")]
+    [ProducesResponseType(typeof(MatchResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> LeaveMatch([FromRoute] Guid matchId)
+    {
+        var playerId = GetPlayerIdFromClaims();
+        var result = await matchmakingService.LeaveMatchAsync(matchId, playerId);
+        return Ok(result);
+    }
+
+    [HttpGet("queues")]
+    [ProducesResponseType(typeof(PageableListResponse<MatchmakingResponse>), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetQueues(
+        [FromQuery] string? search,
+        [FromQuery] int pageIndex = 0,
+        [FromQuery] int pageSize = 10)
+    {
+        var request = new PageableRequest { PageIndex = pageIndex, PageSize = pageSize };
+        var response = await matchmakingService.GetQueuesAsync(gameContext.GameId, search, request);
+        return Ok(response);
+    }
+
+    [HttpPut("queues/{queueId:guid}")]
+    [ProducesResponseType(typeof(MatchmakingResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> UpdateQueue(
+        [FromRoute] Guid queueId,
+        [FromBody] MatchQueueRequest request)
+    {
+        var response = await matchmakingService.UpdateQueueAsync(queueId, request);
+        return Ok(response);
+    }
+
+    [HttpDelete("queues/{queueId:guid}")]
+    [ProducesResponseType((int)HttpStatusCode.OK)]
+    public async Task<IActionResult> DeleteQueue([FromRoute] Guid queueId)
+    {
+        await matchmakingService.DeleteQueueAsync(queueId);
+        return Ok();
+    }
+
+    [HttpPost("queues/{queueId:guid}/toggle")]
+    [ProducesResponseType(typeof(QueueToggleResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> ToggleQueue(
+        [FromRoute] Guid queueId,
+        [FromBody] ToggleQueueRequest request)
+    {
+        var response = await matchmakingService.ToggleQueueAsync(queueId, request.IsEnabled);
+        return Ok(response);
+    }
+
+    [HttpGet("stats")]
+    [ProducesResponseType(typeof(MatchmakingStatsResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetStats(
+        [FromQuery] List<Guid>? queueIds,
+        [FromQuery] string timeRange = "24h")
+    {
+        var response = await matchmakingService.GetMatchmakingStatsAsync(gameContext.GameId, queueIds, timeRange);
+        return Ok(response);
+    }
+
+    [HttpGet("queues/{queueId:guid}/activity")]
+    [ProducesResponseType(typeof(QueueActivityResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetQueueActivity(
+        [FromRoute] Guid queueId,
+        [FromQuery] string timeRange = "24h")
+    {
+        var response = await matchmakingService.GetQueueActivityAsync(queueId, timeRange);
+        return Ok(response);
+    }
+
+    [HttpGet("queues/{queueId:guid}/matches")]
+    [ProducesResponseType(typeof(PageableListResponse<MatchResponse>), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetQueueMatches(
+        [FromRoute] Guid queueId,
+        [FromQuery] string? status,
+        [FromQuery] int pageIndex = 0,
+        [FromQuery] int pageSize = 10)
+    {
+        var request = new PageableRequest { PageIndex = pageIndex, PageSize = pageSize };
+        var response = await matchmakingService.GetQueueMatchesAsync(queueId, status, request);
+        return Ok(response);
+    }
+
+    [HttpGet("queues/{queueId:guid}/tickets")]
+    [ProducesResponseType(typeof(PageableListResponse<MatchTicketResponse>), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetQueueTickets(
+        [FromRoute] Guid queueId,
+        [FromQuery] int pageIndex = 0,
+        [FromQuery] int pageSize = 10)
+    {
+        var request = new PageableRequest { PageIndex = pageIndex, PageSize = pageSize };
+        var response = await matchmakingService.GetQueueTicketsAsync(queueId, request);
+        return Ok(response);
+    }
+
+    [HttpGet("queues/{queueId:guid}/functions")]
+    [ProducesResponseType(typeof(QueueFunctionsResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetQueueFunctions([FromRoute] Guid queueId)
+    {
+        var response = await matchmakingService.GetQueueFunctionsAsync(queueId);
+        return Ok(response);
+    }
+
+    [HttpPut("queues/{queueId:guid}/functions")]
+    [ProducesResponseType((int)HttpStatusCode.OK)]
+    public async Task<IActionResult> UpdateQueueFunctions(
+        [FromRoute] Guid queueId,
+        [FromBody] UpdateQueueFunctionsRequest request)
+    {
+        await matchmakingService.UpdateQueueFunctionsAsync(queueId, request);
+        return Ok();
+    }
+
+    [HttpPost("queues/{queueId:guid}/test")]
+    [ProducesResponseType(typeof(QueueTestResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> TestQueue(
+        [FromRoute] Guid queueId,
+        [FromBody] QueueTestRequest request)
+    {
+        var response = await matchmakingService.TestQueueAsync(queueId, request);
+        return Ok(response);
+    }
+
+    [HttpGet("queues/{queueId:guid}/dashboard")]
+    [ProducesResponseType(typeof(QueueDashboardResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetQueueDashboard([FromRoute] Guid queueId)
+    {
+        var response = await matchmakingService.GetQueueDashboardAsync(queueId);
+        return Ok(response);
+    }
+
+    [HttpGet("queues/{queueId:guid}/rules")]
+    [ProducesResponseType(typeof(JsonDocument), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetQueueRules([FromRoute] Guid queueId)
+    {
+        var response = await matchmakingService.GetQueueRulesAsync(queueId);
+        return Ok(response);
+    }
+
+    [HttpPut("queues/{queueId:guid}/rules")]
+    [ProducesResponseType((int)HttpStatusCode.OK)]
+    public async Task<IActionResult> UpdateQueueRules(
+        [FromRoute] Guid queueId,
+        [FromBody] JsonDocument rules)
+    {
+        await matchmakingService.UpdateQueueRulesAsync(queueId, rules);
+        return Ok();
+    }
 }
+
+public record ToggleQueueRequest(bool IsEnabled);
 
 public record CreateTicketRequest(
     string QueueName,

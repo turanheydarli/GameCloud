@@ -1,0 +1,334 @@
+{
+    "info": {
+        "_postman_id": "8f6a2354-e673-491d-93f5-a6356d384329",
+        "name": "Games API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "17271797"
+    },
+    "item": [
+        {
+            "name": "Games",
+            "item": [
+                {
+                    "name": "Get Games",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games?pageIndex=1&pageSize=10",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games"],
+                            "query": [
+                                {"key": "pageIndex", "value": "1"},
+                                {"key": "pageSize", "value": "10"}
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "originalRequest": {
+                                "method": "GET",
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/games"
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": {
+                                "index": 0,
+                                "size": 10,
+                                "count": 1,
+                                "pages": 1,
+                                "items": []
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Game",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Game",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var responseJson = pm.response.json();",
+                                    "    pm.environment.set('gameId', responseJson.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"My Game\",\n  \"description\": \"Game description\"\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Game",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "PUT",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Updated Game\",\n  \"description\": \"Updated description\"\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Game",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Set Game Icon",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/icon",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "icon"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Game Icon",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/icon?variant=thumbnail",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "icon"],
+                            "query": [
+                                {"key": "variant", "value": "thumbnail"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Game Images",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/images",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "images"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Game Details",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/details",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "details"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Game Players",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/players?pageIndex=1&pageSize=10",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "players"],
+                            "query": [
+                                {"key": "pageIndex", "value": "1"},
+                                {"key": "pageSize", "value": "10"}
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Game Keys",
+            "item": [
+                {
+                    "name": "Get Default Key",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var responseJson = pm.response.json();",
+                                    "    pm.environment.set('gameKey', responseJson.apiKey);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/keys/default",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "keys", "default"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Keys",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/keys?pageIndex=1&pageSize=10",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "keys"],
+                            "query": [
+                                {"key": "pageIndex", "value": "1"},
+                                {"key": "pageSize", "value": "10"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Key",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/keys",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "keys"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Key",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/keys/{{keyValue}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "keys", "{{keyValue}}"]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "if (!pm.environment.get('baseUrl')) {",
+                    "    pm.environment.set('baseUrl', 'https://localhost:7257');",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('startDate')) {",
+                    "    pm.environment.set('startDate', new Date(Date.now() - 24*60*60*1000).toISOString());",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('endDate')) {",
+                    "    pm.environment.set('endDate', new Date().toISOString());",
+                    "}"
+                ]
+            }
+        }
+    ]
+}

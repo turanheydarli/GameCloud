@@ -1,0 +1,264 @@
+{
+    "info": {
+        "_postman_id": "7e6a2354-f673-491d-93f5-a6356d384330",
+        "name": "Functions API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "17271797"
+    },
+    "item": [
+        {
+            "name": "Functions",
+            "item": [
+                {
+                    "name": "Get Functions",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions?pageIndex=1&pageSize=10",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions"],
+                            "query": [
+                                {"key": "pageIndex", "value": "1"},
+                                {"key": "pageSize", "value": "10"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Function",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Function",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var responseJson = pm.response.json();",
+                                    "    pm.environment.set('functionId', responseJson.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-GameKey",
+                                "value": "{{gameKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Test Function\",\n  \"description\": \"Test function description\",\n  \"actionType\": \"test\",\n  \"endpoint\": \"https://api.example.com/function\",\n  \"isEnabled\": true,\n  \"timeout\": \"00:30:00\",\n  \"maxRetries\": 3\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Function",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "PUT",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Updated Function\",\n  \"description\": \"Updated function description\",\n  \"actionType\": \"test\",\n  \"endpoint\": \"https://api.example.com/updated-function\",\n  \"isEnabled\": true,\n  \"timeout\": \"00:30:00\",\n  \"maxRetries\": 3\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Toggle Function",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}/toggle?isEnabled=true",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}", "toggle"],
+                            "query": [
+                                {"key": "isEnabled", "value": "true"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Function",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Test Function",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-GameKey",
+                                "value": "{{gameKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"data\": {}\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}/test",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}", "test"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Function Logs",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "POST",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"pageIndex\": 1,\n  \"pageSize\": 10\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}/logs",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}", "logs"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Function Log",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}/test/{{actionId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}", "test", "{{actionId}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Function Stats",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/{{functionId}}/stats?from={{startDate}}&to={{endDate}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "{{functionId}}", "stats"],
+                            "query": [
+                                {"key": "from", "value": "{{startDate}}"},
+                                {"key": "to", "value": "{{endDate}}"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Game Functions Stats",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/games/{{gameId}}/functions/stats?from={{startDate}}&to={{endDate}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "games", "{{gameId}}", "functions", "stats"],
+                            "query": [
+                                {"key": "from", "value": "{{startDate}}"},
+                                {"key": "to", "value": "{{endDate}}"}
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "if (!pm.environment.get('baseUrl')) {",
+                    "    pm.environment.set('baseUrl', 'https://localhost:7257');",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('startDate')) {",
+                    "    pm.environment.set('startDate', new Date(Date.now() - 24*60*60*1000).toISOString());",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('endDate')) {",
+                    "    pm.environment.set('endDate', new Date().toISOString());",
+                    "}"
+                ]
+            }
+        }
+    ]
+}

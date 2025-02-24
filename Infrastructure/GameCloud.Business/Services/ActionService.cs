@@ -57,7 +57,7 @@ public class ActionService(
 
         if (functionConfig == null)
         {
-            throw new ApplicationException($"Action type '{request.ActionType}' not found.");
+            throw new NotFoundException($"Action type '{request.ActionType}' not found.");
         }
 
         try

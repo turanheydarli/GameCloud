@@ -26,31 +26,32 @@ public class PlayerService(
     ISessionCache sessionCache)
     : IPlayerService
 {
-    public async Task<AuthenticationResponse> AuthenticateWithDeviceAsync(string deviceId, Dictionary<string, object>? metadata = null)
+    public async Task<AuthenticationResponse> AuthenticateWithDeviceAsync(string deviceId,
+        Dictionary<string, object>? metadata = null)
+    {
+        var player = await playerRepository.GetByDeviceIdAsync(gameContext.GameId, deviceId);
+
+        if (player == null)
         {
-            var player = await playerRepository.GetByDeviceIdAsync(gameContext.GameId, deviceId);
-        
-            if (player == null)
+            var guid = Guid.NewGuid();
+            player = new Player
             {
-                var guid = Guid.NewGuid();
-                player = new Player
-                {
-                    Id = guid,
-                    DeviceId = deviceId,
-                    CustomId = $"device_{guid.ToString("N").Substring(0, 8)}",
-                    Username = $"device_{guid.ToString("N").Substring(0, 8)}",
-                    DisplayName = $"Player_{Random.Shared.Next(1000, 9999)}",
-                    GameId = gameContext.GameId,
-                    Metadata = JsonSerializer.SerializeToDocument(metadata ?? new Dictionary<string, object>()),
-                    CreatedAt = DateTime.UtcNow,
-                    LastLoginAt = DateTime.UtcNow
-                };
-        
-                await playerRepository.CreateAsync(player);
-            }
-        
-            return await CreateAuthenticationResponseAsync(player, deviceId);
+                Id = guid,
+                DeviceId = deviceId,
+                CustomId = $"device_{guid.ToString("N").Substring(0, 8)}",
+                Username = $"device_{guid.ToString("N").Substring(0, 8)}",
+                DisplayName = $"Player_{Random.Shared.Next(1000, 9999)}",
+                GameId = gameContext.GameId,
+                Metadata = JsonSerializer.SerializeToDocument(metadata ?? new Dictionary<string, object>()),
+                CreatedAt = DateTime.UtcNow,
+                LastLoginAt = DateTime.UtcNow
+            };
+
+            await playerRepository.CreateAsync(player);
         }
+
+        return await CreateAuthenticationResponseAsync(player, deviceId);
+    }
 
     public async Task<AuthenticationResponse> AuthenticateWithCustomIdAsync(string customId,
         Dictionary<string, object> metadata = null, bool create = true)
@@ -106,7 +107,8 @@ public class PlayerService(
             SessionId = sessionId,
             DeviceId = deviceId,
             IssuedAt = issuedAt,
-            ExpiresAt = expiresAt
+            ExpiresAt = expiresAt,
+            Role = "Player"
         });
 
         await sessionCache.SetSessionAsync(sessionId, new SessionInfo
@@ -206,6 +208,19 @@ public class PlayerService(
 
             await attributeService.SetBulkAsync(username, collection, collectionUpdates);
         }
+    }
+
+    public async Task<PlayerResponse> UpdateAsync(Guid playerId, PlayerRequest request)
+    {
+        var player = await playerRepository.GetByIdAsync(playerId);
+        if (player == null)
+            throw new ApplicationException("Player not found.");
+
+        player.UpdatedAt = DateTime.UtcNow;
+        player.DisplayName = request.DisplayName ?? player.DisplayName;
+
+        player = await playerRepository.UpdateAsync(player);
+        return mapper.Map<PlayerResponse>(player);
     }
 
     public async Task<PlayerResponse> CreateAsync(PlayerRequest request)

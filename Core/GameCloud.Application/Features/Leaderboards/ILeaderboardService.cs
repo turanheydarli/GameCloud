@@ -15,4 +15,12 @@ public interface ILeaderboardService
         string? leaderboardName = null);
 
     Task<PageableListResponse<LeaderboardResponse>> GetPagedLeaderboardsAsync(DynamicRequest request);
+
+    Task<LeaderboardRecordResponse> SubmitScoreAsync(Guid leaderboardId, LeaderboardRecordRequest request);
+    Task<List<LeaderboardRecordResponse>> GetLeaderboardRecordsAsync(Guid leaderboardId, int? limit = 100, int? offset = 0);
+    Task<LeaderboardRecordResponse> GetUserLeaderboardRecordAsync(Guid leaderboardId, Guid userId);
+    
+    Task ResetLeaderboardAsync(Guid leaderboardId);
+    Task<LeaderboardResponse> GetLeaderboardByNameAsync(string name);
+    Task<List<LeaderboardRecordResponse>> GetUserLeaderboardRecordsAsync(Guid userId, int? limit = 100);
 }

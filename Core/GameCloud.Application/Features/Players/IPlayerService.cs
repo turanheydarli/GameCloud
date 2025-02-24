@@ -22,6 +22,7 @@ public interface IPlayerService
     Task SetAttributeAsync(string username, string collection, AttributeRequest request);
     Task RemoveAttributeAsync(string username, string collection, string key);
     Task ApplyAttributeUpdatesAsync(string username, IEnumerable<EntityAttributeUpdate> updates);
+    Task<PlayerResponse> UpdateAsync(Guid playerId, PlayerRequest player);
 }
 
 public class AuthenticationResponse

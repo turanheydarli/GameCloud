@@ -1,8 +1,11 @@
 using System.Text.Json;
 using AutoMapper;
+using GameCloud.Application.Common.Paging;
+using GameCloud.Application.Common.Responses;
 using GameCloud.Application.Exceptions;
 using GameCloud.Application.Features.Actions;
 using GameCloud.Application.Features.Actions.Requests;
+using GameCloud.Application.Features.Actions.Responses;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.Matchmakers;
 using GameCloud.Application.Features.Matchmakers.Requests;
@@ -12,6 +15,7 @@ using GameCloud.Application.Features.Players.Requests;
 using GameCloud.Domain.Entities.Matchmaking;
 using GameCloud.Domain.Enums;
 using GameCloud.Domain.Repositories;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace GameCloud.Business.Services;
@@ -52,15 +56,15 @@ public class MatchmakingService(
 
         if (request.UseCustomMatchmaker)
         {
-            var matchmaker = await functionRepository.GetByActionTypeAsync(
-                gameContext.GameId,
-                request.matchmakerFunctionName!);
+            var matchmaker = await functionRepository.GetAsync(m => m.GameId == gameContext.GameId
+                                                                    && m.Id == request.MatchmakerFunctionId);
 
             if (matchmaker == null)
             {
                 logger.LogWarning("Matchmaker function {FunctionName} not found for game {GameId}",
-                    request.matchmakerFunctionName, gameContext.GameId);
-                throw new MatchmakerFunctionNotFoundException(request.matchmakerFunctionName!, gameContext.GameId);
+                    request.MatchmakerFunctionId, gameContext.GameId);
+                throw new MatchmakerFunctionNotFoundException(request.MatchmakerFunctionId.ToString()!,
+                    gameContext.GameId);
             }
 
             if (matchmaker == null)
@@ -762,7 +766,18 @@ public class MatchmakingService(
         {
             presence.SessionId = sessionId;
             presence.Status = status;
-            presence.Meta = meta;
+
+            var existingMeta = presence.Meta?.RootElement.EnumerateObject()
+                .ToDictionary(p => p.Name, p => p.Value) ?? new Dictionary<string, JsonElement>();
+            var newMeta = meta.RootElement.EnumerateObject()
+                .ToDictionary(p => p.Name, p => p.Value);
+
+            foreach (var (key, value) in newMeta)
+            {
+                existingMeta[key] = value;
+            }
+
+            presence.Meta = JsonSerializer.SerializeToDocument(existingMeta);
         }
 
         match.MatchState = JsonSerializer.SerializeToDocument(matchState);
@@ -822,19 +837,27 @@ public class MatchmakingService(
     {
         var matchState = match.MatchState.Deserialize<MatchState>();
         var queue = await queueRepository.GetByGameAndNameAsync(match.GameId, match.QueueName);
-
-        var result = await actionService.ExecuteActionAsync(
-            match.Id,
-            match.GameId,
-            new ActionRequest(match.Id, $"match.{eventType}",
-                JsonSerializer.SerializeToDocument(new
-                {
-                    state = matchState,
-                    presenceEvent = eventData,
-                    rules = queue.Rules
-                })
-            )
-        );
+        ActionResponse result = null;
+        try
+        {
+            result = await actionService.ExecuteActionAsync(
+                match.Id,
+                match.GameId,
+                new ActionRequest(match.Id, $"match.{eventType}",
+                    JsonSerializer.SerializeToDocument(new
+                    {
+                        state = matchState,
+                        presenceEvent = eventData,
+                        rules = queue.Rules
+                    })
+                )
+            );
+        }
+        catch (NotFoundException exception)
+        {
+            logger.LogWarning("Action not found for event {EventType} in match {MatchId}: {ErrorMessage}",
+                eventType, match.Id, exception.Message);
+        }
 
         var newState = result is { IsSuccess: true, Result.Data: not null }
             ? result.Result.Data.Deserialize<MatchState>()
@@ -844,5 +867,429 @@ public class MatchmakingService(
         logger.LogDebug("Updated match state in cache after {EventType} event", eventType);
 
         return newState;
+    }
+
+    public async Task<MatchResponse> EndMatchAsync(Guid matchId, Guid playerId, JsonDocument? finalState = null)
+    {
+        var match = await matchRepository.GetByIdAsync(matchId);
+        if (match == null)
+            throw new NotFoundException("Match", matchId);
+
+        var matchState = match.MatchState.Deserialize<MatchState>();
+        var presence = ValidateAndGetPresence(matchState, playerId, matchId);
+
+        // Handle match termination through match event system
+        var newState = await HandleMatchEvent(match, "end", new
+        {
+            playerId = playerId.ToString(),
+            finalState = finalState,
+            reason = "completed"
+        });
+
+        match.State = MapMatchStatus(newState.Status);
+        match.CompletedAt = DateTime.UtcNow;
+        match.MatchState = JsonSerializer.SerializeToDocument(newState);
+
+        await matchStateCache.RemoveMatchStateAsync(matchId);
+        await StoreCompletedMatch(match);
+        await matchRepository.UpdateAsync(match);
+
+        return mapper.Map<MatchResponse>(match);
+    }
+
+    public async Task<MatchResponse> LeaveMatchAsync(Guid matchId, Guid playerId)
+    {
+        var match = await matchRepository.GetByIdAsync(matchId);
+        if (match == null)
+            throw new NotFoundException("Match", matchId);
+
+        var matchState = match.MatchState.Deserialize<MatchState>();
+        var presence = matchState.Presences.FirstOrDefault(p => p.PlayerId == playerId.ToString());
+
+        if (presence != null)
+        {
+            var newState = await HandleMatchEvent(match, "leave", new
+            {
+                playerId = playerId.ToString(),
+                reason = "player_left"
+            });
+
+            match.MatchState = JsonSerializer.SerializeToDocument(newState);
+            match.LastActionAt = DateTime.UtcNow;
+
+            var remainingPlayers = newState.Presences.Count(p => p.Status == PresenceStatus.Connected);
+
+            // TODO: While database normalization rules not match here, hardcoded minimum players
+            if (remainingPlayers < 2) // HACK: Hardcoded minimum players
+            {
+                newState.Status = MatchStateStatus.Abandoned;
+                match.State = MatchStatus.Abandoned;
+                match.CompletedAt = DateTime.UtcNow;
+                await matchStateCache.RemoveMatchStateAsync(matchId);
+                await StoreCompletedMatch(match);
+            }
+
+            await matchStateCache.SetMatchStateAsync(matchId, newState);
+            await matchRepository.UpdateAsync(match);
+        }
+
+        return mapper.Map<MatchResponse>(match);
+    }
+
+    public async Task<QueueActivityResponse> GetQueueActivityAsync(Guid queueId, string timeRange)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        var (startDate, endDate) = ParseTimeRange(timeRange);
+        var activity = await matchRepository.GetQueueActivityAsync(queueId, startDate, endDate);
+
+        return new QueueActivityResponse
+        {
+            Labels = activity.TimePoints,
+            Matches = activity.MatchCounts,
+            Players = activity.PlayerCounts
+        };
+    }
+
+    public async Task<PageableListResponse<MatchResponse>> GetQueueMatchesAsync(Guid queueId, string? status,
+        PageableRequest request)
+    {
+        var matches = await matchRepository.GetQueueMatchesAsync(
+            queueId,
+            status,
+            request.PageIndex,
+            request.PageSize
+        );
+
+        return mapper.Map<PageableListResponse<MatchResponse>>(matches);
+    }
+
+    public async Task<PageableListResponse<MatchTicketResponse>> GetQueueTicketsAsync(Guid queueId,
+        PageableRequest request)
+    {
+        var tickets = await ticketRepository.GetQueueTicketsAsync(
+            queueId,
+            request.PageIndex,
+            request.PageSize
+        );
+
+        return mapper.Map<PageableListResponse<MatchTicketResponse>>(tickets);
+    }
+
+    private async Task<QueueStatsResponse> CalculateQueueStats(Guid queueId, string timeRange)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        var (startDate, endDate) = ParseTimeRange(timeRange);
+
+        var activeMatches = await matchRepository.GetQueueMatchesAsync(
+            queueId,
+            "InProgress",
+            0,
+            1000
+        );
+
+        // Get waiting tickets
+        var waitingTickets = await ticketRepository.GetActiveTicketsAsync(queueId);
+
+        // Get historical matches for calculating averages
+        var historicalMatches = await matchRepository.GetQueueMatchesAsync(
+            queueId,
+            null,
+            0,
+            1000
+        );
+
+        var completedMatches = historicalMatches.Items
+            .Where(m => m.State == MatchStatus.Completed)
+            .ToList();
+
+        // Calculate average wait time
+        var avgWaitTime = waitingTickets.Any()
+            ? waitingTickets.Average(t => (DateTime.UtcNow - t.CreatedAt).TotalSeconds)
+            : 0;
+
+        // Calculate previous period stats for trend
+        var previousStartDate = startDate.AddDays(-(endDate - startDate).Days);
+        var previousMatches = await matchRepository.GetQueueMatchesAsync(
+            queueId,
+            null,
+            0,
+            1000
+        );
+
+        var previousAvgWaitTime = previousMatches.Items
+            .Where(m => m.CreatedAt >= previousStartDate && m.CreatedAt < startDate)
+            .Average(m => ((m.StartedAt ?? m.CreatedAt) - m.CreatedAt).TotalSeconds);
+
+        var waitTimeChange = previousAvgWaitTime > 0
+            ? ((avgWaitTime - previousAvgWaitTime) / previousAvgWaitTime) * 100
+            : 0;
+
+        var waitTimeTrend = waitTimeChange switch
+        {
+            > 0 => "up",
+            < 0 => "down",
+            _ => "stable"
+        };
+
+        var totalMatchAttempts = completedMatches.Count + waitingTickets.Count;
+        var successRate = totalMatchAttempts > 0
+            ? (double)completedMatches.Count / totalMatchAttempts * 100
+            : 0;
+
+        return new QueueStatsResponse
+        {
+            QueueId = queueId,
+            ActiveMatches = activeMatches.Count,
+            WaitingPlayers = waitingTickets.Count,
+            AvgWaitTimeSeconds = avgWaitTime,
+            TotalPlayers = historicalMatches.Items.Sum(m => m.PlayerIds.Count),
+            AverageWaitTime = avgWaitTime,
+            AverageWaitTimeTrend = waitTimeTrend,
+            AverageWaitTimeChange = Math.Abs(waitTimeChange),
+            MatchmakingSuccessRate = successRate
+        };
+    }
+
+    public async Task<QueueDashboardResponse> GetQueueDashboardAsync(Guid queueId)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        var stats = await CalculateQueueStats(queueId, "24h");
+        var functions = await GetQueueFunctionsAsync(queueId);
+
+        return new QueueDashboardResponse
+        {
+            Queue = mapper.Map<MatchmakingResponse>(queue),
+            Stats = stats,
+            Functions = functions
+        };
+    }
+
+    public async Task<QueueFunctionsResponse> GetQueueFunctionsAsync(Guid queueId)
+    {
+        var queue = await queueRepository.GetByIdWithFunctionsAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        return new QueueFunctionsResponse
+        {
+            Initialize = queue.InitializeFunction != null
+                ? new QueueFunctionInfo(
+                    queue.InitializeFunction.Id,
+                    queue.InitializeFunction.Name,
+                    queue.InitializeFunction.ActionType)
+                : null,
+            Transition = queue.TransitionFunction != null
+                ? new QueueFunctionInfo(
+                    queue.TransitionFunction.Id,
+                    queue.TransitionFunction.Name,
+                    queue.TransitionFunction.ActionType)
+                : null,
+            Leave = queue.LeaveFunction != null
+                ? new QueueFunctionInfo(
+                    queue.LeaveFunction.Id,
+                    queue.LeaveFunction.Name,
+                    queue.LeaveFunction.ActionType)
+                : null,
+            End = queue.EndFunction != null
+                ? new QueueFunctionInfo(
+                    queue.EndFunction.Id,
+                    queue.EndFunction.Name,
+                    queue.EndFunction.ActionType)
+                : null
+        };
+    }
+
+    public async Task UpdateQueueFunctionsAsync(Guid queueId, UpdateQueueFunctionsRequest request)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        queue.InitializeFunctionId = request.InitializeFunctionId;
+        queue.TransitionFunctionId = request.TransitionFunctionId;
+        queue.LeaveFunctionId = request.LeaveFunctionId;
+        queue.EndFunctionId = request.EndFunctionId;
+
+        await queueRepository.UpdateAsync(queue);
+    }
+
+    public async Task<JsonDocument> GetQueueRulesAsync(Guid queueId)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        return queue.Rules;
+    }
+
+    public async Task UpdateQueueRulesAsync(Guid queueId, JsonDocument rules)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        queue.Rules = rules;
+        await queueRepository.UpdateAsync(queue);
+    }
+
+    public async Task<QueueTestResponse> TestQueueAsync(Guid queueId, QueueTestRequest request)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        var startTime = DateTime.UtcNow;
+        var testPlayers = new List<TestPlayer>();
+
+        for (var i = 0; i < request.Players; i++)
+        {
+            testPlayers.Add(new TestPlayer(
+                Guid.NewGuid(),
+                request.Properties
+            ));
+        }
+
+        var tickets = testPlayers.Select(p => new MatchTicket
+        {
+            GameId = queue.GameId,
+            PlayerId = p.Id,
+            QueueName = queue.Name,
+            Properties = p.Properties,
+            Status = TicketStatus.Queued,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.Add(queue.TicketTTL)
+        }).ToList();
+
+        var matchedGroups = await FindMatchingPlayers(tickets, queue);
+        if (!matchedGroups.Any())
+            return new QueueTestResponse(false, Guid.Empty, testPlayers, 0);
+
+        var matches = await CreateMatchesFromGroups(matchedGroups, queue);
+        var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+
+        return new QueueTestResponse(
+            true,
+            matches.First().Id,
+            testPlayers,
+            duration
+        );
+    }
+
+    private (DateTime startDate, DateTime endDate) ParseTimeRange(string timeRange)
+    {
+        var end = DateTime.UtcNow;
+        var start = timeRange switch
+        {
+            "24h" => end.AddHours(-24),
+            "7d" => end.AddDays(-7),
+            "30d" => end.AddDays(-30),
+            _ => end.AddHours(-24)
+        };
+        return (start, end);
+    }
+
+    public async Task<PageableListResponse<MatchmakingResponse>> GetQueuesAsync(Guid gameId, string? search,
+        PageableRequest request)
+    {
+        var queues = await queueRepository.GetPagedAsync(gameId, search, request.PageIndex, request.PageSize);
+        return mapper.Map<PageableListResponse<MatchmakingResponse>>(queues);
+    }
+
+    public async Task<MatchmakingResponse> GetQueueDetailsAsync(Guid queueId)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        return mapper.Map<MatchmakingResponse>(queue);
+    }
+
+    public async Task<MatchmakingResponse> UpdateQueueAsync(Guid queueId, MatchQueueRequest request)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        queue.Name = request.Name;
+        queue.Description = request.Description;
+        queue.QueueType = request.QueueType;
+        queue.MinPlayers = request.MinPlayers;
+        queue.MaxPlayers = request.MaxPlayers;
+        queue.TicketTTL = request.TicketTTL;
+        queue.Rules = request.Rules;
+        queue.UseCustomMatchmaker = request.UseCustomMatchmaker;
+
+        if (request.UseCustomMatchmaker)
+        {
+            var matchmaker = await functionRepository.GetAsync(m =>
+                m.GameId == queue.GameId &&
+                m.Id == request.MatchmakerFunctionId
+            );
+
+            if (matchmaker == null)
+                throw new MatchmakerFunctionNotFoundException(request.MatchmakerFunctionId.ToString()!,
+                    gameContext.GameId);
+
+            queue.MatchmakerFunctionId = matchmaker.Id;
+            queue.MatchmakerFunction = matchmaker;
+        }
+        else
+        {
+            queue.MatchmakerFunctionId = null;
+            queue.MatchmakerFunction = null;
+        }
+
+        await queueRepository.UpdateAsync(queue);
+        return mapper.Map<MatchmakingResponse>(queue);
+    }
+
+    public async Task DeleteQueueAsync(Guid queueId)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        await queueRepository.DeleteAsync(queue);
+    }
+
+    public async Task<QueueToggleResponse> ToggleQueueAsync(Guid queueId, bool isEnabled)
+    {
+        var queue = await queueRepository.GetByIdAsync(queueId);
+        if (queue == null)
+            throw new NotFoundException("Queue", queueId);
+
+        queue.IsEnabled = isEnabled;
+        await queueRepository.UpdateAsync(queue);
+
+        return new QueueToggleResponse(true, IsEnabled: queue.IsEnabled, QueueId: queue.Id);
+    }
+
+    public async Task<MatchmakingStatsResponse> GetMatchmakingStatsAsync(Guid gameId, List<Guid>? queueIds,
+        string timeRange)
+    {
+        var stats = new List<QueueStatsResponse>();
+        var queues = queueIds != null && queueIds.Any()
+            ? await queueRepository.GetByIdsAsync(queueIds)
+            : await queueRepository.GetByGameIdAsync(gameId);
+
+        foreach (var queue in queues)
+        {
+            var queueStats = await CalculateQueueStats(queue.Id, timeRange);
+            stats.Add(queueStats);
+        }
+
+        return new MatchmakingStatsResponse
+        {
+            QueueStats = stats
+        };
     }
 }

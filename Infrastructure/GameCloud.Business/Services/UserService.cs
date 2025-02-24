@@ -119,7 +119,7 @@ namespace GameCloud.Business.Services
                 await EnsureRoleExistsAsync("Player");
                 await userManager.AddToRoleAsync(user, "Player");
 
-                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, username, user.Id);
+                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, username, "",user.Id);
                 await playerService.CreateAsync(playerRequest);
             }
 

@@ -1,0 +1,104 @@
+{
+    "info": {
+        "_postman_id": "7e6a2354-f673-491d-93f5-a6356d384332",
+        "name": "Images API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "17271797"
+    },
+    "item": [
+        {
+            "name": "Images",
+            "item": [
+                {
+                    "name": "Get Image By Id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/images/{{imageId}}?variant=thumbnail",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "images", "{{imageId}}"],
+                            "query": [
+                                {
+                                    "key": "variant",
+                                    "value": "thumbnail",
+                                    "description": "Optional. Defaults to 'original' if not specified"
+                                }
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "originalRequest": {
+                                "method": "GET",
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/images/{{imageId}}"
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "binary",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "image/jpeg"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Image By Path",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/images/{{imagePath}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "images", "{{imagePath}}"],
+                            "variable": [
+                                {
+                                    "key": "imagePath",
+                                    "value": "gameicon/123456/thumbnail.jpg",
+                                    "description": "Full path to the image"
+                                }
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "originalRequest": {
+                                "method": "GET",
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/images/{{imagePath}}"
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "binary",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "image/jpeg"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "if (!pm.environment.get('baseUrl')) {",
+                    "    pm.environment.set('baseUrl', 'https://localhost:7257');",
+                    "}"
+                ]
+            }
+        }
+    ]
+}

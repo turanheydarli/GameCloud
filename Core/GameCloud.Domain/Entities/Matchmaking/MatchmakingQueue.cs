@@ -19,15 +19,23 @@ public class MatchmakingQueue : BaseEntity
 
     public virtual Game Game { get; set; }
 
-    public Guid? MatchmakerFunctionId { get; set; }
-    public virtual FunctionConfig? MatchmakerFunction { get; set; }
-
     public bool UseCustomMatchmaker { get; set; } = false;
 
     public QueueType QueueType { get; set; } = QueueType.TurnBased;
 
     public virtual ICollection<MatchTicket> Tickets { get; set; }
     public virtual ICollection<MatchAction> Actions { get; set; }
+
+    public Guid? InitializeFunctionId { get; set; }
+    public FunctionConfig? InitializeFunction { get; set; }
+    public Guid? TransitionFunctionId { get; set; }
+    public FunctionConfig? TransitionFunction { get; set; }
+    public Guid? LeaveFunctionId { get; set; }
+    public FunctionConfig? LeaveFunction { get; set; }
+    public Guid? EndFunctionId { get; set; }
+    public FunctionConfig? EndFunction { get; set; }
+    public Guid? MatchmakerFunctionId { get; set; }
+    public FunctionConfig? MatchmakerFunction { get; set; }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
