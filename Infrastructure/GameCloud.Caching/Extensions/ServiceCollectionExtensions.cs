@@ -7,11 +7,30 @@ using StackExchange.Redis;
 
 namespace GameCloud.Caching.Extensions;
 
-public static class ServiceCollectionExtensions 
+public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDistributedCache(this IServiceCollection services, IConfiguration configuration)
     {
-        var redisConnection = configuration.GetConnectionString("Redis") 
+        var environment = configuration.GetValue<string>("Environment") ?? "Production";
+
+        if (environment.Equals("Development", StringComparison.OrdinalIgnoreCase))
+        {
+            InitializeRedisCache(services, configuration);
+        }
+        else
+        {
+            InitializeValkeyCache(services, configuration);
+        }
+
+        services.AddSingleton<IMatchStateCache, RedisMatchStateCache>();
+        services.AddSingleton<ISessionCache, RedisSessionCache>();
+
+        return services;
+    }
+
+    private static void InitializeRedisCache(IServiceCollection services, IConfiguration configuration)
+    {
+        var redisConnection = configuration.GetConnectionString("Redis")
                               ?? throw new InvalidOperationException("Redis connection string is not configured.");
 
         var options = new ConfigurationOptions
@@ -30,10 +49,30 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect(options));
+    }
 
-        services.AddSingleton<IMatchStateCache, RedisMatchStateCache>();
-        services.AddSingleton<ISessionCache, RedisSessionCache>();
+    private static void InitializeValkeyCache(IServiceCollection services, IConfiguration configuration)
+    {
+        var valkeyConnection = configuration.GetConnectionString("Valkey")
+                               ?? throw new InvalidOperationException("Valkey connection string is not configured.");
 
-        return services;
+        var options = new ConfigurationOptions
+        {
+            EndPoints = { valkeyConnection },
+            AbortOnConnectFail = false,
+            ConnectTimeout = 5000,
+            SyncTimeout = 5000,
+            // Ssl = true,
+            // SslProtocols = System.Security.Authentication.SslProtocols.Tls12
+        };
+
+        services.AddStackExchangeRedisCache(redisOptions =>
+        {
+            redisOptions.ConfigurationOptions = options;
+            redisOptions.InstanceName = "GameCloud_";
+        });
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(options));
     }
 }
