@@ -5,9 +5,8 @@ using StackExchange.Redis;
 
 namespace GameCloud.Caching.Redis;
 
-public class RedisSessionCache : ISessionCache
+public class RedisSessionCache(IConnectionMultiplexer redis) : ISessionCache
 {
-    private readonly IConnectionMultiplexer redis;
     private const string SessionKeyPrefix = "auth:session:";
     
     public async Task<SessionInfo> GetSessionAsync(string refreshToken)

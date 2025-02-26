@@ -14,25 +14,33 @@ public class LeaderboardResponse
     public DateTime? StartTimeUtc { get; set; }
     public DateTime? EndTimeUtc { get; set; }
     public JsonDocument? Metadata { get; set; }
+    public string SortOrder { get; set; } = "desc";
+    public string Operator { get; set; } = "best";
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
 
 public class LeaderboardRecordResponse
 {
+    public Guid Id { get; set; }
     public Guid LeaderboardId { get; set; }
     public Guid PlayerId { get; set; }
     public long Score { get; set; }
-    public int? Rank { get; set; }
     public long SubScore { get; set; }
+    public int Rank { get; set; }
     public JsonDocument? Metadata { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
 
 public class LeaderboardArchiveResponse
 {
-    public Guid ArchiveId { get; set; }
+    public Guid Id { get; set; }
     public Guid LeaderboardId { get; set; }
     public string Period { get; set; } = default!;
     public DateTime StartTimeUtc { get; set; }
     public DateTime EndTimeUtc { get; set; }
     public JsonDocument Rankings { get; set; } = default!;
     public JsonDocument? Statistics { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

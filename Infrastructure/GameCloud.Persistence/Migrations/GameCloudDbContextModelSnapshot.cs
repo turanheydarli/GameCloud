@@ -553,6 +553,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<TimeSpan?>("MatchTimeout")
                         .HasColumnType("interval");
 
+                    b.Property<int>("MatchType")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("NextActionDeadline")
                         .HasColumnType("timestamp with time zone");
 
@@ -647,6 +650,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsStoredPlayer")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("MatchId")
                         .HasColumnType("uuid");
 
@@ -694,11 +700,20 @@ namespace GameCloud.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("EndFunctionId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("InitializeFunctionId")
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LeaveFunctionId")
+                        .HasColumnType("uuid");
 
                     b.Property<TimeSpan?>("MatchTimeout")
                         .HasColumnType("interval");
@@ -726,6 +741,9 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<TimeSpan>("TicketTTL")
                         .HasColumnType("interval");
 
+                    b.Property<Guid?>("TransitionFunctionId")
+                        .HasColumnType("uuid");
+
                     b.Property<TimeSpan?>("TurnTimeout")
                         .HasColumnType("interval");
 
@@ -737,11 +755,123 @@ namespace GameCloud.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EndFunctionId");
+
                     b.HasIndex("GameId");
+
+                    b.HasIndex("InitializeFunctionId");
+
+                    b.HasIndex("LeaveFunctionId");
 
                     b.HasIndex("MatchmakerFunctionId");
 
+                    b.HasIndex("TransitionFunctionId");
+
                     b.ToTable("MatchmakingQueues", "gc");
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredMatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("Duration")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("FinalScore")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<JsonDocument>("GameState")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<bool>("IsAvailableForMatching")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double>("MatchQuality")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("MatchType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<JsonDocument>("Metadata")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("OriginalMatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("QueueName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Size")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StoredMatches", "gc");
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<JsonDocument>("Actions")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastPlayedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<JsonDocument>("Statistics")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("StoredMatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId")
+                        .IsUnique();
+
+                    b.HasIndex("StoredMatchId");
+
+                    b.ToTable("StoredPlayers", "gc");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Notification", b =>
@@ -837,7 +967,7 @@ namespace GameCloud.Persistence.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Username")
@@ -1178,19 +1308,58 @@ namespace GameCloud.Persistence.Migrations
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.MatchmakingQueue", b =>
                 {
+                    b.HasOne("GameCloud.Domain.Entities.FunctionConfig", "EndFunction")
+                        .WithMany()
+                        .HasForeignKey("EndFunctionId");
+
                     b.HasOne("GameCloud.Domain.Entities.Game", "Game")
                         .WithMany()
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GameCloud.Domain.Entities.FunctionConfig", "InitializeFunction")
+                        .WithMany()
+                        .HasForeignKey("InitializeFunctionId");
+
+                    b.HasOne("GameCloud.Domain.Entities.FunctionConfig", "LeaveFunction")
+                        .WithMany()
+                        .HasForeignKey("LeaveFunctionId");
+
                     b.HasOne("GameCloud.Domain.Entities.FunctionConfig", "MatchmakerFunction")
                         .WithMany()
                         .HasForeignKey("MatchmakerFunctionId");
 
+                    b.HasOne("GameCloud.Domain.Entities.FunctionConfig", "TransitionFunction")
+                        .WithMany()
+                        .HasForeignKey("TransitionFunctionId");
+
+                    b.Navigation("EndFunction");
+
                     b.Navigation("Game");
 
+                    b.Navigation("InitializeFunction");
+
+                    b.Navigation("LeaveFunction");
+
                     b.Navigation("MatchmakerFunction");
+
+                    b.Navigation("TransitionFunction");
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", b =>
+                {
+                    b.HasOne("GameCloud.Domain.Entities.Player", null)
+                        .WithOne()
+                        .HasForeignKey("GameCloud.Domain.Entities.Matchmaking.StoredPlayer", "PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GameCloud.Domain.Entities.Matchmaking.StoredMatch", null)
+                        .WithMany("Players")
+                        .HasForeignKey("StoredMatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>
@@ -1203,9 +1372,7 @@ namespace GameCloud.Persistence.Migrations
 
                     b.HasOne("GameCloud.Domain.Entities.AppUser", "User")
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
@@ -1310,6 +1477,11 @@ namespace GameCloud.Persistence.Migrations
                     b.Navigation("Actions");
 
                     b.Navigation("Tickets");
+                });
+
+            modelBuilder.Entity("GameCloud.Domain.Entities.Matchmaking.StoredMatch", b =>
+                {
+                    b.Navigation("Players");
                 });
 
             modelBuilder.Entity("GameCloud.Domain.Entities.Player", b =>

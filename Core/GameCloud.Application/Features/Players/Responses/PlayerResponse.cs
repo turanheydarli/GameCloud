@@ -1,10 +1,16 @@
 using GameCloud.Domain.Enums;
+using System.Text.Json;
 
 namespace GameCloud.Application.Features.Players.Responses;
 
 public record PlayerResponse(
     Guid Id,
-    AuthProvider AuthProvider,
+    string Username,
+    string DisplayName,
+    string? DeviceId,
+    string? CustomId,
     PlayerStatus Status,
-    string? Username,
-    Guid UserId);
+    Guid GameId,
+    JsonDocument? Metadata,
+    DateTime CreatedAt,
+    DateTime? LastLoginAt);

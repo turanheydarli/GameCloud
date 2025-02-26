@@ -79,7 +79,6 @@ update-pod-name:
 	@echo "Updating POD_NAME in Makefile..."
 	@POD=$$(kubectl get pods -n $(K8S_NAMESPACE) -l app=$(DEPLOYMENT_NAME) -o jsonpath='{.items[0].metadata.name}')
 
-# Add to deploy target
 deploy:
 	@echo "Deploying application to Kubernetes..."
 	kubectl apply -k k8s/overlays/production -n $(K8S_NAMESPACE)

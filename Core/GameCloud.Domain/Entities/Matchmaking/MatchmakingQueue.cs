@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GameCloud.Domain.Entities.Matchmaking;
 
@@ -18,22 +19,31 @@ public class MatchmakingQueue : BaseEntity
 
     public virtual Game Game { get; set; }
 
-    public Guid? MatchmakerFunctionId {get;set;}
-    public virtual FunctionConfig? MatchmakerFunction {get;set;}
+    public bool UseCustomMatchmaker { get; set; } = false;
 
-    public bool UseCustomMatchmaker { get; set; } = false;  
-    
     public QueueType QueueType { get; set; } = QueueType.TurnBased;
-    
+
     public virtual ICollection<MatchTicket> Tickets { get; set; }
     public virtual ICollection<MatchAction> Actions { get; set; }
+
+    public Guid? InitializeFunctionId { get; set; }
+    public FunctionConfig? InitializeFunction { get; set; }
+    public Guid? TransitionFunctionId { get; set; }
+    public FunctionConfig? TransitionFunction { get; set; }
+    public Guid? LeaveFunctionId { get; set; }
+    public FunctionConfig? LeaveFunction { get; set; }
+    public Guid? EndFunctionId { get; set; }
+    public FunctionConfig? EndFunction { get; set; }
+    public Guid? MatchmakerFunctionId { get; set; }
+    public FunctionConfig? MatchmakerFunction { get; set; }
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum QueueType
 {
-    TurnBased,      // Chess, Tic-tac-toe
-    Simultaneous,   // Tetris, Racing
-    Asynchronous    // Dice Dreams, Mob Control
+    [JsonPropertyName("turnBased")] TurnBased,
+    [JsonPropertyName("simultaneous")] Simultaneous,
+    [JsonPropertyName("asynchronous")] Asynchronous
 }
 
 public record MatchingCriteria(List<AttributeCriteria> Attributes);
@@ -61,6 +71,7 @@ public class MatchTicket : BaseEntity
 
     public virtual Player Player { get; set; }
     public virtual Match Match { get; set; }
+    public bool IsStoredPlayer { get; set; }
 }
 
 public class Match : BaseEntity
@@ -68,6 +79,7 @@ public class Match : BaseEntity
     public Guid GameId { get; set; }
     public string QueueName { get; set; }
     public MatchStatus State { get; set; }
+    public MatchType MatchType { get; set; }
 
     public List<Guid> PlayerIds { get; set; }
     public Guid? CurrentPlayerId { get; set; }

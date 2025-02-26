@@ -54,9 +54,9 @@ public class PlayerAttributeRepository(GameCloudDbContext context) : IPlayerAttr
     public async Task<PlayerAttribute> UpdateAsync(PlayerAttribute attribute)
     {
         var existing = await GetAsync(attribute.Username, attribute.Collection, attribute.Key);
-
-        attribute.Version = (int.Parse(existing.Version) + 1).ToString();
-
+        
+        attribute.Version = (Convert.ToInt64(existing.Version, 16) + 1).ToString("x");
+      
         context.Entry(existing).CurrentValues.SetValues(attribute);
         await context.SaveChangesAsync();
         return attribute;

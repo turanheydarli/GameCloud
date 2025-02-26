@@ -7,33 +7,31 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace GameCloud.Business.Services;
 
-public class TokenService : ITokenService
+public class TokenService(IConfiguration configuration) : ITokenService
 {
-    private readonly string _secretKey;
-    private readonly string _issuer;
-    private readonly string _audience;
-
-    public TokenService(IConfiguration configuration)
-    {
-        _secretKey = configuration["Jwt:SecretKey"];
-        _issuer = configuration["Jwt:Issuer"];
-        _audience = configuration["Jwt:Audience"];
-    }
+    private readonly string? _secretKey = configuration["Jwt:Key"] ?? throw new NullReferenceException();
+    private readonly string? _issuer = configuration["Jwt:Issuer"] ?? throw new NullReferenceException();
+    private readonly string? _audience = configuration["Jwt:Audience"] ?? throw new NullReferenceException();
 
     public async Task<string> GenerateTokenAsync(TokenGenerationRequest request)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, request.PlayerId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, request.PlayerId.ToString()),
+            new Claim(ClaimTypes.Name, request.Username),
             new Claim("username", request.Username),
             new Claim("sid", request.SessionId),
-            new Claim(JwtRegisteredClaimNames.Iat, request.IssuedAt.ToString("O")),
-            new Claim(JwtRegisteredClaimNames.Exp, request.ExpiresAt.ToString("O"))
+            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
         };
 
         if (!string.IsNullOrEmpty(request.DeviceId))
         {
-            claims = claims.Append(new Claim("did", request.DeviceId)).ToArray();
+            claims.Add(new Claim("did", request.DeviceId));
+        }
+
+        if (!string.IsNullOrEmpty(request.Role))
+        {
+            claims.Add(new Claim(ClaimTypes.Role, request.Role));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
@@ -43,13 +41,14 @@ public class TokenService : ITokenService
             issuer: _issuer,
             audience: _audience,
             claims: claims,
+            notBefore: DateTime.UtcNow,
             expires: request.ExpiresAt,
             signingCredentials: creds
         );
 
-        return await Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
-
+    
     public async Task<string> GenerateRefreshTokenAsync()
     {
         return await Task.FromResult(Convert.ToBase64String(Guid.NewGuid().ToByteArray()));

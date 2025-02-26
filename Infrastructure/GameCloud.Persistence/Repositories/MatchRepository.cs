@@ -1,12 +1,134 @@
 using GameCloud.Domain.Entities.Matchmaking;
 using GameCloud.Domain.Repositories;
 using GameCloud.Persistence.Contexts;
+using GameCloud.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace GameCloud.Persistence.Repositories;
 
 public class MatchRepository(GameCloudDbContext context) : IMatchRepository
 {
+    public async Task<int> GetActiveMatchesCountAsync(Guid gameId, List<Guid>? queueIds = null)
+    {
+        var query = context.Set<Match>()
+            .Where(m => m.GameId == gameId &&
+                        (m.State == MatchStatus.InProgress ||
+                         m.State == MatchStatus.Ready));
+
+        if (queueIds != null && queueIds.Any())
+        {
+            var queueNames = await context.Set<MatchmakingQueue>()
+                .Where(q => queueIds.Contains(q.Id))
+                .Select(q => q.Name)
+                .ToListAsync();
+
+            query = query.Where(m => queueNames.Contains(m.QueueName));
+        }
+
+        return await query.CountAsync();
+    }
+
+    public async Task<QueueActivityData> GetQueueActivityAsync(Guid queueId, DateTime startDate, DateTime endDate)
+    {
+        var queue = await context.Set<MatchmakingQueue>()
+            .FirstOrDefaultAsync(q => q.Id == queueId);
+
+        if (queue == null)
+            return new QueueActivityData();
+
+        var matches = await context.Set<Match>()
+            .Where(m =>
+                m.QueueName == queue.Name &&
+                m.CreatedAt >= startDate &&
+                m.CreatedAt <= endDate)
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync();
+
+        var timePoints = new List<string>();
+        var matchCounts = new List<int>();
+        var playerCounts = new List<int>();
+
+        var currentDate = startDate;
+        while (currentDate <= endDate)
+        {
+            var dayMatches = matches.Where(m =>
+                m.CreatedAt.Date == currentDate.Date).ToList();
+
+            timePoints.Add(currentDate.ToString("yyyy-MM-dd"));
+            matchCounts.Add(dayMatches.Count);
+            playerCounts.Add(dayMatches.Sum(m => m.PlayerIds.Count));
+
+            currentDate = currentDate.AddDays(1);
+        }
+
+        return new QueueActivityData
+        {
+            TimePoints = timePoints,
+            MatchCounts = matchCounts,
+            PlayerCounts = playerCounts
+        };
+    }
+
+    public async Task<IPaginate<Match>> GetQueueMatchesAsync(Guid queueId, string? status, int pageIndex,
+        int pageSize)
+    {
+        var queue = await context.Set<MatchmakingQueue>()
+            .FirstOrDefaultAsync(q => q.Id == queueId);
+
+        var query = context.Set<Match>()
+            .Where(m => m.QueueName == queue.Name);
+
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (Enum.TryParse<MatchStatus>(status, true, out var matchStatus))
+            {
+                query = query.Where(m => m.State == matchStatus);
+            }
+        }
+
+        var total = await query.CountAsync();
+        var items = query
+            .OrderByDescending(m => m.CreatedAt);
+
+        return await items.ToPaginateAsync(pageIndex, pageSize);
+    }
+
+    public async Task<IPaginate<MatchmakingLogEntry>> GetMatchmakingLogsAsync(
+        Guid gameId,
+        Guid? queueId,
+        string? eventType,
+        DateTime startDate,
+        DateTime endDate,
+        int pageIndex,
+        int pageSize)
+    {
+        var query = context.Set<MatchmakingLogEntry>()
+            .Where(l =>
+                l.GameId == gameId &&
+                l.Timestamp >= startDate &&
+                l.Timestamp <= endDate);
+
+        if (queueId.HasValue)
+        {
+            var queue = await context.Set<MatchmakingQueue>()
+                .FirstOrDefaultAsync(q => q.Id == queueId.Value);
+            if (queue != null)
+            {
+                query = query.Where(l => l.QueueName == queue.Name);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(eventType))
+        {
+            query = query.Where(l => l.EventType == eventType);
+        }
+
+        var items = query
+            .OrderByDescending(l => l.Timestamp);
+
+        return await items.ToPaginateAsync(pageIndex, pageSize);
+    }
+
     public async Task<Match?> GetByIdAsync(Guid matchId)
     {
         IQueryable<Match> queryable = context.Set<Match>();
@@ -23,6 +145,15 @@ public class MatchRepository(GameCloudDbContext context) : IMatchRepository
     {
         context.Entry(match).State = EntityState.Modified;
         await context.SaveChangesAsync();
+    }
+
+    public async Task<Match?> GetPlayerActiveMatchAsync(Guid playerId)
+    {
+        IQueryable<Match?> queryable = context.Set<Match>();
+
+        return await queryable.FirstOrDefaultAsync(m =>
+            m.PlayerIds.Contains(playerId) &&
+            (m.State == MatchStatus.InProgress || m.State == MatchStatus.Ready));
     }
 
     public async Task<List<Match>> GetTimeoutMatchesAsync(DateTime utcNow)
@@ -57,121 +188,5 @@ public class MatchRepository(GameCloudDbContext context) : IMatchRepository
             )
             .OrderByDescending(m => m.LastActionAt ?? m.CreatedAt)
             .ToListAsync();
-    }
-}
-
-public class MatchTicketRepository(GameCloudDbContext context) : IMatchTicketRepository
-{
-    public async Task<MatchTicket?> GetByIdAsync(Guid ticketId)
-    {
-        IQueryable<MatchTicket> queryable = context.Set<MatchTicket>();
-        return await queryable.FirstOrDefaultAsync(t => t.Id == ticketId);
-    }
-
-    public async Task CreateAsync(MatchTicket ticket)
-    {
-        context.Entry(ticket).State = EntityState.Added;
-        await context.SaveChangesAsync();
-    }
-
-    public async Task UpdateAsync(MatchTicket ticket)
-    {
-        context.Entry(ticket).State = EntityState.Modified;
-        await context.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(MatchTicket ticket)
-    {
-        context.Entry(ticket).State = EntityState.Deleted;
-        await context.SaveChangesAsync();
-    }
-
-    public async Task<List<MatchTicket>> GetActiveTicketsAsync(Guid queueId)
-    {
-        var queue = await context.Set<MatchmakingQueue>().Include(q => q.MatchmakerFunction)
-            .FirstOrDefaultAsync(q => q.Id == queueId);
-
-        if (queue == null)
-            return new List<MatchTicket>();
-
-        return await context.Set<MatchTicket>()
-            .Where(t =>
-                t.QueueName == queue.Name &&
-                t.Status == TicketStatus.Queued &&
-                t.ExpiresAt > DateTime.UtcNow)
-            .OrderBy(t => t.CreatedAt).Include(p => p.Player)
-            .ToListAsync();
-    }
-
-    public async Task UpdateRangeAsync(List<MatchTicket> group)
-    {
-        context.Set<MatchTicket>().UpdateRange(group);
-        await context.SaveChangesAsync();
-    }
-
-    public async Task<List<MatchTicket>> GetMatchTicketsAsync(Guid matchId)
-    {
-        return await context.Set<MatchTicket>()
-            .Where(t => t.MatchId == matchId)
-            .OrderBy(t => t.CreatedAt)
-            .ToListAsync();
-    }
-
-    public async Task<List<MatchTicket>> GetPlayerActiveTicketsAsync(Guid playerId)
-    {
-        return await context.Set<MatchTicket>()
-            .Where(t =>
-                t.PlayerId == playerId &&
-                (t.Status == TicketStatus.Queued ||
-                 t.Status == TicketStatus.Matching ||
-                 t.Status == TicketStatus.MatchFound) &&
-                t.ExpiresAt > DateTime.UtcNow)
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync();
-    }
-}
-
-public class MatchmakingQueueRepository(GameCloudDbContext context) : IMatchmakingQueueRepository
-{
-    public async Task<MatchmakingQueue?> GetByGameAndNameAsync(Guid gameId, string queueName)
-    {
-        IQueryable<MatchmakingQueue> queryable = context.Set<MatchmakingQueue>();
-
-        return await queryable
-            .FirstOrDefaultAsync(q =>
-                q.GameId == gameId &&
-                q.Name == queueName);
-    }
-
-    public async Task<MatchmakingQueue?> GetByIdAsync(Guid queueId)
-    {
-        IQueryable<MatchmakingQueue> queryable = context.Set<MatchmakingQueue>();
-        queryable = queryable.Include(q => q.MatchmakerFunction);
-        return await queryable.FirstOrDefaultAsync(q => q.Id == queueId);
-    }
-
-    public async Task<IEnumerable<MatchmakingQueue>> GetAllAsync()
-    {
-        IQueryable<MatchmakingQueue> queryable = context.Set<MatchmakingQueue>();
-        queryable.Include(q => q.MatchmakerFunction);
-        return await queryable.ToListAsync();
-    }
-
-    public async Task CreateAsync(MatchmakingQueue queue)
-    {
-        context.Entry(queue).State = EntityState.Added;
-        await context.SaveChangesAsync();
-    }
-
-    public async Task UpdateAsync(MatchmakingQueue queue)
-    {
-        context.Entry(queue).State = EntityState.Modified;
-        await context.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(MatchmakingQueue queue)
-    {
-        context.Entry(queue).State = EntityState.Deleted;
-        await context.SaveChangesAsync();
     }
 }

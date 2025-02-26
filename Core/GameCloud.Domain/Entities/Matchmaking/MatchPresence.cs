@@ -12,3 +12,5 @@ public class MatchPresenceState
     public DateTime LastSeen { get; set; }
     public JsonDocument Meta { get; set; }
 }
+
+ 

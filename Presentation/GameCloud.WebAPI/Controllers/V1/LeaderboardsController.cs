@@ -1,6 +1,4 @@
-using System;
 using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GameCloud.Application.Features.Leaderboards;
@@ -66,55 +64,66 @@ namespace GameCloud.WebAPI.Controllers.V1
 
         #endregion
 
-        #region Score Submission (if you want it in the same controller)
+        #region Score Management
 
-        // Example: POST /api/v1/leaderboard/scores
-        // This might call something like "SubmitScoreAsync" in a dedicated service 
-        // (e.g., ILeaderboardRecordService), or you can extend ILeaderboardService for it.
+        [HttpPost("scores")]
+        [ProducesResponseType(typeof(LeaderboardRecordResponse), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> SubmitScore([FromBody] LeaderboardRecordRequest request)
+        {
+            var record = await leaderboardService.SubmitScoreAsync(request.LeaderboardId, request);
+            return Ok(record);
+        }
 
-        // [HttpPost("scores")]
-        // [ProducesResponseType(typeof(LeaderboardRecordResponse), (int)HttpStatusCode.OK)]
-        // public async Task<IActionResult> SubmitScore([FromBody] LeaderboardScoreRequest request)
-        // {
-        //     var userId = GetUserIdFromClaims();
-        //     var record = await _leaderboardService.SubmitScoreAsync(request, userId);
-        //     return Ok(record);
-        // }
+        [HttpGet("{leaderboardId:guid}/records")]
+        [ProducesResponseType(typeof(List<LeaderboardRecordResponse>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> GetLeaderboardRecords(
+            [FromRoute] Guid leaderboardId,
+            [FromQuery] int? limit = 100,
+            [FromQuery] int? offset = 0)
+        {
+            var records = await leaderboardService.GetLeaderboardRecordsAsync(leaderboardId, limit, offset);
+            return Ok(records);
+        }
 
-        #endregion
+        [HttpGet("{leaderboardId:guid}/records/{userId:guid}")]
+        [ProducesResponseType(typeof(LeaderboardRecordResponse), (int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        public async Task<IActionResult> GetUserLeaderboardRecord(
+            [FromRoute] Guid leaderboardId,
+            [FromRoute] Guid userId)
+        {
+            var record = await leaderboardService.GetUserLeaderboardRecordAsync(leaderboardId, userId);
 
-        #region Archives (optional region for archive management)
+            return Ok(record);
+        }
 
-        // Example: POST /api/v1/leaderboard/leaderboards/{leaderboardId}/archive
-        // [HttpPost("leaderboards/{leaderboardId:guid}/archive")]
-        // [ProducesResponseType(typeof(LeaderboardArchiveResponse), (int)HttpStatusCode.OK)]
-        // public async Task<IActionResult> ArchiveLeaderboard([FromRoute] Guid leaderboardId)
-        // {
-        //     var archive = await _leaderboardService.ArchiveLeaderboardAsync(leaderboardId);
-        //     return Ok(archive);
-        // }
+        [HttpGet("records/{userId:guid}")]
+        [ProducesResponseType(typeof(List<LeaderboardRecordResponse>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> GetUserLeaderboardRecords(
+            [FromRoute] Guid userId,
+            [FromQuery] int? limit = 100)
+        {
+            var records = await leaderboardService.GetUserLeaderboardRecordsAsync(userId, limit);
+            return Ok(records);
+        }
 
-        // Example: GET /api/v1/leaderboard/leaderboards/{leaderboardId}/archives
-        // [HttpGet("leaderboards/{leaderboardId:guid}/archives")]
-        // [ProducesResponseType(typeof(List<LeaderboardArchiveResponse>), (int)HttpStatusCode.OK)]
-        // public async Task<IActionResult> GetArchives([FromRoute] Guid leaderboardId)
-        // {
-        //     var archives = await _leaderboardService.GetArchivesAsync(leaderboardId);
-        //     return Ok(archives);
-        // }
+        [HttpGet("by-name/{name}")]
+        [ProducesResponseType(typeof(LeaderboardResponse), (int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        public async Task<IActionResult> GetLeaderboardByName([FromRoute] string name)
+        {
+            var leaderboard = await leaderboardService.GetLeaderboardByNameAsync(name);
 
-        // Example: GET /api/v1/leaderboard/archives/{archiveId}
-        // [HttpGet("archives/{archiveId:guid}")]
-        // [ProducesResponseType(typeof(LeaderboardArchiveResponse), (int)HttpStatusCode.OK)]
-        // [ProducesResponseType((int)HttpStatusCode.NotFound)]
-        // public async Task<IActionResult> GetArchive([FromRoute] Guid archiveId)
-        // {
-        //     var archive = await _leaderboardService.GetArchiveAsync(archiveId);
-        //     if (archive == null)
-        //         return NotFound();
+            return Ok(leaderboard);
+        }
 
-        //     return Ok(archive);
-        // }
+        [HttpPost("{leaderboardId:guid}/reset")]
+        [ProducesResponseType((int)HttpStatusCode.NoContent)]
+        public async Task<IActionResult> ResetLeaderboard([FromRoute] Guid leaderboardId)
+        {
+            await leaderboardService.ResetLeaderboardAsync(leaderboardId);
+            return NoContent();
+        }
 
         #endregion
     }

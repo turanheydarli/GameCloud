@@ -10,6 +10,10 @@ public interface IMatchmakingQueueRepository
     Task CreateAsync(MatchmakingQueue queue);
     Task UpdateAsync(MatchmakingQueue queue);
     Task DeleteAsync(MatchmakingQueue queue);
+    Task<MatchmakingQueue?> GetByIdWithFunctionsAsync(Guid queueId);
+    Task<List<MatchmakingQueue>> GetByIdsAsync(List<Guid> queueIds);
+    Task<IPaginate<MatchmakingQueue>> GetPagedAsync(Guid gameId, string? search, int pageIndex, int pageSize);
+    Task<List<MatchmakingQueue>> GetByGameIdAsync(Guid gameId);
 }
 
 public interface IMatchTicketRepository
@@ -18,18 +22,10 @@ public interface IMatchTicketRepository
     Task CreateAsync(MatchTicket ticket);
     Task UpdateAsync(MatchTicket ticket);
     Task DeleteAsync(MatchTicket ticket);
+    Task<IPaginate<MatchTicket>> GetQueueTicketsAsync(Guid queueId, int pageIndex, int pageSize);
 
     Task<List<MatchTicket>> GetActiveTicketsAsync(Guid queueId);
     Task UpdateRangeAsync(List<MatchTicket> group);
     Task<List<MatchTicket>> GetMatchTicketsAsync(Guid matchId);
     Task<List<MatchTicket>> GetPlayerActiveTicketsAsync(Guid playerId);
-}
-
-public interface IMatchRepository
-{
-    Task<Match?> GetByIdAsync(Guid matchId);
-    Task CreateAsync(Match match);
-    Task UpdateAsync(Match match);
-    Task<List<Match>> GetTimeoutMatchesAsync(DateTime utcNow);
-    Task<List<Match>> GetPlayerActiveMatchesAsync(Guid playerId);
 }

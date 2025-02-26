@@ -24,7 +24,8 @@ namespace GameCloud.Business.Services
         RoleManager<AppRole> roleManager,
         IDeveloperService developerService,
         IPlayerService playerService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ITokenService tokenService)
         : IUserService
     {
         #region Developer Methods
@@ -71,7 +72,7 @@ namespace GameCloud.Business.Services
                 throw new InvalidCredentialException("Username or password is incorrect.");
             }
 
-            var token = GenerateJwtToken(user, "Developer");
+            var token = await GenerateJwtToken(user, "Developer");
 
             return new AuthResponse(
                 UserId: user.Id,
@@ -118,11 +119,11 @@ namespace GameCloud.Business.Services
                 await EnsureRoleExistsAsync("Player");
                 await userManager.AddToRoleAsync(user, "Player");
 
-                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, username, user.Id);
+                var playerRequest = new PlayerRequest(Guid.Empty, request.Provider, username, "",user.Id);
                 await playerService.CreateAsync(playerRequest);
             }
 
-            var token = GenerateJwtToken(user, "Player");
+            var token = await GenerateJwtToken(user, "Player");
             var playerResponse = await playerService.GetByUserIdAsync(user.Id);
 
             return new AuthResponse(
@@ -146,39 +147,22 @@ namespace GameCloud.Business.Services
             }
         }
 
-        private (string Token, DateTime Expires) GenerateJwtToken(AppUser user, string role)
+        private async Task<(string Token, DateTime Expires)> GenerateJwtToken(AppUser user, string role)
         {
-            var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!);
-            var issuer = configuration["Jwt:Issuer"];
-            var audience = configuration["Jwt:Audience"];
             var expires = DateTime.UtcNow.AddHours(int.Parse(configuration["Jwt:Expiration"] ?? "1"));
-
-            var claims = new List<Claim>
+        
+            var request = new TokenGenerationRequest
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Email ?? user.UserName),
-                new Claim(ClaimTypes.Role, role)
+                PlayerId = user.Id,
+                Username = user.UserName,
+                SessionId = Guid.NewGuid().ToString(), // or however you want to handle sessions
+                Role = role,
+                IssuedAt = DateTime.UtcNow,
+                ExpiresAt = expires
             };
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = expires,
-                Issuer = issuer,
-                Audience = audience,
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha256Signature
-                )
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var securityToken = tokenHandler.CreateToken(tokenDescriptor);
-            var tokenString = tokenHandler.WriteToken(securityToken);
-
-            return (tokenString, expires);
+            var token = await tokenService.GenerateTokenAsync(request);
+            return (token, expires);
         }
 
         #endregion
