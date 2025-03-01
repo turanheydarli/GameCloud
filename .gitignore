@@ -3,6 +3,23 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# Go build artifacts
+bin/
+relay/bin/
+
+# Go executable
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test binary, built with `go test -c`
+*.test
+
+# Go coverage outputs
+*.out
+
 # dotenv files
 .env
 .env.*
