@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+          <ItemGroup>
+    <Protobuf Include="../../proto/gamecloud.proto" GrpcServices="Server,Client" />
+    <Protobuf Include="../../proto/matchmaking.proto" GrpcServices="Server,Client" />
+    <Protobuf Include="../../proto/presence.proto" GrpcServices="Server,Client" />
+    <Protobuf Include="../../proto/rtapi.proto" GrpcServices="Client" />
+    </ItemGroup>
+</Project>
