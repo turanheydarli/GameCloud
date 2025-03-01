@@ -6,6 +6,11 @@ POD_NAME := gamecloud-main-576ccfc9d6-5g2hf
 DEPLOYMENT_NAME := gamecloud-main
 IMAGE_TAG := latest
 
+# Go-related variables
+GO_RELAY_DIR := ./relay
+GO_RELAY_BIN := relay-server
+GO_OUTPUT_DIR := ./bin/relay
+
 .PHONY: run run-debug run-release clean restore build test
 
 run:
@@ -19,6 +24,57 @@ run-debug:
 run-release:
 	@echo "Starting application in release modes..."
 	dotnet run --project $(API_PROJ) --configuration Release
+
+# Go-related tasks
+.PHONY: go-init go-deps go-build go-run go-test go-clean go-proto
+
+go-init:
+	@echo "Initializing Go module in $(GO_RELAY_DIR)..."
+	@mkdir -p $(GO_RELAY_DIR)
+	@cd $(GO_RELAY_DIR) && go mod init github.com/turanheydarli/gamecloud/relay
+
+go-deps:
+	@echo "Installing Go dependencies..."
+	@cd $(GO_RELAY_DIR) && go mod tidy
+
+go-build:
+	@echo "Building Go relay components..."
+	@mkdir -p $(GO_OUTPUT_DIR)
+	@cd $(GO_RELAY_DIR) && go build -o ../$(GO_OUTPUT_DIR)/$(GO_RELAY_BIN) ./cmd/relay-server
+
+go-run:
+	@echo "Running Go relay server..."
+	@cd $(GO_RELAY_DIR) && go run ./cmd/relay-server/main.go
+
+go-test:
+	@echo "Running Go tests..."
+	@cd $(GO_RELAY_DIR) && go test ./...
+
+go-clean:
+	@echo "Cleaning Go build artifacts..."
+	@rm -rf $(GO_OUTPUT_DIR)
+	@find $(GO_RELAY_DIR) -type f -name "*.exe" -delete
+
+go-proto:
+	@echo "Generating Go code from protobuf definitions..."
+	@mkdir -p $(GO_RELAY_DIR)/pkg/api
+	@protoc --go_out=$(GO_RELAY_DIR) --go-grpc_out=$(GO_RELAY_DIR) --proto_path=./proto ./proto/*.proto
+
+# Combined tasks
+.PHONY: build-all run-all clean-all init-all
+
+build-all: build go-build
+	@echo "Built all components"
+
+run-all:
+	@echo "Starting all services..."
+	@$(MAKE) run & $(MAKE) go-run
+
+clean-all: clean go-clean
+	@echo "Cleaned all components"
+
+init-all: restore go-init go-deps
+	@echo "Initialized all components"
 
 .PHONY: migration remove-migration database-update database-drop
 
@@ -71,6 +127,17 @@ test:
 	@echo "Running tests..."
 	dotnet test
 
+# Docker-related tasks for the Go relay
+.PHONY: docker-build-relay docker-push-relay
+
+docker-build-relay:
+	@echo "Building Docker image for relay server..."
+	docker build -t $(PROJ_NAME)/relay:$(IMAGE_TAG) -f relay/Dockerfile ./relay
+
+docker-push-relay:
+	@echo "Pushing relay Docker image..."
+	docker push $(PROJ_NAME)/relay:$(IMAGE_TAG)
+
 .PHONY: deploy rollout-status rollout-history rollout-undo scale get-deployments get-services get-nodes cluster-info
 
 .PHONY: update-pod-name
@@ -84,6 +151,13 @@ deploy:
 	kubectl apply -k k8s/overlays/production -n $(K8S_NAMESPACE)
 	@sleep 5
 	@$(MAKE) update-pod-name
+
+# Deploy relay server to Kubernetes
+.PHONY: deploy-relay
+
+deploy-relay:
+	@echo "Deploying relay server to Kubernetes..."
+	kubectl apply -k k8s/overlays/relay -n $(K8S_NAMESPACE)
 
 rollout-undo:
 	@echo "Rolling back to previous version..."
