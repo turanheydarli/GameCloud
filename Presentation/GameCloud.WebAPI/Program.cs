@@ -4,14 +4,14 @@ using GameCloud.Functioning.Extensions;
 using GameCloud.Persistence.Contexts;
 using GameCloud.WebAPI.Exceptions;
 using GameCloud.WebAPI.Filters;
+using GameCloud.WebAPI.Services.Grpc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<RequireGameKeyFilter>();
-});
+builder.Services.AddControllers(options => { options.Filters.Add<RequireGameKeyFilter>(); });
+
+builder.Services.AddGrpc(options => { options.EnableDetailedErrors = true; });
 
 builder.Services.AddCors(options =>
 {
@@ -57,7 +57,7 @@ if (app.Environment.IsDevelopment())
 else
 {
     using var scope = app.Services.CreateScope();
-    try 
+    try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<GameCloudDbContext>();
         dbContext.Database.Migrate();
@@ -80,5 +80,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapDefaultControllerRoute();
+
+app.MapGrpcService<MatchmakingGrpcService>();
+
 
 app.Run();

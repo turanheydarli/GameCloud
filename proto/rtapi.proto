@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package gamecloud;
 
-option go_package = "github.com/turanheydarli/gamecloud/proto";
+option go_package = "github.com/turanheydarli/gamecloud/relay/proto";
 option csharp_namespace = "GameCloud.Proto";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
-import "gamecloud.proto"; 
+import "gamecloud.proto";
 
 // Envelope for WebSocket messages between client and relay server
 message Envelope {
