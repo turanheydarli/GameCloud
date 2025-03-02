@@ -8,8 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/turanheydarli/gamecloud/relay/internal/transport"
+	"github.com/turanheydarli/gamecloud/relay/internal/foundation"
+	"github.com/turanheydarli/gamecloud/relay/internal/matchmaking"
+	"github.com/turanheydarli/gamecloud/relay/internal/rtapi"
 )
 
 var (
@@ -19,27 +22,54 @@ var (
 func main() {
 	flag.Parse()
 
-	log.Printf("GameCloud Relay Server starting on port %d", *port)
+	cfg, err := foundation.LoadConfig() 
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
 
-	wsServer := transport.NewWebSocketServer()
+	logger := foundation.NewLogger(cfg.LogLevel)
 
-	http.HandleFunc("/ws", wsServer.HandleConnection)
+	logger.Infow("startup", "status", "initializing", "port", *port)
+
+	wsManager := rtapi.NewWebSocketManager(logger)
+
+	matchmakingService := matchmaking.NewService(logger, wsManager)
+
+	rtapiHandler := rtapi.NewHandler(logger, wsManager, matchmakingService)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		rtapiHandler.HandleWebSocket(w, r)
+	})
 
 	serverAddr := fmt.Sprintf(":%d", *port)
-	server := &http.Server{Addr: serverAddr}
+	server := &http.Server{
+		Addr:         serverAddr,
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
 
 	go func() {
+		logger.Infow("startup", "status", "listening", "addr", serverAddr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			logger.Fatalw("server failed", "error", err)
 		}
 	}()
-
-	log.Printf("GameCloud Relay Server started on port %d", *port)
-	log.Println("Press Ctrl+C to stop the server")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Server shutting down...")
+	logger.Infow("shutdown", "status", "initiating graceful shutdown")
+
+	shutdownCtx, cancel := foundation.NewShutdownContext(10 * time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Errorw("shutdown error", "error", err)
+	}
+
+	logger.Infow("shutdown", "status", "complete")
 }
