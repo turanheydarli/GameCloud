@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: matchmaking.proto
+// source: proto/matchmaking.proto
 
 package proto
 
@@ -29,16 +29,10 @@ const (
 // MatchmakingServiceClient is the client API for MatchmakingService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// Matchmaking service for finding other players
 type MatchmakingServiceClient interface {
-	// Create a matchmaking ticket
 	CreateTicket(ctx context.Context, in *CreateTicketRequest, opts ...grpc.CallOption) (*MatchmakingTicket, error)
-	// Delete a matchmaking ticket
 	DeleteTicket(ctx context.Context, in *DeleteTicketRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Check status of a ticket
 	GetTicket(ctx context.Context, in *GetTicketRequest, opts ...grpc.CallOption) (*MatchmakingTicket, error)
-	// Add users to a match directly (for party matchmaking)
 	AddUsersToMatch(ctx context.Context, in *AddUsersToMatchRequest, opts ...grpc.CallOption) (*MatchmakingTicket, error)
 }
 
@@ -93,16 +87,10 @@ func (c *matchmakingServiceClient) AddUsersToMatch(ctx context.Context, in *AddU
 // MatchmakingServiceServer is the server API for MatchmakingService service.
 // All implementations must embed UnimplementedMatchmakingServiceServer
 // for forward compatibility.
-//
-// Matchmaking service for finding other players
 type MatchmakingServiceServer interface {
-	// Create a matchmaking ticket
 	CreateTicket(context.Context, *CreateTicketRequest) (*MatchmakingTicket, error)
-	// Delete a matchmaking ticket
 	DeleteTicket(context.Context, *DeleteTicketRequest) (*emptypb.Empty, error)
-	// Check status of a ticket
 	GetTicket(context.Context, *GetTicketRequest) (*MatchmakingTicket, error)
-	// Add users to a match directly (for party matchmaking)
 	AddUsersToMatch(context.Context, *AddUsersToMatchRequest) (*MatchmakingTicket, error)
 	mustEmbedUnimplementedMatchmakingServiceServer()
 }
@@ -244,5 +232,5 @@ var MatchmakingService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "matchmaking.proto",
+	Metadata: "proto/matchmaking.proto",
 }

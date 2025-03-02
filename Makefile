@@ -26,7 +26,7 @@ run-release:
 	dotnet run --project $(API_PROJ) --configuration Release
 
 # Go-related tasks
-.PHONY: go-init go-deps go-build go-run go-test go-clean go-proto
+.PHONY: go-init go-deps go-build go-run go-test go-clean go-proto go-test-ws
 
 go-init:
 	@echo "Initializing Go module in $(GO_RELAY_DIR)..."
@@ -57,8 +57,18 @@ go-clean:
 
 go-proto:
 	@echo "Generating Go code from protobuf definitions..."
-	@mkdir -p $(GO_RELAY_DIR)/pkg/api
-	@protoc --go_out=$(GO_RELAY_DIR) --go-grpc_out=$(GO_RELAY_DIR) --proto_path=./proto ./proto/*.proto
+	@mkdir -p $(GO_RELAY_DIR)/proto
+	@PATH=$$PATH:$(HOME)/go/bin protoc --go_out=$(GO_RELAY_DIR) --go-grpc_out=$(GO_RELAY_DIR) --proto_path=. --proto_path=./proto ./proto/*.proto
+	@echo "Copying generated files to the correct location..."
+	@cp -f $(GO_RELAY_DIR)/github.com/turanheydarli/gamecloud/relay/proto/*.pb.go $(GO_RELAY_DIR)/proto/
+	@echo "Cleaning up temporary files..."
+	@rm -rf $(GO_RELAY_DIR)/github.com
+	@echo "Removing duplicate proto files from relay/proto directory..."
+	@find $(GO_RELAY_DIR)/proto -name "*.proto" -type f -delete
+
+go-test-ws:
+	@echo "Running WebSocket test client..."
+	@cd $(GO_RELAY_DIR) && go run ./cmd/test-client/main.go
 
 # Combined tasks
 .PHONY: build-all run-all clean-all init-all

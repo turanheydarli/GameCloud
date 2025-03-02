@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.67.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -27,6 +29,7 @@
     <ProjectReference Include="..\..\Core\GameCloud.Application\GameCloud.Application.csproj" />
     <ProjectReference Include="..\..\Infrastructure\GameCloud.Business\GameCloud.Business.csproj" />
     <ProjectReference Include="..\..\Infrastructure\GameCloud.Caching\GameCloud.Caching.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\GameCloud.Proto\GameCloud.Proto.csproj" />
     <ProjectReference Include="..\..\Infrastructure\GameCloud.Scripting\GameCloud.Scripting.csproj" />
   </ItemGroup>
 

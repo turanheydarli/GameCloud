@@ -5,17 +5,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/turanheydarli/gamecloud/relay/internal/rtapi"
 	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
-	pbrt "github.com/turanheydarli/gamecloud/proto" 
+	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 )
 
 type Service struct {
-	log       logger.Logger
-	wsManager *rtapi.WebSocketManager
+	log        logger.Logger
+	grpcClient pbrt.MatchmakingServiceClient
+	wsManager  WebSocketManagerInterface
 }
 
-func NewService(log logger.Logger, wsManager *rtapi.WebSocketManager) *Service {
+type WebSocketManagerInterface interface {
+	SendToPlayer(playerID string, message *pbrt.Envelope)
+}
+
+func NewService(log logger.Logger, wsManager WebSocketManagerInterface) *Service {
 	return &Service{
 		log:       log,
 		wsManager: wsManager,
@@ -23,7 +27,11 @@ func NewService(log logger.Logger, wsManager *rtapi.WebSocketManager) *Service {
 }
 
 func (s *Service) CreateTicket(ctx context.Context, playerID string, queueName string) (string, error) {
-	// Here you'd call your ASP.NET (REST or gRPC) to create a ticket.
+	s.grpcClient.CreateTicket(ctx, &pbrt.CreateTicketRequest{
+		PalyerId:  playerID,
+		QueueName: queueName,
+	})
+
 	ticketID := fmt.Sprintf("ticket-%d", time.Now().UnixNano())
 	s.log.Infow("CreateTicket", "player", playerID, "queue", queueName, "ticket", ticketID)
 	return ticketID, nil
@@ -53,4 +61,4 @@ func (s *Service) NotifyBattleStart(matchID string, playerIDs []string) {
 		}
 		s.wsManager.SendToPlayer(pid, message)
 	}
-} 
+}

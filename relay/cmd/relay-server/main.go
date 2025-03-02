@@ -22,7 +22,7 @@ var (
 func main() {
 	flag.Parse()
 
-	cfg, err := foundation.LoadConfig() 
+	cfg, err := foundation.LoadConfig()
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}

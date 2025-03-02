@@ -2,14 +2,14 @@ package rtapi
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 	"github.com/turanheydarli/gamecloud/relay/internal/matchmaking"
 	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
-	pbrt "github.com/turanheydarli/gamecloud/proto"
+	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type Handler struct {
@@ -79,6 +79,15 @@ func (h *Handler) readLoop(playerID string, conn *websocket.Conn) {
 	}
 }
 
+// UnmarshalProto unmarshals binary data into a protocol buffer Envelope
+func UnmarshalProto(data []byte) (*pbrt.Envelope, error) {
+	envelope := &pbrt.Envelope{}
+	if err := proto.Unmarshal(data, envelope); err != nil {
+		return nil, err
+	}
+	return envelope, nil
+}
+
 func (h *Handler) processEnvelope(playerID string, envelope *pbrt.Envelope) {
 	switch msg := envelope.Message.(type) {
 
@@ -86,8 +95,8 @@ func (h *Handler) processEnvelope(playerID string, envelope *pbrt.Envelope) {
 		h.log.Infow("Received MatchmakerAdd", "player", playerID, "queue", msg.MatchmakerAdd.GameId)
 		// Here, create a ticket
 		ticketID, err := h.mmService.CreateTicket(
-			h.makeContext(), 
-			playerID, 
+			h.makeContext(),
+			playerID,
 			msg.MatchmakerAdd.GameId,
 		)
 		if err != nil {
@@ -131,4 +140,4 @@ func (h *Handler) sendError(playerID, envelopeID, code, msg string) {
 		},
 	}
 	h.wsManager.SendToPlayer(playerID, errEnv)
-} 
+}

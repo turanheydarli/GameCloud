@@ -2,33 +2,29 @@ syntax = "proto3";
 
 package gamecloud;
 
-option go_package = "github.com/turanheydarli/gamecloud/proto";
+option go_package = "github.com/turanheydarli/gamecloud/relay/proto";
 option csharp_namespace = "GameCloud.Proto";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-// Matchmaking service for finding other players
 service MatchmakingService {
-  // Create a matchmaking ticket
   rpc CreateTicket(CreateTicketRequest) returns (MatchmakingTicket);
   
-  // Delete a matchmaking ticket
   rpc DeleteTicket(DeleteTicketRequest) returns (google.protobuf.Empty);
   
-  // Check status of a ticket
   rpc GetTicket(GetTicketRequest) returns (MatchmakingTicket);
   
-  // Add users to a match directly (for party matchmaking)
   rpc AddUsersToMatch(AddUsersToMatchRequest) returns (MatchmakingTicket);
 }
 
 message CreateTicketRequest {
-  string user_id = 1;
+  string palyer_id = 1;
   string game_id = 2;
-  MatchmakingCriteria criteria = 3;
-  map<string, string> properties = 4;
-  string session_id = 5;
+  string queue_name = 3;
+  MatchmakingCriteria criteria = 4;
+  map<string, string> properties = 5;
+  string session_id = 6;
 }
 
 message MatchmakingCriteria {

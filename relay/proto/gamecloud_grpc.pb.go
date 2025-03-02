@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: gamecloud.proto
+// source: proto/gamecloud.proto
 
 package proto
 
@@ -536,7 +536,7 @@ var RelayService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "gamecloud.proto",
+	Metadata: "proto/gamecloud.proto",
 }
 
 const (
@@ -828,5 +828,5 @@ var GameEventService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "gamecloud.proto",
+	Metadata: "proto/gamecloud.proto",
 }
