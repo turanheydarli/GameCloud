@@ -5,13 +5,17 @@ using GameCloud.Persistence.Contexts;
 using GameCloud.WebAPI.Exceptions;
 using GameCloud.WebAPI.Filters;
 using GameCloud.WebAPI.Services.Grpc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers(options => { options.Filters.Add<RequireGameKeyFilter>(); });
 
-builder.Services.AddGrpc(options => { options.EnableDetailedErrors = true; });
+builder.Services.AddGrpc(options =>
+{
+    options.EnableDetailedErrors = true;
+});
 
 builder.Services.AddCors(options =>
 {
@@ -20,10 +24,10 @@ builder.Services.AddCors(options =>
         policy
             .AllowAnyOrigin()
             .AllowAnyMethod()
-            .AllowAnyHeader()
-            .WithExposedHeaders("X-Pagination");
+            .AllowAnyHeader();
     });
 });
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -47,6 +51,7 @@ builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -69,7 +74,7 @@ else
     }
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseExceptionHandler(_ => { });
 
@@ -79,9 +84,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapDefaultControllerRoute();
-
 app.MapGrpcService<MatchmakingGrpcService>();
 
+app.MapDefaultControllerRoute();
 
 app.Run();

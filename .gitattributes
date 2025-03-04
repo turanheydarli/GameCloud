@@ -3,9 +3,4 @@
 *.js linguist-detectable=false
 *.html linguist-detectable=false
 *.xml linguist-detectable=false
-*.proto linguist-detectable=true
-*.proto3 linguist-detectable=true
-*.proto3.html linguist-detectable=true
-*.proto3.xml linguist-detectable=true
-*.proto3.js linguist-detectable=true
-*.proto3.css linguist-detectable=true
+*.proto linguist-detectable=false
