@@ -26,7 +26,7 @@ run-release:
 	dotnet run --project $(API_PROJ) --configuration Release
 
 # Go-related tasks
-.PHONY: go-init go-deps go-build go-run go-test go-clean go-proto go-test-ws
+.PHONY: go-init go-deps go-build go-run go-test go-clean go-proto go-test-ws cs-proto
 
 go-init:
 	@echo "Initializing Go module in $(GO_RELAY_DIR)..."
@@ -58,22 +58,30 @@ go-clean:
 go-proto:
 	@echo "Generating Go code from protobuf definitions..."
 	@mkdir -p $(GO_RELAY_DIR)/proto
-	@PATH=$$PATH:$(HOME)/go/bin protoc --go_out=$(GO_RELAY_DIR) --go-grpc_out=$(GO_RELAY_DIR) --proto_path=. --proto_path=./proto ./proto/*.proto
-	@echo "Copying generated files to the correct location..."
-	@cp -f $(GO_RELAY_DIR)/github.com/turanheydarli/gamecloud/relay/proto/*.pb.go $(GO_RELAY_DIR)/proto/
-	@echo "Cleaning up temporary files..."
-	@rm -rf $(GO_RELAY_DIR)/github.com
-	@echo "Removing duplicate proto files from relay/proto directory..."
-	@find $(GO_RELAY_DIR)/proto -name "*.proto" -type f -delete
+	@echo "Installing specific versions of protoc plugins..."
+	@cd $(GO_RELAY_DIR) && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
+	@cd $(GO_RELAY_DIR) && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+	@echo "Generating protobuf code..."
+	@PATH=$$PATH:$(HOME)/go/bin protoc \
+		--go_out=paths=source_relative:$(GO_RELAY_DIR)/proto \
+		--go-grpc_out=paths=source_relative:$(GO_RELAY_DIR)/proto \
+		--proto_path=./proto \
+		./proto/*.proto
+	@echo "Go protobuf files generated successfully in relay/proto"
 
 go-test-ws:
 	@echo "Running WebSocket test client..."
 	@cd $(GO_RELAY_DIR) && go run ./cmd/test-client/main.go
 
+# C#-related proto tasks
+cs-proto:
+	@echo "Generating C# code from protobuf definitions..."
+	@dotnet build ./Infrastructure/GameCloud.Proto/GameCloud.Proto.csproj
+
 # Combined tasks
 .PHONY: build-all run-all clean-all init-all
 
-build-all: build go-build
+build-all: build go-build cs-proto
 	@echo "Built all components"
 
 run-all:
@@ -83,7 +91,7 @@ run-all:
 clean-all: clean go-clean
 	@echo "Cleaned all components"
 
-init-all: restore go-init go-deps
+init-all: restore go-init go-deps cs-proto
 	@echo "Initialized all components"
 
 .PHONY: migration remove-migration database-update database-drop

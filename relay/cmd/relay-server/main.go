@@ -1,75 +1,59 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/turanheydarli/gamecloud/relay/internal/foundation"
-	"github.com/turanheydarli/gamecloud/relay/internal/matchmaking"
-	"github.com/turanheydarli/gamecloud/relay/internal/rtapi"
-)
-
-var (
-	port = flag.Int("port", 7001, "The port to run the server on")
+	"github.com/turanheydarli/gamecloud/relay/internal/foundation/config"
+	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
 )
 
 func main() {
+	envPath := flag.String("env", "./.env", "Path to .env configuration file")
 	flag.Parse()
 
-	cfg, err := foundation.LoadConfig()
+	cfg, err := config.Load(*envPath)
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		fmt.Printf("WARNING: Failed to load configuration file: %v\n", err)
+		fmt.Println("Continuing with default configuration...")
+		cfg = config.New()
 	}
 
-	logger := foundation.NewLogger(cfg.LogLevel)
+	log := logger.NewStdLogger(cfg.Log.Level)
+	log.Infow("starting relay server", "port", cfg.Server.Port)
 
-	logger.Infow("startup", "status", "initializing", "port", *port)
-
-	wsManager := rtapi.NewWebSocketManager(logger)
-
-	matchmakingService := matchmaking.NewService(logger, wsManager)
-
-	rtapiHandler := rtapi.NewHandler(logger, wsManager, matchmakingService)
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		rtapiHandler.HandleWebSocket(w, r)
-	})
-
-	serverAddr := fmt.Sprintf(":%d", *port)
-	server := &http.Server{
-		Addr:         serverAddr,
-		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+	app, err := foundation.NewApp(*cfg, log)
+	if err != nil {
+		log.Fatalw("failed to create application", "error", err)
 	}
 
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	appErrors := make(chan error, 1)
 	go func() {
-		logger.Infow("startup", "status", "listening", "addr", serverAddr)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalw("server failed", "error", err)
-		}
+		log.Infow("starting application")
+		appErrors <- app.Start(context.Background())
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	logger.Infow("shutdown", "status", "initiating graceful shutdown")
-
-	shutdownCtx, cancel := foundation.NewShutdownContext(10 * time.Second)
-	defer cancel()
-
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		logger.Errorw("shutdown error", "error", err)
+	select {
+	case err := <-appErrors:
+		if err != nil {
+			log.Errorw("application error", "error", err)
+		}
+	case sig := <-shutdown:
+		log.Infow("shutdown signal received", "signal", sig)
 	}
 
-	logger.Infow("shutdown", "status", "complete")
+	log.Infow("stopping application...")
+	if err := app.Stop(); err != nil {
+		log.Errorw("error stopping application", "error", err)
+	}
+
+	log.Infow("application stopped")
 }
