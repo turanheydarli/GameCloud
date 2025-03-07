@@ -10,6 +10,7 @@ import "google/protobuf/timestamp.proto";
 
 service RelayService {
   rpc AuthenticateUser(AuthenticateRequest) returns (AuthenticateResponse);
+  rpc UpdatePlayer(UpdatePlayerRequest) returns (UpdatePlayerResponse);
   
   rpc CreateRoom(CreateRoomRequest) returns (Room);
   rpc GetRoom(GetRoomRequest) returns (Room);
@@ -24,10 +25,56 @@ service RelayService {
   rpc EndGame(EndGameRequest) returns (google.protobuf.Empty);
   
   rpc PersistGameState(PersistGameStateRequest) returns (google.protobuf.Empty);
+
+  rpc UpdatePlayerAttributes(UpdatePlayerAttributesRequest) returns (UpdatePlayerAttributesResponse);
+  rpc GetPlayerAttributes(GetPlayerAttributesRequest) returns (GetPlayerAttributesResponse);
+  rpc DeletePlayerAttribute(DeletePlayerAttributeRequest) returns (DeletePlayerAttributeResponse);
 }
 
 message SessionConnectResponse {
   string session_id = 1;
+}
+
+
+message UpdatePlayerAttributesRequest {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+  string value = 4;
+}
+
+message UpdatePlayerAttributesResponse {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+  string value = 4;
+}
+
+message GetPlayerAttributesRequest {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+}
+
+message GetPlayerAttributesResponse {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+  string value = 4;
+  map<string, string> attributes = 5;
+}
+
+message DeletePlayerAttributeRequest {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+}
+
+message DeletePlayerAttributeResponse {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+  bool success = 4;
 }
 
 message SessionConnect {
@@ -44,6 +91,20 @@ service GameEventService {
   rpc OnGameCompleted(GameCompletedEvent) returns (EventAck);
   rpc OnGameStateChanged(GameStateEvent) returns (EventAck);
   rpc OnMatchmakingResult(MatchmakingResultEvent) returns (EventAck);
+}
+
+message UpdatePlayerRequest {
+  string player_id = 1;
+  map<string, string> metadata = 2;
+  string display_name = 3;
+}
+
+message UpdatePlayerResponse {
+  string player_id = 1;
+  string display_name = 2;
+  string avatar_url = 3;
+  map<string, string> metadata = 4;
+  google.protobuf.Timestamp updated_at = 5;
 }
 
 message AuthenticateRequest {

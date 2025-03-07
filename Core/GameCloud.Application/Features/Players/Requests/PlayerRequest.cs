@@ -4,7 +4,6 @@ namespace GameCloud.Application.Features.Players.Requests;
 
 public record PlayerRequest(
     Guid Id,
-    AuthProvider AuthProvider,
     string? Username,
     string? DisplayName,
-    Guid UserId);
+    Dictionary<string, object>? Metadata = null);

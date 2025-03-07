@@ -39,7 +39,6 @@ namespace GameCloud.WebAPI.Middlewares
 
             metadata.Add("request-id", context.GetHttpContext().TraceIdentifier);
 
-            // Map specific exception types to appropriate gRPC status codes
             switch (exception)
             {
                 case InvalidCredentialException:

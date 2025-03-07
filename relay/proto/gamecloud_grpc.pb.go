@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RelayServiceClient interface {
 	AuthenticateUser(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
+	UpdatePlayer(ctx context.Context, in *UpdatePlayerRequest, opts ...grpc.CallOption) (*UpdatePlayerResponse, error)
 	CreateRoom(ctx context.Context, in *CreateRoomRequest, opts ...grpc.CallOption) (*Room, error)
 	GetRoom(ctx context.Context, in *GetRoomRequest, opts ...grpc.CallOption) (*Room, error)
 	DeleteRoom(ctx context.Context, in *DeleteRoomRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -34,6 +35,9 @@ type RelayServiceClient interface {
 	SendGameAction(ctx context.Context, in *GameAction, opts ...grpc.CallOption) (*GameActionAck, error)
 	EndGame(ctx context.Context, in *EndGameRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PersistGameState(ctx context.Context, in *PersistGameStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdatePlayerAttributes(ctx context.Context, in *UpdatePlayerAttributesRequest, opts ...grpc.CallOption) (*UpdatePlayerAttributesResponse, error)
+	GetPlayerAttributes(ctx context.Context, in *GetPlayerAttributesRequest, opts ...grpc.CallOption) (*GetPlayerAttributesResponse, error)
+	DeletePlayerAttribute(ctx context.Context, in *DeletePlayerAttributeRequest, opts ...grpc.CallOption) (*DeletePlayerAttributeResponse, error)
 }
 
 type relayServiceClient struct {
@@ -47,6 +51,15 @@ func NewRelayServiceClient(cc grpc.ClientConnInterface) RelayServiceClient {
 func (c *relayServiceClient) AuthenticateUser(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error) {
 	out := new(AuthenticateResponse)
 	err := c.cc.Invoke(ctx, "/gamecloud.RelayService/AuthenticateUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayServiceClient) UpdatePlayer(ctx context.Context, in *UpdatePlayerRequest, opts ...grpc.CallOption) (*UpdatePlayerResponse, error) {
+	out := new(UpdatePlayerResponse)
+	err := c.cc.Invoke(ctx, "/gamecloud.RelayService/UpdatePlayer", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -143,11 +156,39 @@ func (c *relayServiceClient) PersistGameState(ctx context.Context, in *PersistGa
 	return out, nil
 }
 
+func (c *relayServiceClient) UpdatePlayerAttributes(ctx context.Context, in *UpdatePlayerAttributesRequest, opts ...grpc.CallOption) (*UpdatePlayerAttributesResponse, error) {
+	out := new(UpdatePlayerAttributesResponse)
+	err := c.cc.Invoke(ctx, "/gamecloud.RelayService/UpdatePlayerAttributes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayServiceClient) GetPlayerAttributes(ctx context.Context, in *GetPlayerAttributesRequest, opts ...grpc.CallOption) (*GetPlayerAttributesResponse, error) {
+	out := new(GetPlayerAttributesResponse)
+	err := c.cc.Invoke(ctx, "/gamecloud.RelayService/GetPlayerAttributes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayServiceClient) DeletePlayerAttribute(ctx context.Context, in *DeletePlayerAttributeRequest, opts ...grpc.CallOption) (*DeletePlayerAttributeResponse, error) {
+	out := new(DeletePlayerAttributeResponse)
+	err := c.cc.Invoke(ctx, "/gamecloud.RelayService/DeletePlayerAttribute", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RelayServiceServer is the server API for RelayService service.
 // All implementations must embed UnimplementedRelayServiceServer
 // for forward compatibility
 type RelayServiceServer interface {
 	AuthenticateUser(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error)
+	UpdatePlayer(context.Context, *UpdatePlayerRequest) (*UpdatePlayerResponse, error)
 	CreateRoom(context.Context, *CreateRoomRequest) (*Room, error)
 	GetRoom(context.Context, *GetRoomRequest) (*Room, error)
 	DeleteRoom(context.Context, *DeleteRoomRequest) (*emptypb.Empty, error)
@@ -158,6 +199,9 @@ type RelayServiceServer interface {
 	SendGameAction(context.Context, *GameAction) (*GameActionAck, error)
 	EndGame(context.Context, *EndGameRequest) (*emptypb.Empty, error)
 	PersistGameState(context.Context, *PersistGameStateRequest) (*emptypb.Empty, error)
+	UpdatePlayerAttributes(context.Context, *UpdatePlayerAttributesRequest) (*UpdatePlayerAttributesResponse, error)
+	GetPlayerAttributes(context.Context, *GetPlayerAttributesRequest) (*GetPlayerAttributesResponse, error)
+	DeletePlayerAttribute(context.Context, *DeletePlayerAttributeRequest) (*DeletePlayerAttributeResponse, error)
 	mustEmbedUnimplementedRelayServiceServer()
 }
 
@@ -167,6 +211,9 @@ type UnimplementedRelayServiceServer struct {
 
 func (UnimplementedRelayServiceServer) AuthenticateUser(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AuthenticateUser not implemented")
+}
+func (UnimplementedRelayServiceServer) UpdatePlayer(context.Context, *UpdatePlayerRequest) (*UpdatePlayerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePlayer not implemented")
 }
 func (UnimplementedRelayServiceServer) CreateRoom(context.Context, *CreateRoomRequest) (*Room, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRoom not implemented")
@@ -198,6 +245,15 @@ func (UnimplementedRelayServiceServer) EndGame(context.Context, *EndGameRequest)
 func (UnimplementedRelayServiceServer) PersistGameState(context.Context, *PersistGameStateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PersistGameState not implemented")
 }
+func (UnimplementedRelayServiceServer) UpdatePlayerAttributes(context.Context, *UpdatePlayerAttributesRequest) (*UpdatePlayerAttributesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePlayerAttributes not implemented")
+}
+func (UnimplementedRelayServiceServer) GetPlayerAttributes(context.Context, *GetPlayerAttributesRequest) (*GetPlayerAttributesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPlayerAttributes not implemented")
+}
+func (UnimplementedRelayServiceServer) DeletePlayerAttribute(context.Context, *DeletePlayerAttributeRequest) (*DeletePlayerAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePlayerAttribute not implemented")
+}
 func (UnimplementedRelayServiceServer) mustEmbedUnimplementedRelayServiceServer() {}
 
 // UnsafeRelayServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -225,6 +281,24 @@ func _RelayService_AuthenticateUser_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RelayServiceServer).AuthenticateUser(ctx, req.(*AuthenticateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayService_UpdatePlayer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePlayerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayServiceServer).UpdatePlayer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gamecloud.RelayService/UpdatePlayer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayServiceServer).UpdatePlayer(ctx, req.(*UpdatePlayerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -409,6 +483,60 @@ func _RelayService_PersistGameState_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RelayService_UpdatePlayerAttributes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePlayerAttributesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayServiceServer).UpdatePlayerAttributes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gamecloud.RelayService/UpdatePlayerAttributes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayServiceServer).UpdatePlayerAttributes(ctx, req.(*UpdatePlayerAttributesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayService_GetPlayerAttributes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPlayerAttributesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayServiceServer).GetPlayerAttributes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gamecloud.RelayService/GetPlayerAttributes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayServiceServer).GetPlayerAttributes(ctx, req.(*GetPlayerAttributesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayService_DeletePlayerAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePlayerAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayServiceServer).DeletePlayerAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gamecloud.RelayService/DeletePlayerAttribute",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayServiceServer).DeletePlayerAttribute(ctx, req.(*DeletePlayerAttributeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RelayService_ServiceDesc is the grpc.ServiceDesc for RelayService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -419,6 +547,10 @@ var RelayService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AuthenticateUser",
 			Handler:    _RelayService_AuthenticateUser_Handler,
+		},
+		{
+			MethodName: "UpdatePlayer",
+			Handler:    _RelayService_UpdatePlayer_Handler,
 		},
 		{
 			MethodName: "CreateRoom",
@@ -459,6 +591,18 @@ var RelayService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PersistGameState",
 			Handler:    _RelayService_PersistGameState_Handler,
+		},
+		{
+			MethodName: "UpdatePlayerAttributes",
+			Handler:    _RelayService_UpdatePlayerAttributes_Handler,
+		},
+		{
+			MethodName: "GetPlayerAttributes",
+			Handler:    _RelayService_GetPlayerAttributes_Handler,
+		},
+		{
+			MethodName: "DeletePlayerAttribute",
+			Handler:    _RelayService_DeletePlayerAttribute_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
