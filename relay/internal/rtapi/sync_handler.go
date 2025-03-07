@@ -3,12 +3,12 @@ package rtapi
 import (
 	"context"
 
+	"github.com/turanheydarli/gamecloud/relay/internal/session"
 	"github.com/turanheydarli/gamecloud/relay/internal/sync"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 )
 
-// handleObjectInstantiate processes object instantiation requests
-func (h *Handler) handleObjectInstantiate(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleObjectInstantiate(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to instantiate objects")
 		return
@@ -20,14 +20,12 @@ func (h *Handler) handleObjectInstantiate(ctx context.Context, session *ClientSe
 		return
 	}
 
-	// Get player's current room
 	room, inRoom := h.roomService.GetPlayerRoom(session.PlayerID)
 	if !inRoom {
 		h.sendErrorToSession(session, envelope.Id, "not_in_room", "You must be in a room to instantiate objects")
 		return
 	}
 
-	// Create the object using the sync service
 	obj := h.syncService.CreateObject(
 		session.PlayerID,
 		room.ID,
@@ -38,7 +36,6 @@ func (h *Handler) handleObjectInstantiate(ctx context.Context, session *ClientSe
 		instMsg.ObjectInstantiate.Properties,
 	)
 
-	// Send response to instantiator
 	response := &pbrt.Envelope{
 		Id: envelope.Id,
 		Message: &pbrt.Envelope_ObjectInstantiate{
@@ -56,12 +53,10 @@ func (h *Handler) handleObjectInstantiate(ctx context.Context, session *ClientSe
 
 	h.sendEnvelopeToSession(session, response)
 
-	// Broadcast to other players in the room
 	h.broadcastObjectInstantiate(session.PlayerID, obj)
 }
 
-// handleObjectSync processes object synchronization requests
-func (h *Handler) handleObjectSync(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleObjectSync(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to sync objects")
 		return
@@ -73,20 +68,17 @@ func (h *Handler) handleObjectSync(ctx context.Context, session *ClientSession, 
 		return
 	}
 
-	// Get the object
 	obj, exists := h.syncService.GetObject(syncMsg.ObjectSync.ViewId)
 	if !exists {
 		h.sendErrorToSession(session, envelope.Id, "object_not_found", "Object not found")
 		return
 	}
 
-	// Check ownership (only owner can sync, unless it's a shared object)
 	if obj.OwnerID != session.PlayerID && obj.OwnerID != "" {
 		h.sendErrorToSession(session, envelope.Id, "not_owner", "You don't own this object")
 		return
 	}
 
-	// Update transform if provided
 	if syncMsg.ObjectSync.Position != nil || syncMsg.ObjectSync.Rotation != nil || syncMsg.ObjectSync.Scale != nil {
 		h.syncService.UpdateObjectTransform(
 			obj.ViewID,
@@ -96,12 +88,10 @@ func (h *Handler) handleObjectSync(ctx context.Context, session *ClientSession, 
 		)
 	}
 
-	// Update properties if provided
 	if syncMsg.ObjectSync.Properties != nil && len(syncMsg.ObjectSync.Properties) > 0 {
 		h.syncService.UpdateObjectProperties(obj.ViewID, syncMsg.ObjectSync.Properties)
 	}
 
-	// Send acknowledgment to sender
 	response := &pbrt.Envelope{
 		Id: envelope.Id,
 		Message: &pbrt.Envelope_ObjectSyncAck{
@@ -114,12 +104,10 @@ func (h *Handler) handleObjectSync(ctx context.Context, session *ClientSession, 
 
 	h.sendEnvelopeToSession(session, response)
 
-	// Broadcast to other players in the room
 	h.broadcastObjectSync(session.PlayerID, syncMsg.ObjectSync)
 }
 
-// handleObjectDestroy processes object destruction requests
-func (h *Handler) handleObjectDestroy(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleObjectDestroy(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to destroy objects")
 		return
@@ -131,31 +119,26 @@ func (h *Handler) handleObjectDestroy(ctx context.Context, session *ClientSessio
 		return
 	}
 
-	// Get the object
 	obj, exists := h.syncService.GetObject(destroyMsg.ObjectDestroy.ViewId)
 	if !exists {
 		h.sendErrorToSession(session, envelope.Id, "object_not_found", "Object not found")
 		return
 	}
 
-	// Check ownership (only owner can destroy, unless it's a shared object)
 	if obj.OwnerID != session.PlayerID && obj.OwnerID != "" {
 		h.sendErrorToSession(session, envelope.Id, "not_owner", "You don't own this object")
 		return
 	}
 
-	// Store room ID for broadcasting
 	roomID := obj.RoomID
 	viewID := obj.ViewID
 
-	// Delete the object
 	roomID, success := h.syncService.DeleteObject(viewID)
 	if !success {
 		h.sendErrorToSession(session, envelope.Id, "destroy_failed", "Failed to destroy object")
 		return
 	}
 
-	// Send response to destroyer
 	response := &pbrt.Envelope{
 		Id: envelope.Id,
 		Message: &pbrt.Envelope_ObjectDestroy{
@@ -168,11 +151,9 @@ func (h *Handler) handleObjectDestroy(ctx context.Context, session *ClientSessio
 
 	h.sendEnvelopeToSession(session, response)
 
-	// Broadcast to other players in the room
 	h.broadcastObjectDestroy(session.PlayerID, roomID, viewID)
 }
 
-// broadcastObjectInstantiate broadcasts object instantiation to all players in a room except the sender
 func (h *Handler) broadcastObjectInstantiate(senderID string, obj *sync.NetworkObject) {
 	players := h.roomService.GetPlayersInRoom(obj.RoomID)
 
@@ -188,7 +169,7 @@ func (h *Handler) broadcastObjectInstantiate(senderID string, obj *sync.NetworkO
 
 	for _, playerID := range players {
 		if playerID == senderID {
-			continue // Skip sender
+			continue
 		}
 
 		envelope := &pbrt.Envelope{
@@ -202,7 +183,6 @@ func (h *Handler) broadcastObjectInstantiate(senderID string, obj *sync.NetworkO
 	}
 }
 
-// broadcastObjectSync broadcasts object sync to all players in a room except the sender
 func (h *Handler) broadcastObjectSync(senderID string, syncMsg *pbrt.ObjectSync) {
 	obj, exists := h.syncService.GetObject(syncMsg.ViewId)
 	if !exists {
@@ -213,7 +193,7 @@ func (h *Handler) broadcastObjectSync(senderID string, syncMsg *pbrt.ObjectSync)
 
 	for _, playerID := range players {
 		if playerID == senderID {
-			continue // Skip sender
+			continue
 		}
 
 		envelope := &pbrt.Envelope{
@@ -227,7 +207,6 @@ func (h *Handler) broadcastObjectSync(senderID string, syncMsg *pbrt.ObjectSync)
 	}
 }
 
-// broadcastObjectDestroy broadcasts object destruction to all players in a room except the sender
 func (h *Handler) broadcastObjectDestroy(senderID string, roomID string, viewID int32) {
 	players := h.roomService.GetPlayersInRoom(roomID)
 
@@ -252,7 +231,6 @@ func (h *Handler) broadcastObjectDestroy(senderID string, roomID string, viewID 
 	}
 }
 
-// sendRoomObjectsToPlayer sends all existing objects in a room to a player
 func (h *Handler) sendRoomObjectsToPlayer(playerID string, roomID string) {
 	roomObjects := h.syncService.GetRoomObjects(roomID)
 

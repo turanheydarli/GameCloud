@@ -3,10 +3,11 @@ package rtapi
 import (
 	"context"
 
+	"github.com/turanheydarli/gamecloud/relay/internal/session"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 )
 
-func (h *Handler) handleRoomCreate(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleRoomCreate(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to create rooms")
 		return
@@ -45,7 +46,7 @@ func (h *Handler) handleRoomCreate(ctx context.Context, session *ClientSession, 
 	h.sendEnvelopeToSession(session, response)
 }
 
-func (h *Handler) handleRoomJoin(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleRoomJoin(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to join rooms")
 		return
@@ -108,7 +109,7 @@ func (h *Handler) handleRoomJoin(ctx context.Context, session *ClientSession, en
 	h.sendRoomObjectsToPlayer(session.PlayerID, room.ID)
 }
 
-func (h *Handler) handleRoomLeave(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleRoomLeave(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to leave rooms")
 		return
@@ -154,7 +155,7 @@ func (h *Handler) handleRoomLeave(ctx context.Context, session *ClientSession, e
 	h.broadcastPlayerLeft(session.PlayerID, roomID)
 }
 
-func (h *Handler) handleRoomMessage(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleRoomMessage(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to send room messages")
 		return

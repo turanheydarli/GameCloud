@@ -3,10 +3,12 @@ package rtapi
 import (
 	"context"
 
+	"github.com/turanheydarli/gamecloud/relay/internal/session"
+	"github.com/turanheydarli/gamecloud/relay/internal/transport"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 )
 
-func (h *Handler) handleUpdatePlayer(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleUpdatePlayer(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to update player data")
 		return
@@ -18,7 +20,7 @@ func (h *Handler) handleUpdatePlayer(ctx context.Context, session *ClientSession
 		return
 	}
 
-	grpcCtx := createGRPCContext(ctx, session.GameKey)
+	grpcCtx := transport.CreateGRPCContext(ctx, session.GameKey)
 
 	updateReq := &pbrt.UpdatePlayerRequest{
 		PlayerId:    session.PlayerID,
@@ -51,7 +53,7 @@ func (h *Handler) handleUpdatePlayer(ctx context.Context, session *ClientSession
 		"player_id", session.PlayerID)
 }
 
-func (h *Handler) handleUpdatePlayerAttributes(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleUpdatePlayerAttributes(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to update player attributes")
 		return
@@ -63,7 +65,7 @@ func (h *Handler) handleUpdatePlayerAttributes(ctx context.Context, session *Cli
 		return
 	}
 
-	grpcCtx := createGRPCContext(ctx, session.GameKey)
+	grpcCtx := transport.CreateGRPCContext(ctx, session.GameKey)
 
 	updateReq := &pbrt.UpdatePlayerAttributesRequest{
 		PlayerId:   session.PlayerID,
@@ -99,7 +101,7 @@ func (h *Handler) handleUpdatePlayerAttributes(ctx context.Context, session *Cli
 		"key", updateMsg.UpdatePlayerAttributes.Key)
 }
 
-func (h *Handler) handleGetPlayerAttributes(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleGetPlayerAttributes(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to get player attributes")
 		return
@@ -111,7 +113,7 @@ func (h *Handler) handleGetPlayerAttributes(ctx context.Context, session *Client
 		return
 	}
 
-	grpcCtx := createGRPCContext(ctx, session.GameKey)
+	grpcCtx := transport.CreateGRPCContext(ctx, session.GameKey)
 
 	getReq := &pbrt.GetPlayerAttributesRequest{
 		PlayerId:   session.PlayerID,
@@ -146,7 +148,7 @@ func (h *Handler) handleGetPlayerAttributes(ctx context.Context, session *Client
 		"collection", getMsg.GetPlayerAttributes.Collection)
 }
 
-func (h *Handler) handleDeletePlayerAttribute(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleDeletePlayerAttribute(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	if session.PlayerID == "" {
 		h.sendErrorToSession(session, envelope.Id, "unauthorized", "You must be authenticated to delete player attributes")
 		return
@@ -158,7 +160,7 @@ func (h *Handler) handleDeletePlayerAttribute(ctx context.Context, session *Clie
 		return
 	}
 
-	grpcCtx := createGRPCContext(ctx, session.GameKey)
+	grpcCtx := transport.CreateGRPCContext(ctx, session.GameKey)
 
 	deleteReq := &pbrt.DeletePlayerAttributeRequest{
 		PlayerId:   session.PlayerID,

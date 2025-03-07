@@ -8,7 +8,6 @@ import (
 	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
 )
 
-// Room represents a multiplayer room
 type Room struct {
 	ID         string
 	Name       string
@@ -23,7 +22,6 @@ type Room struct {
 	UpdatedAt  time.Time
 }
 
-// RoomPlayer represents a player in a room
 type RoomPlayer struct {
 	PlayerID  string
 	SessionID string
@@ -32,15 +30,13 @@ type RoomPlayer struct {
 	Metadata  map[string]string
 }
 
-// Service manages room operations
 type Service struct {
 	log         logger.Logger
 	rooms       map[string]*Room
-	playerRooms map[string]string // PlayerID -> RoomID
+	playerRooms map[string]string
 	mutex       sync.RWMutex
 }
 
-// NewService creates a new room service
 func NewService(log logger.Logger) *Service {
 	return &Service{
 		log:         log,
@@ -49,7 +45,6 @@ func NewService(log logger.Logger) *Service {
 	}
 }
 
-// CreateRoom creates a new room
 func (s *Service) CreateRoom(name, gameType string, maxPlayers int, isPrivate bool,
 	password string, ownerID string, metadata map[string]string) *Room {
 
@@ -73,7 +68,6 @@ func (s *Service) CreateRoom(name, gameType string, maxPlayers int, isPrivate bo
 		UpdatedAt:  now,
 	}
 
-	// Add owner as first player
 	if ownerID != "" {
 		room.Players[ownerID] = &RoomPlayer{
 			PlayerID: ownerID,
@@ -94,7 +88,6 @@ func (s *Service) CreateRoom(name, gameType string, maxPlayers int, isPrivate bo
 	return room
 }
 
-// GetRoom retrieves a room by ID
 func (s *Service) GetRoom(roomID string) (*Room, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -103,7 +96,6 @@ func (s *Service) GetRoom(roomID string) (*Room, bool) {
 	return room, exists
 }
 
-// GetPlayerRoom gets the room a player is in
 func (s *Service) GetPlayerRoom(playerID string) (*Room, bool) {
 	s.mutex.RLock()
 	roomID, exists := s.playerRooms[playerID]
@@ -118,7 +110,6 @@ func (s *Service) GetPlayerRoom(playerID string) (*Room, bool) {
 	return room, roomExists
 }
 
-// JoinRoom adds a player to a room
 func (s *Service) JoinRoom(roomID, playerID, sessionID string, metadata map[string]string) (*Room, bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -128,25 +119,20 @@ func (s *Service) JoinRoom(roomID, playerID, sessionID string, metadata map[stri
 		return nil, false
 	}
 
-	// Check if room is full
 	if len(room.Players) >= room.MaxPlayers && room.MaxPlayers > 0 {
 		return nil, false
 	}
 
-	// Check if player is already in a room
 	if existingRoomID, inRoom := s.playerRooms[playerID]; inRoom {
 		if existingRoomID == roomID {
-			// Already in this room
 			return room, true
 		}
 
-		// Leave the current room first
 		if existingRoom, roomExists := s.rooms[existingRoomID]; roomExists {
 			delete(existingRoom.Players, playerID)
 		}
 	}
 
-	// Add player to room
 	room.Players[playerID] = &RoomPlayer{
 		PlayerID:  playerID,
 		SessionID: sessionID,
@@ -165,7 +151,6 @@ func (s *Service) JoinRoom(roomID, playerID, sessionID string, metadata map[stri
 	return room, true
 }
 
-// LeaveRoom removes a player from a room
 func (s *Service) LeaveRoom(playerID string) (*Room, bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -181,20 +166,16 @@ func (s *Service) LeaveRoom(playerID string) (*Room, bool) {
 		return nil, false
 	}
 
-	// Remove player from room
 	delete(room.Players, playerID)
 	delete(s.playerRooms, playerID)
 
-	// If room is empty, delete it
 	if len(room.Players) == 0 {
 		delete(s.rooms, roomID)
 		s.log.Infow("room deleted (empty)", "room_id", roomID)
 		return nil, true
 	}
 
-	// If owner left, assign new owner
 	if room.OwnerID == playerID && len(room.Players) > 0 {
-		// Pick first player as new owner
 		for pid := range room.Players {
 			room.OwnerID = pid
 			break
@@ -213,7 +194,6 @@ func (s *Service) LeaveRoom(playerID string) (*Room, bool) {
 	return room, true
 }
 
-// GetPlayersInRoom gets all player IDs in a room
 func (s *Service) GetPlayersInRoom(roomID string) []string {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -231,7 +211,6 @@ func (s *Service) GetPlayersInRoom(roomID string) []string {
 	return players
 }
 
-// DeleteRoom removes a room
 func (s *Service) DeleteRoom(roomID string) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -241,7 +220,6 @@ func (s *Service) DeleteRoom(roomID string) bool {
 		return false
 	}
 
-	// Remove all players from the room
 	for playerID := range room.Players {
 		delete(s.playerRooms, playerID)
 	}
@@ -253,7 +231,6 @@ func (s *Service) DeleteRoom(roomID string) bool {
 	return true
 }
 
-// SetPlayerReady sets a player's ready status
 func (s *Service) SetPlayerReady(playerID string, isReady bool) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -284,7 +261,6 @@ func (s *Service) SetPlayerReady(playerID string, isReady bool) bool {
 	return true
 }
 
-// AreAllPlayersReady checks if all players in a room are ready
 func (s *Service) AreAllPlayersReady(roomID string) bool {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()

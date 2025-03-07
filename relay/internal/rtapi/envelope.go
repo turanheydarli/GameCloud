@@ -3,6 +3,7 @@ package rtapi
 import (
 	"context"
 
+	"github.com/turanheydarli/gamecloud/relay/internal/session"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 	"google.golang.org/protobuf/proto"
 )
@@ -71,8 +72,8 @@ func getOpCode(envelope *pbrt.Envelope) string {
 	}
 }
 
-func (h *Handler) processEnvelope(session *ClientSession, envelope *pbrt.Envelope) {
-	ctx := context.WithValue(session.Ctx, sessionContextKey, session)
+func (h *Handler) processEnvelope(session *session.ClientSession, envelope *pbrt.Envelope) {
+	ctx := context.WithValue(session.Ctx, "session", session)
 
 	opCode := getOpCode(envelope)
 	h.log.Infow("received message", "op_code", opCode, "session_id", session.ID)
@@ -136,7 +137,7 @@ func UnmarshalProto(data []byte) (*pbrt.Envelope, error) {
 	return envelope, nil
 }
 
-func (h *Handler) sendEnvelopeToSession(session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) sendEnvelopeToSession(session *session.ClientSession, envelope *pbrt.Envelope) {
 	data, err := MarshalProto(envelope)
 	if err != nil {
 		h.log.Errorw("failed to marshal envelope", "error", err)
@@ -152,7 +153,7 @@ func (h *Handler) sendEnvelopeToSession(session *ClientSession, envelope *pbrt.E
 	}
 }
 
-func (h *Handler) sendErrorToSession(session *ClientSession, envelopeID, code, message string) {
+func (h *Handler) sendErrorToSession(session *session.ClientSession, envelopeID, code, message string) {
 	response := &pbrt.Envelope{
 		Id: envelopeID,
 		Message: &pbrt.Envelope_Error{
