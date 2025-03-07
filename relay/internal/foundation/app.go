@@ -9,7 +9,10 @@ import (
 
 	"github.com/turanheydarli/gamecloud/relay/internal/foundation/config"
 	"github.com/turanheydarli/gamecloud/relay/internal/player"
+	"github.com/turanheydarli/gamecloud/relay/internal/room"
+	"github.com/turanheydarli/gamecloud/relay/internal/rpc"
 	"github.com/turanheydarli/gamecloud/relay/internal/rtapi"
+	"github.com/turanheydarli/gamecloud/relay/internal/sync"
 	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -179,10 +182,16 @@ func (a *App) setupRoutes() http.Handler {
 
 func (a *App) buildHandler() *rtapi.Handler {
 	playerService := player.NewService(a.Logger, a.GrpcConn)
+	syncService := sync.NewService(a.Logger)
+	rpcService := rpc.NewService(a.Logger)
+	roomService := room.NewService(a.Logger)
 
 	handler := rtapi.NewHandler(
 		a.Logger,
 		playerService,
+		syncService,
+		rpcService,
+		roomService,
 	)
 
 	return handler

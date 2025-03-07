@@ -1,40 +1,23 @@
 package rtapi
 
 import (
-	"context"
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/turanheydarli/gamecloud/relay/internal/session"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
 var ErrPlayerNotConnected = errors.New("player not connected")
 
-type contextKey string
-
-const (
-	sessionContextKey  contextKey = "session"
-	contextKeyGameKey  contextKey = "game_key"
-	contextKeyPlayerID contextKey = "player_id"
-)
-
+// generateSessionID generates a unique session ID
 func generateSessionID() string {
 	return uuid.New().String()
 }
 
-func createGRPCContext(ctx context.Context, gameKey string) context.Context {
-	if gameKey == "" {
-		return ctx
-	}
-
-	md := metadata.Pairs("X-Game-Key", gameKey)
-	return metadata.NewOutgoingContext(ctx, md)
-}
-
-func (h *Handler) handleGRPCError(session *ClientSession, envelopeID string, err error) {
+func (h *Handler) handleGRPCError(session *session.ClientSession, envelopeID string, err error) {
 	st, ok := status.FromError(err)
 	if !ok {
 		h.log.Errorw("non-gRPC error occurred", "error", err, "session_id", session.ID)

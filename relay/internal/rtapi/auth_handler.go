@@ -3,10 +3,12 @@ package rtapi
 import (
 	"context"
 
+	"github.com/turanheydarli/gamecloud/relay/internal/session"
+	"github.com/turanheydarli/gamecloud/relay/internal/transport"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 )
 
-func (h *Handler) handleAuthentication(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+func (h *Handler) handleAuthentication(ctx context.Context, session *session.ClientSession, envelope *pbrt.Envelope) {
 	authMsg, ok := envelope.Message.(*pbrt.Envelope_Connect)
 	if !ok {
 		h.sendErrorToSession(session, envelope.Id, "invalid_payload", "Invalid authentication payload")
@@ -24,7 +26,7 @@ func (h *Handler) handleAuthentication(ctx context.Context, session *ClientSessi
 
 	h.log.Infow("authenticating with game key", "game_key", session.GameKey, "session_id", session.ID)
 
-	grpcCtx := createGRPCContext(ctx, session.GameKey)
+	grpcCtx := transport.CreateGRPCContext(ctx, session.GameKey)
 
 	authReq := &pbrt.AuthenticateRequest{
 		DeviceId: deviceId,

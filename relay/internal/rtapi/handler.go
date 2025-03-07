@@ -2,12 +2,17 @@ package rtapi
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/turanheydarli/gamecloud/relay/internal/player"
+	"github.com/turanheydarli/gamecloud/relay/internal/room"
+	"github.com/turanheydarli/gamecloud/relay/internal/rpc"
+	"github.com/turanheydarli/gamecloud/relay/internal/session"
+	gameSync "github.com/turanheydarli/gamecloud/relay/internal/sync"
 	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 )
@@ -15,7 +20,10 @@ import (
 type Handler struct {
 	log           logger.Logger
 	playerService *player.Service
-	clients       map[string]*ClientSession
+	roomService   *room.Service
+	syncService   *gameSync.Service
+	rpcService    *rpc.Service
+	clients       map[string]*session.ClientSession
 	clientsMu     sync.RWMutex
 	upgrader      websocket.Upgrader
 }
@@ -23,6 +31,9 @@ type Handler struct {
 func NewHandler(
 	log logger.Logger,
 	playerService *player.Service,
+	syncService *gameSync.Service,
+	rpcService *rpc.Service,
+	roomService *room.Service,
 ) *Handler {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -32,12 +43,35 @@ func NewHandler(
 		},
 	}
 
-	return &Handler{
+	h := &Handler{
 		log:           log,
 		playerService: playerService,
-		clients:       make(map[string]*ClientSession),
+		roomService:   roomService,
+		syncService:   syncService,
+		rpcService:    rpcService,
+		clients:       make(map[string]*session.ClientSession),
 		upgrader:      upgrader,
 	}
+
+	// Register default RPC handlers
+	h.registerDefaultRPCHandlers()
+
+	return h
+}
+
+func (h *Handler) registerDefaultRPCHandlers() {
+	// Echo function - returns the same data it receives
+	h.rpcService.RegisterServerFunction("echo", func(ctx context.Context, playerID string, params []byte) ([]byte, error) {
+		return params, nil
+	})
+
+	// GetServerTime function - returns the current server time
+	h.rpcService.RegisterServerFunction("getServerTime", func(ctx context.Context, playerID string, params []byte) ([]byte, error) {
+		timeData, err := json.Marshal(map[string]interface{}{
+			"timestamp": time.Now().Unix(),
+		})
+		return timeData, err
+	})
 }
 
 func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -47,38 +81,28 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	session := &ClientSession{
-		ID:        generateSessionID(),
-		Conn:      conn,
-		PlayerID:  "",
-		GameKey:   "",
-		Send:      make(chan []byte, 256),
-		Ctx:       ctx,
-		Cancel:    cancel,
-		CreatedAt: time.Now(),
-	}
+	cSession := session.New(conn, "")
 
 	gameKey := r.Header.Get("X-Game-Key")
 	if gameKey == "" {
-		h.log.Errorw("game key not found", "session_id", session.ID)
-		h.sendErrorToSession(session, "", "invalid_payload", "Game key not found")
+		h.log.Errorw("game key not found", "session_id", cSession.ID)
+		h.sendErrorToSession(cSession, "", "invalid_payload", "Game key not found")
 		return
 	}
 
-	session.GameKey = gameKey
+	cSession.GameKey = gameKey
 
 	h.clientsMu.Lock()
-	h.clients[session.ID] = session
+	h.clients[cSession.ID] = cSession
 	h.clientsMu.Unlock()
 
-	h.log.Infow("new websocket connection", "session_id", session.ID)
+	h.log.Infow("new websocket connection", "session_id", cSession.ID)
 
-	go h.readPump(session)
-	go h.writePump(session)
+	go h.readPump(cSession)
+	go h.writePump(cSession)
 }
 
-func (h *Handler) readPump(session *ClientSession) {
+func (h *Handler) readPump(session *session.ClientSession) {
 	defer func() {
 		h.closeSession(session)
 	}()
@@ -110,7 +134,7 @@ func (h *Handler) readPump(session *ClientSession) {
 	}
 }
 
-func (h *Handler) writePump(session *ClientSession) {
+func (h *Handler) writePump(session *session.ClientSession) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer func() {
 		ticker.Stop()
@@ -166,7 +190,7 @@ func (h *Handler) SendToPlayer(playerID string, envelope *pbrt.Envelope) error {
 	return nil
 }
 
-func (h *Handler) closeSession(session *ClientSession) {
+func (h *Handler) closeSession(session *session.ClientSession) {
 	h.clientsMu.Lock()
 	defer h.clientsMu.Unlock()
 
