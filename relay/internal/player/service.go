@@ -23,8 +23,6 @@ func NewService(log logger.Logger, conn *grpc.ClientConn) *Service {
 }
 
 func (s *Service) Authenticate(ctx context.Context, req *pbrt.AuthenticateRequest) (*pbrt.AuthenticateResponse, error) {
-	s.log.Infow("authenticating player", "device_id_present", req.DeviceId != "", "custom_id_present", req.CustomId != "")
-
 	resp, err := s.grpcClient.AuthenticateUser(ctx, req)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -38,16 +36,56 @@ func (s *Service) Authenticate(ctx context.Context, req *pbrt.AuthenticateReques
 	return resp, nil
 }
 
-func (s *Service) ValidateToken(ctx context.Context, req *pbrt.ValidateTokenRequest) (*pbrt.ValidateTokenResponse, error) {
-	s.log.Infow("validating token", "token_present", req.Token != "")
-
-	resp, err := s.grpcClient.ValidateToken(ctx, req)
+func (s *Service) UpdatePlayer(ctx context.Context, req *pbrt.UpdatePlayerRequest) (*pbrt.UpdatePlayerResponse, error) {
+	resp, err := s.grpcClient.UpdatePlayer(ctx, req)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
-			s.log.Warnw("token validation failed", "grpc_code", st.Code(), "message", st.Message())
-			return nil, fmt.Errorf("token validation failed: %s", st.Message())
+			s.log.Warnw("player update failed", "grpc_code", st.Code(), "message", st.Message())
+			return nil, fmt.Errorf("player update failed: %s", st.Message())
 		}
-		s.log.Errorw("unexpected error during token validation", "error", err)
+		s.log.Errorw("unexpected error during player update", "error", err)
+		return nil, fmt.Errorf("unexpected error: %w", err)
+	}
+
+	return resp, nil
+}
+
+func (s *Service) UpdatePlayerAttributes(ctx context.Context, req *pbrt.UpdatePlayerAttributesRequest) (*pbrt.UpdatePlayerAttributesResponse, error) {
+	resp, err := s.grpcClient.UpdatePlayerAttributes(ctx, req)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			s.log.Warnw("player attributes update failed", "grpc_code", st.Code(), "message", st.Message())
+			return nil, fmt.Errorf("player attributes update failed: %s", st.Message())
+		}
+		s.log.Errorw("unexpected error during player attributes update", "error", err)
+		return nil, fmt.Errorf("unexpected error: %w", err)
+	}
+
+	return resp, nil
+}
+
+func (s *Service) GetPlayerAttributes(ctx context.Context, req *pbrt.GetPlayerAttributesRequest) (*pbrt.GetPlayerAttributesResponse, error) {
+	resp, err := s.grpcClient.GetPlayerAttributes(ctx, req)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			s.log.Warnw("get player attributes failed", "grpc_code", st.Code(), "message", st.Message())
+			return nil, fmt.Errorf("get player attributes failed: %s", st.Message())
+		}
+		s.log.Errorw("unexpected error during get player attributes", "error", err)
+		return nil, fmt.Errorf("unexpected error: %w", err)
+	}
+
+	return resp, nil
+}
+
+func (s *Service) DeletePlayerAttribute(ctx context.Context, req *pbrt.DeletePlayerAttributeRequest) (*pbrt.DeletePlayerAttributeResponse, error) {
+	resp, err := s.grpcClient.DeletePlayerAttribute(ctx, req)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			s.log.Warnw("delete player attribute failed", "grpc_code", st.Code(), "message", st.Message())
+			return nil, fmt.Errorf("delete player attribute failed: %s", st.Message())
+		}
+		s.log.Errorw("unexpected error during delete player attribute", "error", err)
 		return nil, fmt.Errorf("unexpected error: %w", err)
 	}
 

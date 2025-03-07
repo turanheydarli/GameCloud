@@ -17,7 +17,8 @@ message Envelope {
   // Message type and payload
   oneof message {
     Error error = 2;
-    
+    UpdatePlayer update_player = 25; //
+
     // Session messages
     SessionConnect connect = 3;
     SessionDisconnect disconnect = 4;
@@ -46,19 +47,47 @@ message Envelope {
     GameActionAck game_action_ack = 42; // This now refers to the message type in gamecloud.proto
     TurnChange turn_change = 43;
     GameEnd game_end = 44;
+
+    UpdatePlayerAttributes update_player_attributes = 50;
+    GetPlayerAttributes get_player_attributes = 51;
+    DeletePlayerAttribute delete_player_attribute = 52;
   }
+}
+
+
+message UpdatePlayerAttributes {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+  string value = 4;
+}
+
+message GetPlayerAttributes {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+  string value = 4;
+  map<string, string> attributes = 5;
+}
+
+message DeletePlayerAttribute {
+  string player_id = 1;
+  string collection = 2;
+  string key = 3;
+  bool success = 4;
+}
+
+message UpdatePlayer {
+  string player_id = 1;
+  string display_name = 2;
+  string avatar_url = 3;
+  map<string, string> metadata = 4;
 }
 
 message Error {
   string code = 1;
   string message = 2;
   map<string, string> context = 3;
-}
-
-message SessionConnect {
-  string device_id = 1;
-  string token = 2;
-  map<string, string> connection_metadata = 3;
 }
 
 message SessionDisconnect {
@@ -69,7 +98,6 @@ message SessionHeartbeat {
   google.protobuf.Timestamp timestamp = 1;
 }
 
-// Room messages
 message RoomCreate {
   string game_id = 1;
   map<string, string> metadata = 2;
