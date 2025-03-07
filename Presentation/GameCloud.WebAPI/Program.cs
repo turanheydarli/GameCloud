@@ -4,8 +4,8 @@ using GameCloud.Functioning.Extensions;
 using GameCloud.Persistence.Contexts;
 using GameCloud.WebAPI.Exceptions;
 using GameCloud.WebAPI.Filters;
+using GameCloud.WebAPI.Middlewares;
 using GameCloud.WebAPI.Services.Grpc;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +15,8 @@ builder.Services.AddControllers(options => { options.Filters.Add<RequireGameKeyF
 builder.Services.AddGrpc(options =>
 {
     options.EnableDetailedErrors = true;
+    options.Interceptors.Add<GameContextInterceptor>();
+    options.Interceptors.Add<GrpcExceptionInterceptor>();
 });
 
 builder.Services.AddCors(options =>
@@ -85,6 +87,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGrpcService<MatchmakingGrpcService>();
+app.MapGrpcService<RelayGrpcService>();
 
 app.MapDefaultControllerRoute();
 

@@ -10,7 +10,6 @@ import "google/protobuf/timestamp.proto";
 
 service RelayService {
   rpc AuthenticateUser(AuthenticateRequest) returns (AuthenticateResponse);
-  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
   
   rpc CreateRoom(CreateRoomRequest) returns (Room);
   rpc GetRoom(GetRoomRequest) returns (Room);
@@ -25,6 +24,17 @@ service RelayService {
   rpc EndGame(EndGameRequest) returns (google.protobuf.Empty);
   
   rpc PersistGameState(PersistGameStateRequest) returns (google.protobuf.Empty);
+}
+
+message SessionConnectResponse {
+  string session_id = 1;
+}
+
+message SessionConnect {
+  string device_id = 1;
+  string token = 2;
+  string game_key = 3;
+  map<string, string> connection_metadata = 4;
 }
 
 service GameEventService {
@@ -43,20 +53,11 @@ message AuthenticateRequest {
 }
 
 message AuthenticateResponse {
-  string session_token = 1;
-  string user_id = 2;
+  string token = 1;
+  string player_id = 2;
   bool created = 3;
   google.protobuf.Timestamp expires_at = 4;
-}
-
-message ValidateTokenRequest {
-  string token = 1;
-}
-
-message ValidateTokenResponse {
-  bool valid = 1;
-  string user_id = 2;
-  map<string, string> claims = 3;
+  optional string refresh_token = 5;
 }
 
 message CreateRoomRequest {

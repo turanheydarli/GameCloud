@@ -9,10 +9,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	gameCtx "github.com/turanheydarli/gamecloud/relay/internal/foundation/context"
 	"github.com/turanheydarli/gamecloud/relay/internal/player"
 	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -67,12 +69,21 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		ID:        generateSessionID(),
 		Conn:      conn,
 		PlayerID:  "", // Will be set after authentication
-		GameKey:   "", // Will be set after authentication
+		GameKey:   "",
 		Send:      make(chan []byte, 256),
 		Ctx:       ctx,
 		Cancel:    cancel,
 		CreatedAt: time.Now(),
 	}
+
+	gameKey := r.Header.Get("X-Game-Key")
+	if gameKey == "" {
+		h.log.Errorw("game key not found", "session_id", session.ID)
+		h.sendErrorToSession(session, "", "invalid_payload", "Game key not found")
+		return
+	}
+
+	session.GameKey = gameKey
 
 	h.clientsMu.Lock()
 	h.clients[session.ID] = session
@@ -217,8 +228,6 @@ func (h *Handler) processEnvelope(session *ClientSession, envelope *pbrt.Envelop
 	switch opCode {
 	case "connect":
 		h.handleAuthentication(ctx, session, envelope)
-	case "validate_token":
-		h.handleTokenValidation(ctx, session, envelope)
 	case "matchmaker_add":
 		h.handleMatchmakingCreateTicket(ctx, session, envelope)
 	default:
@@ -235,48 +244,47 @@ func (h *Handler) handleAuthentication(ctx context.Context, session *ClientSessi
 	}
 
 	connectMsg := authMsg.Connect
-
 	deviceId := connectMsg.DeviceId
 
-	gameKey := ""
-	if metadata, ok := connectMsg.ConnectionMetadata["game_key"]; ok {
-		gameKey = metadata
+	if session.GameKey == "" {
+		h.log.Errorw("game key not found in session", "session_id", session.ID)
+		h.sendErrorToSession(session, envelope.Id, "invalid_payload", "Game key not found")
+		return
 	}
 
-	session.GameKey = gameKey
+	h.log.Infow("authenticating with game key", "game_key", session.GameKey, "session_id", session.ID)
+
+	grpcCtx := h.createGRPCContext(ctx, session.GameKey)
 
 	authReq := &pbrt.AuthenticateRequest{
 		DeviceId: deviceId,
 	}
 
-	authResp, err := h.playerService.Authenticate(ctx, authReq)
+	authResp, err := h.playerService.Authenticate(grpcCtx, authReq)
 	if err != nil {
-		h.log.Errorw("authentication failed", "error", err, "session_id", session.ID)
-		h.sendErrorToSession(session, envelope.Id, "authentication_failed", "Failed to authenticate user")
+		h.handleGRPCError(session, envelope.Id, err)
 		return
 	}
 
-	session.PlayerID = authResp.UserId
-
-	ctx = gameCtx.SetGameKey(ctx, gameKey)
-	ctx = gameCtx.SetPlayerID(ctx, authResp.UserId)
+	session.PlayerID = authResp.PlayerId
+	jwtToken := authResp.Token
 
 	h.clientsMu.Lock()
-	h.clients[authResp.UserId] = session
+	h.clients[authResp.PlayerId] = session
 	h.clientsMu.Unlock()
 
 	h.log.Infow("player authenticated",
 		"session_id", session.ID,
-		"player_id", authResp.UserId,
-		"game_key", gameKey)
+		"player_id", authResp.PlayerId,
+		"game_key", session.GameKey)
 
 	response := &pbrt.Envelope{
 		Id: envelope.Id,
 		Message: &pbrt.Envelope_Connect{
 			Connect: &pbrt.SessionConnect{
-				Token: authResp.SessionToken,
+				Token: jwtToken,
 				ConnectionMetadata: map[string]string{
-					"user_id": authResp.UserId,
+					"user_id": authResp.PlayerId,
 					"status":  "online",
 				},
 			},
@@ -286,23 +294,8 @@ func (h *Handler) handleAuthentication(ctx context.Context, session *ClientSessi
 	h.sendEnvelopeToSession(session, response)
 }
 
-func (h *Handler) handleTokenValidation(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
-	// This is a placeholder implementation
-	// You'll need to adapt this to your actual token validation logic
-
-	response := &pbrt.Envelope{
-		Id: envelope.Id,
-		Message: &pbrt.Envelope_Status{
-			Status: &pbrt.Status{
-				PresenceStatuses: map[string]string{"status": "validated"},
-			},
-		},
-	}
-
-	h.sendEnvelopeToSession(session, response)
-}
-
 func (h *Handler) handleMatchmakingCreateTicket(ctx context.Context, session *ClientSession, envelope *pbrt.Envelope) {
+
 }
 
 func (h *Handler) sendEnvelopeToSession(session *ClientSession, envelope *pbrt.Envelope) {
@@ -322,7 +315,6 @@ func (h *Handler) sendEnvelopeToSession(session *ClientSession, envelope *pbrt.E
 }
 
 func (h *Handler) sendErrorToSession(session *ClientSession, envelopeID, code, message string) {
-	// Create error response using the Error message type
 	response := &pbrt.Envelope{
 		Id: envelopeID,
 		Message: &pbrt.Envelope_Error{
@@ -350,40 +342,32 @@ func (h *Handler) SendToPlayer(playerID string, envelope *pbrt.Envelope) error {
 	return nil
 }
 
-// closeSession closes a client session and cleans up resources
 func (h *Handler) closeSession(session *ClientSession) {
 	h.clientsMu.Lock()
 	defer h.clientsMu.Unlock()
 
-	// Only process if not already closed
 	if _, exists := h.clients[session.ID]; !exists {
 		return
 	}
 
-	// Remove by session ID and player ID if authenticated
 	delete(h.clients, session.ID)
 	if session.PlayerID != "" {
 		delete(h.clients, session.PlayerID)
 	}
 
-	// Cancel the context to terminate goroutines
 	session.Cancel()
 
-	// Close the send channel
 	close(session.Send)
 
-	// Close the WebSocket connection
 	session.Conn.Close()
 
 	h.log.Infow("closed websocket session", "session_id", session.ID, "player_id", session.PlayerID)
 }
 
-// MarshalProto marshals a protobuf envelope to bytes
 func MarshalProto(envelope *pbrt.Envelope) ([]byte, error) {
 	return proto.Marshal(envelope)
 }
 
-// UnmarshalProto unmarshals bytes to a protobuf envelope
 func UnmarshalProto(data []byte) (*pbrt.Envelope, error) {
 	envelope := &pbrt.Envelope{}
 	if err := proto.Unmarshal(data, envelope); err != nil {
@@ -392,7 +376,6 @@ func UnmarshalProto(data []byte) (*pbrt.Envelope, error) {
 	return envelope, nil
 }
 
-// Helper context keys
 type contextKey string
 
 const (
@@ -400,7 +383,83 @@ const (
 	contextKeyPlayerID contextKey = "player_id"
 )
 
-// generateSessionID generates a unique session ID
 func generateSessionID() string {
 	return uuid.New().String()
+}
+
+func (h *Handler) createGRPCContext(ctx context.Context, gameKey string) context.Context {
+	if gameKey == "" {
+		h.log.Warnw("no game key available for gRPC call")
+		return ctx
+	}
+
+	md := metadata.Pairs("X-Game-Key", gameKey)
+	return metadata.NewOutgoingContext(ctx, md)
+}
+
+func (h *Handler) handleGRPCError(session *ClientSession, envelopeID string, err error) {
+	st, ok := status.FromError(err)
+	if !ok {
+		h.log.Errorw("non-gRPC error occurred", "error", err, "session_id", session.ID)
+		h.sendErrorToSession(session, envelopeID, "internal_error", "An internal error occurred")
+		return
+	}
+
+	var code string
+	var message string
+
+	switch st.Code() {
+	case codes.Unauthenticated:
+		code = "authentication_failed"
+		message = st.Message()
+	case codes.PermissionDenied:
+		code = "permission_denied"
+		message = st.Message()
+	case codes.InvalidArgument:
+		code = "invalid_argument"
+		message = st.Message()
+	case codes.NotFound:
+		code = "not_found"
+		message = st.Message()
+	case codes.AlreadyExists:
+		code = "already_exists"
+		message = st.Message()
+	case codes.ResourceExhausted:
+		code = "resource_exhausted"
+		message = st.Message()
+	case codes.FailedPrecondition:
+		code = "failed_precondition"
+		message = st.Message()
+	case codes.Aborted:
+		code = "aborted"
+		message = st.Message()
+	case codes.DeadlineExceeded:
+		code = "timeout"
+		message = "The operation timed out"
+	case codes.Unavailable:
+		code = "service_unavailable"
+		message = "The service is currently unavailable"
+	default:
+		code = "internal_error"
+		message = "An internal error occurred"
+	}
+
+	h.log.Errorw("gRPC error occurred",
+		"error", err,
+		"grpc_code", st.Code(),
+		"grpc_message", st.Message(),
+		"client_code", code,
+		"session_id", session.ID)
+
+	var details []string
+	for _, detail := range st.Details() {
+		if d, ok := detail.(proto.Message); ok {
+			detailBytes, err := proto.Marshal(d)
+			if err == nil {
+				details = append(details, string(detailBytes))
+			}
+		}
+	}
+
+	h.sendErrorToSession(session, envelopeID, code, message)
 }
