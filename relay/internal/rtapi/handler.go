@@ -2,12 +2,16 @@ package rtapi
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/turanheydarli/gamecloud/relay/internal/player"
+	"github.com/turanheydarli/gamecloud/relay/internal/room"
+	"github.com/turanheydarli/gamecloud/relay/internal/rpc"
+	gameSync "github.com/turanheydarli/gamecloud/relay/internal/sync"
 	"github.com/turanheydarli/gamecloud/relay/pkg/logger"
 	pbrt "github.com/turanheydarli/gamecloud/relay/proto"
 )
@@ -15,6 +19,9 @@ import (
 type Handler struct {
 	log           logger.Logger
 	playerService *player.Service
+	roomService   *room.Service
+	syncService   *gameSync.Service
+	rpcService    *rpc.Service
 	clients       map[string]*ClientSession
 	clientsMu     sync.RWMutex
 	upgrader      websocket.Upgrader
@@ -23,6 +30,9 @@ type Handler struct {
 func NewHandler(
 	log logger.Logger,
 	playerService *player.Service,
+	syncService *gameSync.Service,
+	rpcService *rpc.Service,
+	roomService *room.Service,
 ) *Handler {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -32,12 +42,35 @@ func NewHandler(
 		},
 	}
 
-	return &Handler{
+	h := &Handler{
 		log:           log,
 		playerService: playerService,
+		roomService:   roomService,
+		syncService:   syncService,
+		rpcService:    rpcService,
 		clients:       make(map[string]*ClientSession),
 		upgrader:      upgrader,
 	}
+
+	// Register default RPC handlers
+	h.registerDefaultRPCHandlers()
+
+	return h
+}
+
+func (h *Handler) registerDefaultRPCHandlers() {
+	// Echo function - returns the same data it receives
+	h.rpcService.RegisterServerFunction("echo", func(ctx context.Context, playerID string, params []byte) ([]byte, error) {
+		return params, nil
+	})
+
+	// GetServerTime function - returns the current server time
+	h.rpcService.RegisterServerFunction("getServerTime", func(ctx context.Context, playerID string, params []byte) ([]byte, error) {
+		timeData, err := json.Marshal(map[string]interface{}{
+			"timestamp": time.Now().Unix(),
+		})
+		return timeData, err
+	})
 }
 
 func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {

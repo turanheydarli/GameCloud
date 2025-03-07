@@ -24,14 +24,20 @@ message Envelope {
     SessionDisconnect disconnect = 4;
     SessionHeartbeat heartbeat = 5;
     
-    // Room messages
-    RoomCreate room_create = 10;
-    RoomJoin room_join = 11;
-    RoomLeave room_leave = 12;
-    RoomData room_data = 13;
-    RoomPresence room_presence = 14;
+    RPC rpc = 70;
+    RPCResult rpc_result = 71;
+    RPCEvent rpc_event = 72;
     
-    // Matchmaking
+    ObjectInstantiate object_instantiate = 80;
+    ObjectSync object_sync = 81;
+    ObjectSyncAck object_sync_ack = 82;
+    ObjectDestroy object_destroy = 83;
+    
+    RoomCreate room_create = 90;
+    RoomJoin room_join = 91;
+    RoomLeave room_leave = 92;
+    RoomMessage room_message = 93;
+    
     MatchmakerAdd matchmaker_add = 20;
     MatchmakerRemove matchmaker_remove = 21;
     MatchmakerMatched matchmaker_matched = 22;
@@ -51,9 +57,113 @@ message Envelope {
     UpdatePlayerAttributes update_player_attributes = 50;
     GetPlayerAttributes get_player_attributes = 51;
     DeletePlayerAttribute delete_player_attribute = 52;
+
+    PlayerJoined player_joined = 100;
+    PlayerLeft player_left = 101;
+    RoomMessageEvent room_message_event = 102;
   }
 }
 
+
+// RPC Messages
+message RPC {
+  string id = 1;
+  string method = 2;
+  bytes params = 3;
+  int32 target = 4;  // RPCTarget enum value
+  bytes target_players = 5;  // JSON array of player IDs for RPCTargetSpecific
+  int32 view_id = 6;  // For PhotonView-like targeting
+}
+
+message RPCResult {
+  string id = 1;
+  bytes result = 2;
+}
+
+message RPCEvent {
+  string id = 1;
+  string sender_id = 2;
+  string method = 3;
+  bytes params = 4;
+  int32 view_id = 5;  // For PhotonView-like targeting
+}
+
+// Object Sync Messages (PhotonView-like)
+message ObjectInstantiate {
+  int32 view_id = 1;
+  string owner_id = 2;
+  string prefab_name = 3;
+  Vector3 position = 4;
+  Quaternion rotation = 5;
+  Vector3 scale = 6;
+  map<string, bytes> properties = 7;
+}
+
+message ObjectSync {
+  int32 view_id = 1;
+  Vector3 position = 2;
+  Quaternion rotation = 3;
+  Vector3 scale = 4;
+  map<string, bytes> properties = 5;
+}
+
+message ObjectSyncAck {
+  int32 view_id = 1;
+  bool success = 2;
+}
+
+message ObjectDestroy {
+  int32 view_id = 1;
+  bool success = 2;
+}
+
+message RoomCreate {
+  string room_id = 1;
+  string name = 2;
+  string game_type = 3;
+  int32 max_players = 4;
+  bool is_private = 5;
+  string password = 6;
+  map<string, string> metadata = 7;
+}
+
+message RoomJoin {
+  string room_id = 1;
+  string password = 2;
+  bool success = 3;
+  repeated RoomPlayer players = 4;
+  map<string, string> metadata = 5;
+}
+
+message RoomPlayer {
+  string player_id = 1;
+  bool is_ready = 2;
+  map<string, string> metadata = 3;
+}
+
+message RoomLeave {
+  string room_id = 1;
+  bool success = 2;
+}
+
+message RoomMessage {
+  string room_id = 1;
+  bytes data = 2;
+  bool success = 3;
+}
+
+message Vector3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message Quaternion {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float w = 4;
+}
 
 message UpdatePlayerAttributes {
   string player_id = 1;
@@ -98,20 +208,6 @@ message SessionHeartbeat {
   google.protobuf.Timestamp timestamp = 1;
 }
 
-message RoomCreate {
-  string game_id = 1;
-  map<string, string> metadata = 2;
-  int32 max_players = 3;
-}
-
-message RoomJoin {
-  string room_id = 1;
-  bool as_spectator = 2;
-}
-
-message RoomLeave {
-  string room_id = 1;
-}
 
 message RoomData {
   string room_id = 1;
@@ -191,4 +287,23 @@ message GameEnd {
   string winner_id = 2;
   map<string, int32> scores = 3;
   map<string, string> result_metadata = 4;
+}
+
+message PlayerJoined {
+  string room_id = 1;
+  string player_id = 2;
+  map<string, string> metadata = 3;
+}
+
+message PlayerLeft {
+  string room_id = 1;
+  string player_id = 2;
+  string reason = 3;
+}
+
+message RoomMessageEvent {
+  string room_id = 1;
+  string sender_id = 2;
+  bytes data = 3;
+  google.protobuf.Timestamp timestamp = 4;
 }

@@ -9,46 +9,15 @@ import (
 
 func getOpCode(envelope *pbrt.Envelope) string {
 	switch envelope.Message.(type) {
+	// Authentication
 	case *pbrt.Envelope_Connect:
 		return "connect"
 	case *pbrt.Envelope_Disconnect:
 		return "disconnect"
 	case *pbrt.Envelope_Heartbeat:
 		return "heartbeat"
-	case *pbrt.Envelope_RoomCreate:
-		return "room_create"
-	case *pbrt.Envelope_RoomJoin:
-		return "room_join"
-	case *pbrt.Envelope_RoomLeave:
-		return "room_leave"
-	case *pbrt.Envelope_RoomData:
-		return "room_data"
-	case *pbrt.Envelope_RoomPresence:
-		return "room_presence"
-	case *pbrt.Envelope_MatchmakerAdd:
-		return "matchmaker_add"
-	case *pbrt.Envelope_MatchmakerRemove:
-		return "matchmaker_remove"
-	case *pbrt.Envelope_MatchmakerMatched:
-		return "matchmaker_matched"
-	case *pbrt.Envelope_Status:
-		return "status"
-	case *pbrt.Envelope_StatusUpdate:
-		return "status_update"
-	case *pbrt.Envelope_StatusPresence:
-		return "status_presence"
-	case *pbrt.Envelope_GameState:
-		return "game_state"
-	case *pbrt.Envelope_GameAction:
-		return "game_action"
-	case *pbrt.Envelope_GameActionAck:
-		return "game_action_ack"
-	case *pbrt.Envelope_TurnChange:
-		return "turn_change"
-	case *pbrt.Envelope_GameEnd:
-		return "game_end"
-	case *pbrt.Envelope_Error:
-		return "error"
+
+	// Player
 	case *pbrt.Envelope_UpdatePlayer:
 		return "update_player"
 	case *pbrt.Envelope_UpdatePlayerAttributes:
@@ -57,6 +26,46 @@ func getOpCode(envelope *pbrt.Envelope) string {
 		return "get_player_attributes"
 	case *pbrt.Envelope_DeletePlayerAttribute:
 		return "delete_player_attribute"
+
+	// Room
+	case *pbrt.Envelope_RoomCreate:
+		return "room_create"
+	case *pbrt.Envelope_RoomJoin:
+		return "room_join"
+	case *pbrt.Envelope_RoomLeave:
+		return "room_leave"
+	case *pbrt.Envelope_RoomMessage:
+		return "room_message"
+
+	// RPC
+	case *pbrt.Envelope_Rpc:
+		return "rpc"
+	case *pbrt.Envelope_RpcResult:
+		return "rpc_result"
+	case *pbrt.Envelope_RpcEvent:
+		return "rpc_event"
+
+	// Object Sync
+	case *pbrt.Envelope_ObjectInstantiate:
+		return "object_instantiate"
+	case *pbrt.Envelope_ObjectSync:
+		return "object_sync"
+	case *pbrt.Envelope_ObjectSyncAck:
+		return "object_sync_ack"
+	case *pbrt.Envelope_ObjectDestroy:
+		return "object_destroy"
+
+	// Matchmaking
+	case *pbrt.Envelope_MatchmakerAdd:
+		return "matchmaker_add"
+	case *pbrt.Envelope_MatchmakerRemove:
+		return "matchmaker_remove"
+	case *pbrt.Envelope_MatchmakerMatched:
+		return "matchmaker_matched"
+
+	// Other
+	case *pbrt.Envelope_Error:
+		return "error"
 	default:
 		return "unknown"
 	}
@@ -69,10 +78,11 @@ func (h *Handler) processEnvelope(session *ClientSession, envelope *pbrt.Envelop
 	h.log.Infow("received message", "op_code", opCode, "session_id", session.ID)
 
 	switch opCode {
+	// Authentication
 	case "connect":
 		h.handleAuthentication(ctx, session, envelope)
-	case "matchmaker_add":
-		h.handleMatchmakingCreateTicket(ctx, session, envelope)
+
+	// Player
 	case "update_player":
 		h.handleUpdatePlayer(ctx, session, envelope)
 	case "update_player_attributes":
@@ -81,6 +91,33 @@ func (h *Handler) processEnvelope(session *ClientSession, envelope *pbrt.Envelop
 		h.handleGetPlayerAttributes(ctx, session, envelope)
 	case "delete_player_attribute":
 		h.handleDeletePlayerAttribute(ctx, session, envelope)
+
+	// Room
+	case "room_create":
+		h.handleRoomCreate(ctx, session, envelope)
+	case "room_join":
+		h.handleRoomJoin(ctx, session, envelope)
+	case "room_leave":
+		h.handleRoomLeave(ctx, session, envelope)
+	case "room_message":
+		h.handleRoomMessage(ctx, session, envelope)
+
+	// RPC
+	case "rpc":
+		h.handleRPC(ctx, session, envelope)
+
+	// Object Sync
+	case "object_instantiate":
+		h.handleObjectInstantiate(ctx, session, envelope)
+	case "object_sync":
+		h.handleObjectSync(ctx, session, envelope)
+	case "object_destroy":
+		h.handleObjectDestroy(ctx, session, envelope)
+
+	// Matchmaking
+	case "matchmaker_add":
+		h.handleMatchmakingCreateTicket(ctx, session, envelope)
+
 	default:
 		h.log.Warnw("unknown message type", "op_code", opCode)
 		h.sendErrorToSession(session, envelope.Id, "unknown_message", "Unknown message type")
