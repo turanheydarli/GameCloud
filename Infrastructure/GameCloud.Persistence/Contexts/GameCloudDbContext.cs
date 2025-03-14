@@ -1,5 +1,6 @@
 using GameCloud.Domain.Entities;
 using GameCloud.Domain.Entities.Matchmaking;
+using GameCloud.Domain.Entities.Rooms;
 using GameCloud.Persistence.Configurations;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -27,12 +28,14 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<MatchAction> MatchActions { get; set; }
         public DbSet<StoredMatch> StoredMatches { get; set; }
         public DbSet<StoredPlayer> StoredPlayers { get; set; }
-        
+        public DbSet<Room> Rooms { get; set; }
+        public DbSet<RoomConfig> RoomConfigs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("gc");
             base.OnModelCreating(modelBuilder);
-            
+
             modelBuilder.ApplyConfiguration(new AppUserEntityConfiguration());
             modelBuilder.ApplyConfiguration(new AppRoleEntityConfiguration());
             modelBuilder.ApplyConfiguration(new GameEntityConfiguration());
@@ -46,6 +49,9 @@ namespace GameCloud.Persistence.Contexts
             modelBuilder.ApplyConfiguration(new ActionLogEntityConfiguration());
             modelBuilder.ApplyConfiguration(new StoredMatchEntityConfiguration());
             modelBuilder.ApplyConfiguration(new StoredPlayerEntityConfiguration());
+            
+            modelBuilder.ApplyConfiguration(new RoomEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new RoomConfigEntityConfiguration());
         }
     }
 }

@@ -20,10 +20,11 @@ import (
 )
 
 type App struct {
-	Config     config.Config
-	Logger     logger.Logger
-	HttpServer *http.Server
-	GrpcConn   *grpc.ClientConn
+	Config      config.Config
+	Logger      logger.Logger
+	HttpServer  *http.Server
+	GrpcConn    *grpc.ClientConn
+	RoomService *room.Service
 }
 
 func NewApp(cfg config.Config, log logger.Logger) (*App, error) {
@@ -41,6 +42,10 @@ func NewApp(cfg config.Config, log logger.Logger) (*App, error) {
 		return nil, fmt.Errorf("failed to create gRPC client: %w", err)
 	}
 	app.GrpcConn = conn
+
+	// Initialize room service with gRPC connection
+	app.RoomService = room.NewService(log)
+	app.RoomService.Initialize(conn)
 
 	app.HttpServer = &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
@@ -184,7 +189,9 @@ func (a *App) buildHandler() *rtapi.Handler {
 	playerService := player.NewService(a.Logger, a.GrpcConn)
 	syncService := sync.NewService(a.Logger)
 	rpcService := rpc.NewService(a.Logger)
-	roomService := room.NewService(a.Logger)
+
+	// Use the app's room service that's already initialized with gRPC
+	roomService := a.RoomService
 
 	handler := rtapi.NewHandler(
 		a.Logger,

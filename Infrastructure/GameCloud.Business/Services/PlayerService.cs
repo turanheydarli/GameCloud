@@ -11,6 +11,7 @@ using GameCloud.Application.Features.Players.Requests;
 using GameCloud.Application.Features.Players.Responses;
 using GameCloud.Application.Features.Sessions.Models;
 using GameCloud.Domain.Entities;
+using GameCloud.Domain.Enums;
 using GameCloud.Domain.Repositories;
 using Microsoft.AspNetCore.Http;
 
@@ -228,7 +229,7 @@ public class PlayerService(
         if (string.IsNullOrWhiteSpace(request.Username))
             throw new ArgumentException("Username must be provided.");
 
-        var existing = await playerRepository.GetByUsernameAsync(request.Username, request.AuthProvider);
+        var existing = await playerRepository.GetByUsernameAsync(request.Username, AuthProvider.Custom);
         if (existing != null)
             throw new Exception("A player with this PlayerId already exists.");
 

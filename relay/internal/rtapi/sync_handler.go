@@ -88,8 +88,10 @@ func (h *Handler) handleObjectSync(ctx context.Context, session *session.ClientS
 		)
 	}
 
-	if syncMsg.ObjectSync.Properties != nil && len(syncMsg.ObjectSync.Properties) > 0 {
-		h.syncService.UpdateObjectProperties(obj.ViewID, syncMsg.ObjectSync.Properties)
+	if syncMsg.ObjectSync.Properties != nil {
+		if len(syncMsg.ObjectSync.Properties) > 0 {
+			h.syncService.UpdateObjectProperties(obj.ViewID, syncMsg.ObjectSync.Properties)
+		}
 	}
 
 	response := &pbrt.Envelope{
@@ -130,7 +132,7 @@ func (h *Handler) handleObjectDestroy(ctx context.Context, session *session.Clie
 		return
 	}
 
-	roomID := obj.RoomID
+	//roomID := obj.RoomID
 	viewID := obj.ViewID
 
 	roomID, success := h.syncService.DeleteObject(viewID)
