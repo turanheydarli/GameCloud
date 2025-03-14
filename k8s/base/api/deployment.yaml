@@ -41,11 +41,11 @@ spec:
                 secretKeyRef:
                   name: gamecloud-secrets
                   key: DB_CONNECTION_STRING
-            - name: ConnectionStrings__Redis
+            - name: ConnectionStrings__Valkey
               valueFrom:
                 secretKeyRef:
                   name: gamecloud-secrets
-                  key: REDIS_CONNECTION_STRING
+                  key: VALKEY_CONNECTION_STRING
             - name: Jwt__Key
               valueFrom:
                 secretKeyRef:

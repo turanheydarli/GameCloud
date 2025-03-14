@@ -8,6 +8,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+type contextKey string
+
+const (
+	sessionKey contextKey = "session"
+)
+
 func getOpCode(envelope *pbrt.Envelope) string {
 	switch envelope.Message.(type) {
 	// Authentication
@@ -73,7 +79,7 @@ func getOpCode(envelope *pbrt.Envelope) string {
 }
 
 func (h *Handler) processEnvelope(session *session.ClientSession, envelope *pbrt.Envelope) {
-	ctx := context.WithValue(session.Ctx, "session", session)
+	ctx := context.WithValue(session.Ctx, sessionKey, session)
 
 	opCode := getOpCode(envelope)
 	h.log.Infow("received message", "op_code", opCode, "session_id", session.ID)
