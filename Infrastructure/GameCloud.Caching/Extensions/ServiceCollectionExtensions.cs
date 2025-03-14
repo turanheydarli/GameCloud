@@ -56,15 +56,13 @@ public static class ServiceCollectionExtensions
         var valkeyConnection = configuration.GetConnectionString("Valkey")
                                ?? throw new InvalidOperationException("Valkey connection string is not configured.");
 
-        var options = new ConfigurationOptions
-        {
-            EndPoints = { valkeyConnection },
-            AbortOnConnectFail = false,
-            ConnectTimeout = 5000,
-            SyncTimeout = 5000,
-            // Ssl = true,
-            // SslProtocols = System.Security.Authentication.SslProtocols.Tls12
-        };
+        var options = ConfigurationOptions.Parse(valkeyConnection);
+    
+        options.AbortOnConnectFail = false;
+        options.ConnectTimeout = 5000;
+        options.SyncTimeout = 5000;
+        // options.Ssl = true;
+        // options.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 
         services.AddStackExchangeRedisCache(redisOptions =>
         {
