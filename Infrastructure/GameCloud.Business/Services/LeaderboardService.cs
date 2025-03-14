@@ -23,9 +23,13 @@ public class LeaderboardService(
         {
             Description = request.Description,
             DisplayName = request.DisplayName,
+            Name = request.Name,
             StartTimeUtc = request.StartTimeUtc,
             EndTimeUtc = request.EndTimeUtc,
             GameId = gameContext.GameId,
+            IsActive = request.IsActive,
+            MaxSize = request.MaxSize,
+            Metadata = request.Metadata,
         };
 
         await leaderboardRepository.CreateAsync(entity);

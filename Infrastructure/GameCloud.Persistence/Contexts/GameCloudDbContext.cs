@@ -1,4 +1,5 @@
 using GameCloud.Domain.Entities;
+using GameCloud.Domain.Entities.Leaderboards;
 using GameCloud.Domain.Entities.Matchmaking;
 using GameCloud.Domain.Entities.Rooms;
 using GameCloud.Persistence.Configurations;
@@ -31,6 +32,10 @@ namespace GameCloud.Persistence.Contexts
         public DbSet<Room> Rooms { get; set; }
         public DbSet<RoomConfig> RoomConfigs { get; set; }
 
+        public DbSet<Leaderboard> Leaderboards { get; set; }
+        public DbSet<LeaderboardRecord> LeaderboardRecords { get; set; }
+        public DbSet<LeaderboardArchive> LeaderboardArchives { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("gc");
@@ -52,6 +57,10 @@ namespace GameCloud.Persistence.Contexts
             
             modelBuilder.ApplyConfiguration(new RoomEntityConfiguration());
             modelBuilder.ApplyConfiguration(new RoomConfigEntityConfiguration());
+          
+            modelBuilder.ApplyConfiguration(new LeaderboardEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new LeaderboardArchiveEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new LeaderboardRecordEntityConfiguration());
         }
     }
 }
