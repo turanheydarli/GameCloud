@@ -12,6 +12,7 @@ using GameCloud.Application.Features.Developers;
 using GameCloud.Application.Features.Functions;
 using GameCloud.Application.Features.Games;
 using GameCloud.Application.Features.ImageDocuments;
+using GameCloud.Application.Features.Leaderboards;
 using GameCloud.Application.Features.Matchmakers;
 using GameCloud.Application.Features.Notifications;
 using GameCloud.Application.Features.Players;
@@ -60,6 +61,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IGameRepository, GameRepository>()
             .AddScoped<IDeveloperRepository, DeveloperRepository>()
             .AddScoped<IRoomRepository, RoomRepository>()
+            .AddScoped<ILeaderboardRepository, LeaderboardRepository>()
             .AddScoped<IPlayerRepository, PlayerRepository>()
             .AddScoped<IPlayerAttributeRepository, PlayerAttributeRepository>()
             .AddScoped<ISessionRepository, SessionRepository>()
@@ -82,6 +84,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IExecutionContextAccessor, ExecutionContextAccessor>()
             .AddScoped<IGameKeyResolver, GameKeyResolver>()
             .AddScoped<IGameService, GameService>()
+            .AddScoped<ILeaderboardService, LeaderboardService>()
             .AddScoped<IDeveloperService, DeveloperService>()
             .AddScoped<IRoomService, RoomService>()
             .AddScoped<IPlayerService, PlayerService>()
