@@ -79,7 +79,8 @@ jobs:
           echo "JWT_KEY=${{ secrets.JWT_KEY }}" >> k8s/overlays/production/.env.prod
           echo "YANDEX_STORAGE_ACCESS_KEY=${{ secrets.YANDEX_STORAGE_ACCESS_KEY }}" >> k8s/overlays/production/.env.prod
           echo "YANDEX_STORAGE_SECRET_KEY=${{ secrets.YANDEX_STORAGE_SECRET_KEY }}" >> k8s/overlays/production/.env.prod
-      
+          echo "YANDEX_STORAGE_BUCKET_NAME=${{ secrets.YANDEX_STORAGE_BUCKET_NAME }}" >> k8s/overlays/production/.env.prod
+          echo "YANDEX_STORAGE_SERVICE_URL=${{ secrets.YANDEX_STORAGE_SERVICE_URL }}" >> k8s/overlays/production/.env.prod
       
       - name: Update Kubernetes resources
         run: |
