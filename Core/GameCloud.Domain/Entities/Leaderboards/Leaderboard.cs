@@ -48,16 +48,6 @@ namespace GameCloud.Domain.Entities.Leaderboards
         public List<string>? RequiredMetadataFields { get; set; }
     }
 
-    public class LeaderboardConfig
-    {
-        public bool AllowTies { get; set; }
-        public TimeSpan? MinScoreInterval { get; set; }
-        public int? MaxDailySubmissions { get; set; }
-        public bool RequireAuthentication { get; set; }
-        public List<string>? AllowedCountries { get; set; }
-        public ValidationRules? ValidationRules { get; set; }
-    }
-
     public class Leaderboard : BaseEntity
     {
         public Guid GameId { get; set; }
