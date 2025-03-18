@@ -8,6 +8,7 @@ resources:
   - relay/deployment.yaml
   - relay/service.yaml
   - relay/ingress.yaml
+  - relay/configmap.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gamecloud

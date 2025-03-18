@@ -20,7 +20,7 @@ spec:
               service:
                 name: gamecloud-relay
                 port:
-                  number: 8090
+                  number: 80
     - host: ws.playables.studio
       http:
         paths:
