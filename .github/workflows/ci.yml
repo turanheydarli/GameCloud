@@ -20,6 +20,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
+          submodules: recursive 
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
