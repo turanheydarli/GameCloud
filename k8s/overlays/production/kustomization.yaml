@@ -10,6 +10,8 @@ resources:
 images:
   - name: cr.yandex/crpl3p256m938dtgp3lh/gamecloud-main
     newTag: latest
+  - name: cr.yandex/crpl3p256m938dtgp3lh/gamecloud-relay
+    newTag: latest
 
 
 configMapGenerator:

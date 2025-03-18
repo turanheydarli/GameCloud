@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gamecloud-relay
+spec:
+  selector:
+    matchLabels:
+      app: gamecloud-relay
+      app.kubernetes.io/part-of: gamecloud
+      app.kubernetes.io/managed-by: kustomize
+  template:
+    metadata:
+      labels:
+        app: gamecloud-relay
+        app.kubernetes.io/part-of: gamecloud
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      containers:
+        - name: gamecloud-relay
+          image: cr.yandex/crpl3p256m938dtgp3lh/gamecloud-relay:latest
+          ports:
+            - containerPort: 8090
+              name: http
+            - containerPort: 9000
+              name: ws
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: SERVER_PORT
+              value: "8090"
+            - name: WEBSOCKET_PORT
+              value: "9000"
+            - name: POSTGRES_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: DB_CONNECTION_STRING
+            - name: REDIS_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: VALKEY_CONNECTION_STRING
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gamecloud-secrets
+                  key: JWT_KEY
+            - name: LOG_LEVEL
+              value: "info" 
