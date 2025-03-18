@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gamecloud-relay
+  labels:
+    app: gamecloud-relay
+  annotations:
+    cloud.yandex.com/monitored: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8090
+      targetPort: 8090
+      protocol: TCP
+      name: http
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+      name: ws
+  selector:
+    app: gamecloud-relay 

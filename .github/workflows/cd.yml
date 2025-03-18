@@ -12,6 +12,7 @@ env:
   LATEST_TAG: latest
   YC_REGISTRY: cr.yandex/crpl3p256m938dtgp3lh
   APP_NAME: gamecloud-main
+  RELAY_NAME: gamecloud-relay
   KUBE_NAMESPACE: gamecloud
 
 jobs:
@@ -37,6 +38,7 @@ jobs:
 
       - name: Build and push
         run: |
+          # Main app
           docker build -t ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} \
             --build-arg BUILD_VERSION=${{ env.IMAGE_TAG }} \
             -f ./Presentation/GameCloud.WebAPI/Dockerfile .
@@ -44,6 +46,15 @@ jobs:
             ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
           docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
           docker push ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.LATEST_TAG }}
+          
+          # Relay server
+          docker build -t ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.IMAGE_TAG }} \
+            --build-arg BUILD_VERSION=${{ env.IMAGE_TAG }} \
+            -f ./relay/Dockerfile ./relay
+          docker tag ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.IMAGE_TAG }} \
+            ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.LATEST_TAG }}
+          docker push ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.LATEST_TAG }}
 
       - name: Install Yandex Cloud CLI
         run: |

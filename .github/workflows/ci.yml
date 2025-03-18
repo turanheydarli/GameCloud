@@ -10,6 +10,7 @@ env:
   DOTNET_VERSION: '8.0.x'
   YC_REGISTRY: cr.yandex/crpl3p256m938dtgp3lh
   APP_NAME: gamecloud-main
+  RELAY_NAME: gamecloud-relay
 
 jobs:
   build-and-test:
@@ -33,7 +34,18 @@ jobs:
       - name: Test
         run: dotnet test --no-build --verbosity normal --configuration Release
 
-      - name: Build Docker image
+      - name: Setup Go
+        if: github.ref == 'refs/heads/main'
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build Main Docker image
         if: github.ref == 'refs/heads/main'
         run: |
           docker build -t ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ github.sha }} -f ./Presentation/GameCloud.WebAPI/Dockerfile .
+
+      - name: Build Relay Docker image
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker build -t ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ github.sha }} -f ./relay/Dockerfile ./relay
