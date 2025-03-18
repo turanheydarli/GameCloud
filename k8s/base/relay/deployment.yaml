@@ -19,7 +19,7 @@ spec:
         - name: gamecloud-relay
           image: cr.yandex/crpl3p256m938dtgp3lh/gamecloud-relay:latest
           ports:
-            - containerPort: 8090
+            - containerPort: 8080
               name: http
             - containerPort: 9000
               name: ws
@@ -38,15 +38,16 @@ spec:
           livenessProbe:
             httpGet:
               path: /live
-              port: 8090
+              port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /ready
-              port: 8090
-            initialDelaySeconds: 10
+              port: 8080
+            initialDelaySeconds: 30
             periodSeconds: 15
+            failureThreshold: 5
       volumes:
         - name: config-volume
           configMap:
