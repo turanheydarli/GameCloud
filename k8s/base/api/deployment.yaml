@@ -21,6 +21,8 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+            - containerPort: 5005
+              name: grpc
           resources:
             requests:
               cpu: "100m"
@@ -72,3 +74,14 @@ spec:
                 secretKeyRef:
                   name: gamecloud-secrets
                   key: YANDEX_STORAGE_SERVICE_URL
+                  
+            - name: Kestrel__Endpoints__gRPC__Url
+              value: "http://+:5005"
+            - name: Kestrel__Endpoints__gRPC__Protocols
+              value: "Http2"
+              
+            - name: Kestrel__Endpoints__Http__Url
+              value: "http://+:8080"
+            - name: Kestrel__Endpoints__Http__Protocols
+              value: "Http1AndHttp2"
+              

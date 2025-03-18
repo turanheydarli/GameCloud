@@ -49,7 +49,6 @@ jobs:
           
           # Relay server
           docker build -t ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.IMAGE_TAG }} \
-            --build-arg BUILD_VERSION=${{ env.IMAGE_TAG }} \
             -f ./relay/Dockerfile ./relay
           docker tag ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.IMAGE_TAG }} \
             ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.LATEST_TAG }}
@@ -98,12 +97,14 @@ jobs:
         run: |
           cd k8s/overlays/production
           kustomize edit set image ${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}=${{ env.YC_REGISTRY }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+          kustomize edit set image ${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}=${{ env.YC_REGISTRY }}/${{ env.RELAY_NAME }}:${{ env.IMAGE_TAG }}
           kustomize build . > manifests.yaml
 
       - name: Deploy to Kubernetes
         run: |
           kubectl apply -k k8s/overlays/production
           kubectl rollout status deployment/${{ env.APP_NAME }} -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/${{ env.RELAY_NAME }} -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
 
       - name: Verify Deployment
         run: |

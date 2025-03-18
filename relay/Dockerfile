@@ -16,10 +16,14 @@ WORKDIR /app
 
 COPY --from=builder /app/relay-server .
 
-RUN adduser -D appuser
-USER appuser
+RUN mkdir -p /app/config
 
-EXPOSE 8090
-EXPOSE 9000
+RUN apk add --no-cache ca-certificates tzdata
+
+RUN apk add --no-cache curl busybox-extras
+
+ENV TZ=UTC
+
+EXPOSE 8080
 
 ENTRYPOINT ["./relay-server"] 
