@@ -5,7 +5,7 @@ metadata:
   namespace: gamecloud
 data:
   .env: |
-    PORT=8090
+    PORT=8080
     GRPC_SERVER_ADDR=gamecloud-main:5005
     LOG_LEVEL=info
     READ_TIMEOUT=5s

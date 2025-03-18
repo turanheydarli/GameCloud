@@ -50,7 +50,7 @@ func New() *Config {
 
 	cfg.Log.Level = "info"
 
-	cfg.GRPC.ServerAddr = "localhost:5005"
+	cfg.GRPC.ServerAddr = "gamecloud-main:5005"
 	cfg.GRPC.Timeout = 10 * time.Second
 
 	cfg.WebSocket.MaxMessageSize = 32 * 1024

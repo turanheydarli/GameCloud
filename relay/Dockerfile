@@ -24,6 +24,8 @@ RUN apk add --no-cache curl busybox-extras
 
 ENV TZ=UTC
 
-EXPOSE 8080
+EXPOSE 8080 8090 9000
+
+RUN chmod +x /app/relay-server
 
 ENTRYPOINT ["./relay-server"] 
