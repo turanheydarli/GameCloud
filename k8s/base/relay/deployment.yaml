@@ -21,7 +21,7 @@ spec:
           ports:
             - containerPort: 8080
               name: http
-            - containerPort: 9000
+            - containerPort: 8080
               name: ws
           resources:
             requests:
